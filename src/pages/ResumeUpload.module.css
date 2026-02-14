@@ -1,0 +1,201 @@
+.pageWrapper {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background-color: #F9FAFB;
+    font-family: 'Inter', sans-serif;
+    padding: 2rem;
+}
+
+.topMessage {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+    max-width: 600px;
+    margin-bottom: 2rem;
+    text-align: center;
+    justify-content: center;
+}
+
+.sparkleIcon {
+    color: #39C8CE;
+    min-width: 16px;
+    margin-top: 2px;
+}
+
+.messageText {
+    font-size: 0.875rem;
+    color: #1F2937;
+    font-style: italic;
+    line-height: 1.5;
+}
+
+.mainHeading {
+    font-size: 1.75rem;
+    font-weight: 800;
+    color: #111827;
+    margin-bottom: 0.5rem;
+    text-align: center;
+}
+
+.subHeading {
+    font-size: 0.875rem;
+    color: #6B7280;
+    margin-bottom: 3rem;
+    text-align: center;
+}
+
+.card {
+    background: white;
+    border-radius: 1.5rem;
+    padding: 3rem 2rem;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+    width: 100%;
+    max-width: 800px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+}
+
+.iconCircle {
+    width: 80px;
+    height: 80px;
+    background-color: #39C8CE;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    margin-bottom: 2rem;
+    box-shadow: 0 4px 10px rgba(57, 200, 206, 0.3);
+}
+
+.cardTitle {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: #111827;
+    margin-bottom: 0.5rem;
+}
+
+.cardSubtitle {
+    font-size: 0.75rem;
+    color: #6B7280;
+    margin-bottom: 2rem;
+    max-width: 400px;
+}
+
+.uploadButton {
+    background: linear-gradient(90deg, #293991 0%, #1ABFD2 100%);
+    /* Deep blue gradient */
+    color: white;
+    padding: 0.75rem 2rem;
+    border-radius: 0.5rem;
+    font-weight: 500;
+    font-size: 0.875rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    width: 100%;
+    max-width: 400px;
+    justify-content: center;
+    cursor: pointer;
+    border: none;
+    transition: opacity 0.2s;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.uploadButton:hover {
+    opacity: 0.9;
+}
+
+.uploadMeta {
+    font-size: 0.7rem;
+    color: #6B7280;
+    /* lighter text color from image */
+    margin-top: 0.75rem;
+    margin-bottom: 1.5rem;
+}
+
+.importOptions {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    font-size: 0.75rem;
+    color: #4B5563;
+    margin-bottom: 2rem;
+}
+
+.importItem {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.linkedinIcon {
+    color: #0077B5;
+    background: white;
+    border-radius: 2px;
+}
+
+.linkIcon {
+    color: #F59E0B;
+}
+
+.skipButton {
+    background-color: #39C8CE;
+    color: white;
+    padding: 0.5rem 1.5rem;
+    border-radius: 999px;
+    font-weight: 500;
+    font-size: 0.875rem;
+    border: none;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    box-shadow: 0 2px 4px rgba(57, 200, 206, 0.3);
+}
+
+.skipButton:hover {
+    background-color: #2FB1B6;
+}
+
+.footer {
+    display: flex;
+    gap: 2rem;
+    margin-top: 3rem;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.badge {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.75rem;
+    color: #6B7280;
+}
+
+.checkIcon {
+    color: #10B981;
+    /* Green */
+    background: #D1FAE5;
+    border-radius: 50%;
+    padding: 2px;
+}
+
+.lockIcon {
+    color: #3B82F6;
+    /* Blue */
+    background: #DBEAFE;
+    border-radius: 50%;
+    padding: 2px;
+}
+
+.shieldIcon {
+    color: #8B5CF6;
+    /* Purple */
+    background: #EDE9FE;
+    border-radius: 50%;
+    padding: 2px;
+}

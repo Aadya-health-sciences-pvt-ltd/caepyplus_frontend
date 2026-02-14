@@ -1,0 +1,191 @@
+.overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.dialog {
+    background: white;
+    border-radius: 16px;
+    padding: 2.5rem;
+    max-width: 480px;
+    width: 90%;
+    text-align: center;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+    position: relative;
+    overflow: hidden;
+}
+
+.dialog::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #0F766E, #10B981, #39C8CE);
+}
+
+.iconWrapper {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 1.25rem;
+}
+
+.iconNew {
+    background: linear-gradient(135deg, #CCFBF1, #D1FAE5);
+    color: #0F766E;
+}
+
+.iconReturning {
+    background: linear-gradient(135deg, #DBEAFE, #EDE9FE);
+    color: #293991;
+}
+
+.title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #111827;
+    margin: 0 0 0.75rem;
+    line-height: 1.3;
+}
+
+.description {
+    font-size: 0.95rem;
+    color: #6B7280;
+    line-height: 1.6;
+    margin: 0 0 1.75rem;
+}
+
+.statusCard {
+    background: #F9FAFB;
+    border: 1px solid #E5E7EB;
+    border-radius: 12px;
+    padding: 1rem 1.25rem;
+    margin-bottom: 1.5rem;
+    text-align: left;
+}
+
+.statusRow {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+}
+
+.statusLabel {
+    font-size: 0.85rem;
+    color: #6B7280;
+    font-weight: 500;
+}
+
+.statusValue {
+    font-size: 0.85rem;
+    color: #111827;
+    font-weight: 600;
+}
+
+.progressBarOuter {
+    width: 100%;
+    height: 6px;
+    background: #E5E7EB;
+    border-radius: 3px;
+    overflow: hidden;
+    margin-top: 0.5rem;
+}
+
+.progressBarInner {
+    height: 100%;
+    background: linear-gradient(90deg, #0F766E, #10B981);
+    border-radius: 3px;
+    transition: width 0.8s ease;
+}
+
+.buttonGroup {
+    display: flex;
+    gap: 0.75rem;
+    justify-content: center;
+}
+
+.primaryButton {
+    padding: 0.75rem 1.75rem;
+    background: linear-gradient(135deg, #0F766E, #10B981);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    flex: 1;
+}
+
+.primaryButton:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(15, 118, 110, 0.3);
+}
+
+.secondaryButton {
+    padding: 0.75rem 1.75rem;
+    background: transparent;
+    color: #6B7280;
+    border: 1px solid #E5E7EB;
+    border-radius: 10px;
+    font-size: 0.95rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.secondaryButton:hover {
+    background: #F9FAFB;
+    border-color: #D1D5DB;
+}
+
+.confetti {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    pointer-events: none;
+    overflow: hidden;
+}
+
+.confettiPiece {
+    position: absolute;
+    width: 8px;
+    height: 8px;
+    border-radius: 2px;
+    animation: confettiFall 3s ease-in-out forwards;
+    opacity: 0;
+}
+
+@keyframes confettiFall {
+    0% {
+        opacity: 1;
+        transform: translateY(-20px) rotate(0deg) scale(0);
+    }
+
+    20% {
+        opacity: 1;
+        transform: translateY(20px) rotate(90deg) scale(1);
+    }
+
+    100% {
+        opacity: 0;
+        transform: translateY(200px) rotate(720deg) scale(0.5);
+    }
+}
