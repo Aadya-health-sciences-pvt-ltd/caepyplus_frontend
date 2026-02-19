@@ -5,6 +5,7 @@ import Stepper from '../components/ui/Stepper';
 import Toast from '../components/ui/Toast';
 import styles from './ReviewProfile.module.css';
 import { mockDataService } from '../services/mockDataService';
+import { doctorService } from '../services/doctorService';
 import { validateSection1 } from '../lib/validation';
 
 const ReviewProfile = () => {
@@ -32,7 +33,7 @@ const ReviewProfile = () => {
     const getVal = (key: string) => formData[key] || 'Not provided';
     const getArr = (key: string) => Array.isArray(formData[key]) ? formData[key].join(', ') : (formData[key] || 'None');
 
-    const handleSubmit = () => {
+    const handleSubmit = async () => {
         // Validate Section 1 before submission
         const { isValid, missingFields } = validateSection1(formData);
         if (!isValid) {
@@ -40,28 +41,58 @@ const ReviewProfile = () => {
             return;
         }
 
-        // Update status in mock backend
-        const currentUser = mockDataService.getCurrentUser();
-        if (currentUser) {
-            mockDataService.updateProfile(currentUser.id, {
-                status: 'submitted',
-                data: formData
-            });
+        const doctorId = localStorage.getItem('doctor_id');
+        if (!doctorId) {
+            showToast('User session not found. Please log in again.', 'error');
+            return;
         }
 
-        // Simulate API submission delay
-        setTimeout(() => {
-            navigate('/submitted', { state: { formData } });
-        }, 1000);
+        try {
+            // 1. Save latest data first
+            await doctorService.updateDoctorDetails(doctorId, formData);
+
+            // 2. Submit profile
+            await doctorService.submitProfile(doctorId);
+
+            // 3. Update mock status for UI consistency
+            const currentUser = mockDataService.getCurrentUser();
+            if (currentUser) {
+                mockDataService.updateProfile(currentUser.id, {
+                    status: 'submitted',
+                    data: formData
+                });
+            }
+
+            showToast('Profile submitted successfully!', 'success');
+
+            // 4. Redirect
+            setTimeout(() => {
+                navigate('/submitted', { state: { formData } });
+            }, 1000);
+
+        } catch (err: any) {
+            console.error('Submission failed:', err);
+            const msg = err.response?.data?.message || 'Failed to submit profile. Please try again.';
+            showToast(msg, 'error');
+        }
     };
 
-    const handleContinue = () => {
+    const handleContinue = async () => {
+        // Save current progress before continuing
+        const doctorId = localStorage.getItem('doctor_id');
+        if (doctorId) {
+            try {
+                await doctorService.updateDoctorDetails(doctorId, formData);
+            } catch (err) {
+                console.error('Auto-save failed on continue:', err);
+            }
+        }
         navigate('/onboarding', { state: { formData, step: 4 } });
     };
 
     const handleEdit = (field: string) => {
         const fieldMap: Record<string, number> = {
-            fullName: 1, specialty: 1, experience: 1, primaryLocation: 1, practiceLocations: 1,
+            fullName: 1, specialty: 1, experience: 1, primaryLocation: 1, practiceLocations: 1, registrationNumber: 1,
             mbbsYear: 2, specialisationYear: 2, qualifications: 2, fellowships: 2,
             areasOfInterest: 3, commonConditions: 3, knownForConditions: 3,
             trainingExperience: 4, motivation: 4, unwinding: 4,
@@ -116,6 +147,7 @@ const ReviewProfile = () => {
                 <ReviewRow icon={<Briefcase size={20} />} label="EXPERIENCE" value={getVal('experience') ? `${getVal('experience')} years` : 'Not provided'} onEdit={() => handleEdit('experience')} />
                 <ReviewRow icon={<Building size={20} />} label="PRIMARY LOCATION" value={getVal('primaryLocation')} onEdit={() => handleEdit('primaryLocation')} />
                 <ReviewRow icon={<MapPin size={20} />} label="PRACTICE LOCATIONS" value={formData.practiceLocations?.length ? `${formData.practiceLocations.length} locations added` : 'None added'} onEdit={() => handleEdit('practiceLocations')} />
+                <ReviewRow icon={<FileText size={20} />} label="REGISTRATION NUMBER" value={getVal('registrationNumber')} onEdit={() => handleEdit('registrationNumber')} />
 
                 <h2 className={styles.sectionHeader} style={{ marginTop: '2rem' }}>Credentials</h2>
                 <ReviewRow icon={<GraduationCap size={20} />} label="MBBS YEAR" value={getVal('mbbsYear')} onEdit={() => handleEdit('mbbsYear')} />

@@ -37,36 +37,70 @@ export const useAssistant = (): UseAssistantReturn => {
         };
     }, []);
 
-    const speak = useCallback((text: string, onEnd?: () => void) => {
+    const audioRef = useRef<HTMLAudioElement | null>(null);
+
+    const speak = useCallback(async (text: string, onEnd?: () => void) => {
+        // Cancel any existing speech
+        if (speechSynthRef.current) speechSynthRef.current.cancel();
+        if (audioRef.current) {
+            audioRef.current.pause();
+            audioRef.current.src = '';
+        }
+
+        try {
+            // Attempt ElevenLabs TTS
+            const { elevenLabsService } = await import('../services/elevenLabsService');
+            const audioUrl = await elevenLabsService.textToSpeech(text);
+
+            const audio = new Audio(audioUrl);
+            audioRef.current = audio;
+
+            audio.onplay = () => {
+                if (mountedRef.current) setIsSpeaking(true);
+            };
+
+            audio.onended = () => {
+                if (mountedRef.current) setIsSpeaking(false);
+                URL.revokeObjectURL(audioUrl);
+                if (onEnd) onEnd();
+            };
+
+            audio.onerror = () => {
+                console.error('Audio playback error, falling back to native TTS');
+                if (mountedRef.current) setIsSpeaking(false);
+                URL.revokeObjectURL(audioUrl);
+                speakNative(text, onEnd);
+            };
+
+            audio.play();
+        } catch (error) {
+            console.warn('ElevenLabs TTS failed, falling back to native TTS:', error);
+            speakNative(text, onEnd);
+        }
+    }, []);
+
+    const speakNative = (text: string, onEnd?: () => void) => {
         if (!speechSynthRef.current) return;
 
-        // Cancel any existing speech
-        speechSynthRef.current.cancel();
-
         const utterance = new SpeechSynthesisUtterance(text);
-
-        // Optional: Select a specific voice preference (e.g., Google US English)
         const voices = speechSynthRef.current.getVoices();
         const preferredVoice = voices.find(v => v.lang === 'en-US' && v.name.includes('Google')) || voices[0];
         if (preferredVoice) utterance.voice = preferredVoice;
 
         utterance.rate = 1;
-
         utterance.onstart = () => {
             if (mountedRef.current) setIsSpeaking(true);
         };
-
         utterance.onend = () => {
             if (mountedRef.current) setIsSpeaking(false);
             if (onEnd) onEnd();
         };
-
         utterance.onerror = () => {
             if (mountedRef.current) setIsSpeaking(false);
         };
 
         speechSynthRef.current.speak(utterance);
-    }, []);
+    };
 
     const listen = useCallback((onResult: (text: string) => void) => {
         if (!recognitionRef.current) {
@@ -105,6 +139,10 @@ export const useAssistant = (): UseAssistantReturn => {
     const stop = useCallback(() => {
         if (speechSynthRef.current) speechSynthRef.current.cancel();
         if (recognitionRef.current) recognitionRef.current.stop();
+        if (audioRef.current) {
+            audioRef.current.pause();
+            audioRef.current.src = '';
+        }
         setIsSpeaking(false);
         setIsListening(false);
     }, []);

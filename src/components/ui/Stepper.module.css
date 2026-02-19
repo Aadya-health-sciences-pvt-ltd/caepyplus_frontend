@@ -39,16 +39,16 @@
 }
 
 .stepCircle.active {
-    background-color: #39C8CE;
-    border-color: #39C8CE;
+    background-color: #293991;
+    border-color: #293991;
     color: white;
-    box-shadow: 0 0 0 4px #F0FDFA;
+    box-shadow: 0 0 0 4px rgba(41, 57, 145, 0.1);
 }
 
 .stepCircle.completed {
-    background-color: #E0F2F1;
-    border-color: #39C8CE;
-    color: black
+    background-color: #293991;
+    border-color: #293991;
+    color: white
 }
 
 .stepLine {

@@ -13,7 +13,22 @@ const AdminSidebar: React.FC = () => {
     const [user, setUser] = useState<AdminUser | null>(null);
 
     useEffect(() => {
-        setUser(getLoggedInAdmin());
+        // Prefer localStorage role if available (from real API login)
+        const storedRole = localStorage.getItem('role');
+        const mockUser = getLoggedInAdmin();
+
+        if (storedRole) {
+            // Construct a user object with the stored role
+            setUser({
+                id: localStorage.getItem('doctor_id') || 'admin_user',
+                name: 'Admin User', // Placeholder or fetch from somewhere else if needed
+                email: localStorage.getItem('mobile_number') || '',
+                role: storedRole as 'admin' | 'operation',
+                joinedDate: new Date().toISOString()
+            });
+        } else {
+            setUser(mockUser);
+        }
     }, []);
 
     const toggleSidebar = () => {

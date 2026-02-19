@@ -56,6 +56,7 @@ const Login = () => {
 
     const handleSendOTP = async (e: React.FormEvent) => {
         e.preventDefault();
+        authService.clearSession();
         setError(null);
         setIsLoading(true);
 
@@ -158,6 +159,7 @@ const Login = () => {
 
     const handleGoogleLogin = async () => {
         try {
+            authService.clearSession();
             const result = await signInWithPopup(auth, googleProvider);
             const user = result.user;
             const email = user.email;

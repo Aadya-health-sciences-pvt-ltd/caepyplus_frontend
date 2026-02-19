@@ -1,6 +1,7 @@
 .pageWrapper {
     display: flex;
-    min-height: 100vh;
+    height: 100vh;
+    overflow: hidden;
     font-family: 'Inter', sans-serif;
 }
 
@@ -9,7 +10,7 @@
     background: linear-gradient(135deg, #293991 0%, #1ABFD2 100%);
     /* Deep blue to teal */
     color: white;
-    padding: 6rem;
+    padding: 4rem;
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -57,7 +58,7 @@
 }
 
 .heroTitle {
-    font-size: 3.5rem;
+    font-size: clamp(2rem, 4vw, 3.5rem);
     font-weight: 700;
     line-height: 1.1;
     margin-bottom: 1.5rem;
@@ -179,17 +180,18 @@
     flex: 1;
     display: flex;
     flex-direction: column;
-    padding: 6rem;
-    /* Increased padding to match Hero padding */
+    padding: 4rem;
+    /* Reduced padding to fit fixed height */
     background-color: white;
-    justify-content: space-between;
-    /* Pushes footer to bottom if needed, or just distributes space */
+    justify-content: center;
+    overflow-y: auto;
 }
 
 .logoWrapper {
     width: 100%;
-    margin-bottom: 4rem;
-    /* Additional space below logo */
+    margin-top: 2rem;
+    margin-bottom: 2rem;
+    /* Reduced space below logo */
 }
 
 .formContainer {
@@ -211,7 +213,7 @@
 
 .formSubtitle {
     color: #64748b;
-    margin-bottom: 2.5rem;
+    margin-bottom: 1.5rem;
     line-height: 1.6;
     font-size: 1rem;
 }

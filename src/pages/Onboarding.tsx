@@ -124,19 +124,18 @@ const Onboarding = () => {
             try {
                 const response = await voiceService.sendChatMessage(currentSessionId, transcript, context);
 
-                // Update Form Data with extracted fields
-                if (response.extracted_fields && Object.keys(response.extracted_fields).length > 0) {
+                // Update Form Data with all collected fields
+                if (response.current_data && Object.keys(response.current_data).length > 0) {
                     setFormData((prev: any) => ({
                         ...prev,
-                        ...response.extracted_fields
+                        ...response.current_data
                     }));
 
-                    const keys = Object.keys(response.extracted_fields);
-                    if (keys.length > 0) {
-                        setFocusedField(keys[0]);
-                    }
+                    // Optional: highlight last updated field if possible, or just skip focus logic for now
+                    // The backend doesn't explicitly tell us which field was *just* updated, 
+                    // but we can infer or just rely on the UI updating.
 
-                    showToast(`Updated: ${Object.keys(response.extracted_fields).join(', ')}`, 'success');
+                    showToast(`Updated fields based on voice input`, 'success');
                 }
 
                 // Speak AI response, then continue listening
@@ -167,6 +166,7 @@ const Onboarding = () => {
         practiceLocations: [], // Array of { name, address, timings }
         experience: '',
         postSpecialisationExperience: '',
+        registrationNumber: '',
 
         // Block 2: Credentials & Trust Markers
         mbbsYear: '',
@@ -256,6 +256,33 @@ const Onboarding = () => {
             mockDataService.updateOnboardingData(savedUser.id, currentStep, formData);
         }
     }, [currentStep, formData, savedUser]);
+
+    // Fetch doctor profile from API on mount and merge into formData
+    useEffect(() => {
+        const doctorId = localStorage.getItem('doctor_id');
+        if (!doctorId) return;
+
+        doctorService.fetchAndStoreProfile(doctorId)
+            .then((profile) => {
+                const mappedData = doctorService.mapProfileToFormData(profile);
+                setFormData((prev: typeof formData) => {
+                    const updated = { ...prev };
+                    for (const [key, value] of Object.entries(mappedData)) {
+                        const existing = updated[key as keyof typeof updated];
+                        const isEmpty = existing === '' || existing === null || existing === undefined
+                            || (Array.isArray(existing) && existing.length === 0);
+                        if (isEmpty && value !== '' && value !== null && value !== undefined) {
+                            (updated as Record<string, unknown>)[key] = value;
+                        }
+                    }
+                    return updated;
+                });
+            })
+            .catch((err) => {
+                console.warn('Could not fetch doctor profile on mount:', err);
+            });
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
@@ -352,8 +379,17 @@ const Onboarding = () => {
             }
 
             if (targetElement) {
-                targetElement.focus();
-                targetElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                // Focus the input field without scrolling (we handle scroll separately)
+                targetElement.focus({ preventScroll: true });
+
+                // Scroll to the prompt block (Caepy AI block) instead
+                const promptBlock = document.getElementById('section-prompt-block');
+                if (promptBlock) {
+                    promptBlock.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                } else {
+                    // Fallback if prompt block not found
+                    targetElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
             }
         }, 100);
 
@@ -364,6 +400,13 @@ const Onboarding = () => {
 
     const handleBack = () => {
         if (currentStep > 1) {
+            // Persist to backend API before navigating
+            const doctorId = localStorage.getItem('doctor_id');
+            if (doctorId) {
+                doctorService.updateDoctorDetails(doctorId, formData).catch((err) => {
+                    console.error('Failed to save to API:', err);
+                });
+            }
             setCurrentStep((c: number) => c - 1);
         }
     };
@@ -373,7 +416,7 @@ const Onboarding = () => {
             case 1:
                 return (
                     <>
-                        <div className={styles.promptItem}>
+                        <div id="section-prompt-block" className={styles.promptItem}>
                             <Sparkles className={styles.promptIcon} size={20} />
                             <p className={styles.promptText}>
                                 "Let's start with the basics. These help patients recognise you quickly and accurately."
@@ -526,13 +569,27 @@ const Onboarding = () => {
                                     />
                                 </div>
                             </div>
+
+                            <div className={styles.fullWidth}>
+                                <div className={styles.inputWrapper}>
+                                    <label className={styles.label}>Medical Registration Number <span>*</span></label>
+                                    <input
+                                        name="registrationNumber"
+                                        value={formData.registrationNumber}
+                                        onChange={handleInputChange}
+                                        onFocus={() => setFocusedField('registrationNumber')}
+                                        className={styles.input}
+                                        placeholder="Enter your registration/license number"
+                                    />
+                                </div>
+                            </div>
                         </div>
                     </>
                 );
             case 2:
                 return (
                     <>
-                        <div className={styles.promptItem}>
+                        <div id="section-prompt-block" className={styles.promptItem}>
                             <Sparkles className={styles.promptIcon} size={20} />
                             <p className={styles.promptText}>
                                 "This section highlights your training and professional milestones. You may keep this factual."
@@ -646,7 +703,7 @@ const Onboarding = () => {
             case 3:
                 return (
                     <>
-                        <div className={styles.promptItem}>
+                        <div id="section-prompt-block" className={styles.promptItem}>
                             <Sparkles className={styles.promptIcon} size={20} />
                             <p className={styles.promptText}>
                                 "This reflects what you actually practice, not just what you were trained in."
@@ -760,7 +817,7 @@ const Onboarding = () => {
                             </div>
                         </div>
 
-                        <div className={styles.promptItem}>
+                        <div id="section-prompt-block" className={styles.promptItem}>
                             <Sparkles className={styles.promptIcon} size={20} />
                             <p className={styles.promptText}>
                                 "Let potential patients connect with you as a person. Share what drives you."
@@ -932,7 +989,7 @@ const Onboarding = () => {
             case 5:
                 return (
                     <>
-                        <div className={styles.promptItem}>
+                        <div id="section-prompt-block" className={styles.promptItem}>
                             <Sparkles className={styles.promptIcon} size={20} />
                             <p className={styles.promptText}>
                                 "If a patient had 30 seconds to understand your practice, what would you want them to know?"
@@ -994,7 +1051,7 @@ const Onboarding = () => {
             case 6:
                 return (
                     <>
-                        <div className={styles.promptItem}>
+                        <div id="section-prompt-block" className={styles.promptItem}>
                             <Sparkles className={styles.promptIcon} size={20} />
                             <p className={styles.promptText}>
                                 "Just answer as you would explain to a patient in your clinic. No need to write an article."
@@ -1122,12 +1179,20 @@ const Onboarding = () => {
             }
         }
 
-        // Save current step data
+        // Save current step data locally
         mockDataService.updateOnboardingData(
             mockDataService.getCurrentUser()?.id || 'temp',
             currentStep,
             formData
         );
+
+        // Persist to backend API
+        const doctorId = localStorage.getItem('doctor_id');
+        if (doctorId) {
+            doctorService.updateDoctorDetails(doctorId, formData).catch((err) => {
+                console.error('Failed to save to API:', err);
+            });
+        }
 
         if (currentStep === 3) {
             // Updated Flow: Review after Step 3
@@ -1148,6 +1213,13 @@ const Onboarding = () => {
         // Only allow jumping comfortably backward or to adjacent?
         // For now, allow jumping to any previous step as requested.
         if (step < currentStep) {
+            // Persist to backend API before jumping
+            const doctorId = localStorage.getItem('doctor_id');
+            if (doctorId) {
+                doctorService.updateDoctorDetails(doctorId, formData).catch((err) => {
+                    console.error('Failed to save to API:', err);
+                });
+            }
             setCurrentStep(step);
         }
     };

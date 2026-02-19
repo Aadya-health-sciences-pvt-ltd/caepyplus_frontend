@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Stethoscope, Bell, Settings, User, CheckCircle, FileText, CreditCard, HelpCircle, Phone, LogOut } from 'lucide-react';
 import styles from './Header.module.css';
+import { authService } from '../services/authService';
 
 interface HeaderProps {
     centerTitle?: string;
@@ -12,6 +13,7 @@ import { mockDataService } from '../services/mockDataService';
 const Header: React.FC<HeaderProps> = ({ centerTitle }) => {
     const [openDropdown, setOpenDropdown] = useState<string | null>(null); // 'notifications', 'settings', 'profile', or null
     const navigate = useNavigate();
+    const location = useLocation();
 
     const user = mockDataService.getCurrentUser();
     // Access name from root or nested data. Fallback to Anonymous.
@@ -21,16 +23,13 @@ const Header: React.FC<HeaderProps> = ({ centerTitle }) => {
 
     const handleLogout = () => {
         // Clear all auth and user data from localStorage
-        localStorage.removeItem('access_token');
-        localStorage.removeItem('token_type');
-        localStorage.removeItem('expires_in');
-        localStorage.removeItem('doctor_id');
-        localStorage.removeItem('mobile_number');
-        localStorage.removeItem('is_new_user');
-        localStorage.removeItem('role');
-        localStorage.removeItem('doctor_profile');
+        authService.clearSession();
 
-        navigate('/login', { replace: true });
+        if (location.pathname.startsWith('/admin')) {
+            navigate('/admin/login', { replace: true });
+        } else {
+            navigate('/login', { replace: true });
+        }
     };
 
     return (

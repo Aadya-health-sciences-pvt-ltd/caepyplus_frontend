@@ -6,7 +6,8 @@ export const validateSection1 = (formData: any) => {
         { key: 'specialty', label: 'Specialty' },
         { key: 'primaryLocation', label: 'Primary Location' },
         { key: 'experience', label: 'Experience' },
-        { key: 'postSpecialisationExperience', label: 'Post-specialization Experience' }
+        { key: 'postSpecialisationExperience', label: 'Post-specialization Experience' },
+        { key: 'registrationNumber', label: 'Registration Number' }
         // practiceLocations check needs special handling if it's an array
     ];
 

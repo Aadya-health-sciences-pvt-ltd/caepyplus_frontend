@@ -71,6 +71,17 @@ export const getCurrentUserRole = (email: string): 'admin' | 'operation' | null 
 export const getLoggedInAdmin = (): AdminUser | null => {
     const email = localStorage.getItem('caepy_logged_in_email');
     if (!email) return null;
+
+    if (email.startsWith('phone:')) {
+        return {
+            id: 'phone-admin',
+            name: 'Admin User',
+            email: email,
+            role: (localStorage.getItem('role') as 'admin' | 'operation') || 'admin',
+            joinedDate: new Date().toISOString()
+        };
+    }
+
     const users = getAdminUsers();
     return users.find(u => u.email === email) || null;
 };

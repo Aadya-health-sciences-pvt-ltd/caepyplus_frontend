@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Sparkles, Star } from 'lucide-react';
+import { Sparkles, Star, Loader2 } from 'lucide-react';
 
 import { signInWithPopup } from 'firebase/auth';
 import { auth, googleProvider } from '../../lib/firebase';
 import { getCurrentUserRole, setLoggedInAdmin } from '../../lib/adminAuth';
+import { authService } from '../../services/authService';
 import styles from './AdminLogin.module.css';
 
 const AdminLogin = () => {
@@ -13,31 +14,114 @@ const AdminLogin = () => {
     const [mobileNumber, setMobileNumber] = useState('');
     const [loginMethod, setLoginMethod] = useState<'email' | 'phone'>('email');
 
-    const handleLogin = (e: React.FormEvent) => {
-        e.preventDefault();
+    // OTP State
+    const [otp, setOtp] = useState('');
+    const [isOtpSent, setIsOtpSent] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+    const [timer, setTimer] = useState(0);
 
-        if (loginMethod === 'email') {
-            const role = getCurrentUserRole(email);
-            if (role) {
-                setLoggedInAdmin(email); // Persist session
-                navigate('/admin/dashboard');
-            } else {
-                alert("Access Denied: You are not an authorized admin or operations user.");
-            }
-        } else {
-            // Mock Phone Login for Admin (allow any 10 digit number for now or specific list)
-            // In real app, this would verify OTP.
-            if (mobileNumber.length === 10) {
-                setLoggedInAdmin(`phone:${mobileNumber}`);
-                navigate('/admin/dashboard');
-            } else {
-                alert("Please enter a valid 10-digit mobile number.");
-            }
+    // Timer logic
+    useEffect(() => {
+        let interval: ReturnType<typeof setInterval>;
+        if (timer > 0) {
+            interval = setInterval(() => {
+                setTimer((prev) => prev - 1);
+            }, 1000);
         }
+        return () => clearInterval(interval);
+    }, [timer]);
+
+
+    const handleEmailLogin = (e: React.FormEvent) => {
+        e.preventDefault();
+        authService.clearSession();
+        const role = getCurrentUserRole(email);
+        if (role) {
+            setLoggedInAdmin(email); // Persist session
+            navigate('/admin/dashboard');
+        } else {
+            alert("Access Denied: You are not an authorized admin or operations user.");
+        }
+    };
+
+    const handleSendOTP = async (e: React.FormEvent) => {
+        e.preventDefault();
+        authService.clearSession();
+        setError(null);
+        setIsLoading(true);
+
+        try {
+            const response = await authService.requestOTP(mobileNumber);
+            if (response.success) {
+                setIsOtpSent(true);
+                setTimer(30); // 30 seconds cooldown
+            }
+        } catch (err: unknown) {
+            console.error("OTP Request Error:", err);
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const errorMessage = (err as any).response?.data?.detail?.message || "Failed to send OTP. Please try again.";
+            setError(errorMessage);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const handleVerifyOTP = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setError(null);
+        setIsLoading(true);
+
+        try {
+            // Use admin specific verification
+            const response = await authService.verifyAdminOTP(mobileNumber, otp);
+
+            if (response.success) {
+                console.log("Admin Login Successful:", response);
+                setLoggedInAdmin(`phone:${mobileNumber}`);
+                // navigate to dashboard
+                navigate('/admin/dashboard');
+            }
+        } catch (err: unknown) {
+            console.error("OTP Verify Error:", err);
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const errorMessage = (err as any).response?.data?.detail?.message || "Invalid OTP. Please try again.";
+            setError(errorMessage);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const handleResendOTP = async () => {
+        if (timer > 0) return;
+        setError(null);
+        setIsLoading(true);
+
+        try {
+            const response = await authService.resendOTP(mobileNumber);
+            if (response.success) {
+                setTimer(30);
+                alert("OTP sent successfully!");
+            }
+        } catch (err: unknown) {
+            console.error("OTP Resend Error:", err);
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const errorMessage = (err as any).response?.data?.detail?.message || "Failed to resend OTP.";
+            setError(errorMessage);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const handleChangeNumber = () => {
+        setIsOtpSent(false);
+        setOtp('');
+        setError(null);
     };
 
     const handleGoogleLogin = async () => {
         try {
+            authService.clearSession();
             const result = await signInWithPopup(auth, googleProvider);
             const user = result.user;
             const userEmail = user.email || '';
@@ -108,7 +192,7 @@ const AdminLogin = () => {
 
     const [currentTestimonial, setCurrentTestimonial] = useState(0);
 
-    React.useEffect(() => {
+    useEffect(() => {
         const interval = setInterval(() => {
             setCurrentTestimonial((prev) => (prev + 1) % testimonials.length);
         }, 5000);
@@ -186,101 +270,151 @@ const AdminLogin = () => {
                         Login to access the operational dashboard.
                     </p>
 
-                    {!email ? (
-                        /* Phone Login View - Wait, logic in AdminLogin is confusing. 
-                           It has separate states for email and mobileNumber. 
-                           Let's match the Login.tsx logic where it renders based on loginMethod. */
-                        <></>
-                    ) : null}
+                    {!isOtpSent ? (
+                        <>
+                            {/* Toggle Button for Email / Phone */}
+                            <div style={{ display: 'flex', marginBottom: '1rem' }}>
+                                <div style={{
+                                    display: 'flex',
+                                    background: '#F1F5F9',
+                                    padding: '4px',
+                                    borderRadius: '8px',
+                                }}>
+                                    <button
+                                        type="button"
+                                        onClick={() => setLoginMethod('email')}
+                                        style={{
+                                            padding: '6px 16px',
+                                            borderRadius: '6px',
+                                            border: 'none',
+                                            background: loginMethod === 'email' ? 'white' : 'transparent',
+                                            boxShadow: loginMethod === 'email' ? '0 1px 2px rgba(0,0,0,0.05)' : 'none',
+                                            color: loginMethod === 'email' ? '#0F172A' : '#64748B',
+                                            fontWeight: 500,
+                                            fontSize: '0.875rem',
+                                            cursor: 'pointer',
+                                            transition: 'all 0.2s ease'
+                                        }}
+                                    >
+                                        Email
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setLoginMethod('phone')}
+                                        style={{
+                                            padding: '6px 16px',
+                                            borderRadius: '6px',
+                                            border: 'none',
+                                            background: loginMethod === 'phone' ? 'white' : 'transparent',
+                                            boxShadow: loginMethod === 'phone' ? '0 1px 2px rgba(0,0,0,0.05)' : 'none',
+                                            color: loginMethod === 'phone' ? '#0F172A' : '#64748B',
+                                            fontWeight: 500,
+                                            fontSize: '0.875rem',
+                                            cursor: 'pointer',
+                                            transition: 'all 0.2s ease'
+                                        }}
+                                    >
+                                        Phone
+                                    </button>
+                                </div>
+                            </div>
 
-                    {/* Toggle Button for Email / Phone - Moved Component */}
-                    <div style={{ display: 'flex', marginBottom: '1rem' }}>
-                        <div style={{
-                            display: 'flex',
-                            background: '#F1F5F9',
-                            padding: '4px',
-                            borderRadius: '8px',
-                        }}>
-                            <button
-                                type="button"
-                                onClick={() => setLoginMethod('email')}
-                                style={{
-                                    padding: '6px 16px',
-                                    borderRadius: '6px',
-                                    border: 'none',
-                                    background: loginMethod === 'email' ? 'white' : 'transparent',
-                                    boxShadow: loginMethod === 'email' ? '0 1px 2px rgba(0,0,0,0.05)' : 'none',
-                                    color: loginMethod === 'email' ? '#0F172A' : '#64748B',
-                                    fontWeight: 500,
-                                    fontSize: '0.875rem',
-                                    cursor: 'pointer',
-                                    transition: 'all 0.2s ease'
-                                }}
-                            >
-                                Email
-                            </button>
-                            <button
-                                type="button"
-                                onClick={() => setLoginMethod('phone')}
-                                style={{
-                                    padding: '6px 16px',
-                                    borderRadius: '6px',
-                                    border: 'none',
-                                    background: loginMethod === 'phone' ? 'white' : 'transparent',
-                                    boxShadow: loginMethod === 'phone' ? '0 1px 2px rgba(0,0,0,0.05)' : 'none',
-                                    color: loginMethod === 'phone' ? '#0F172A' : '#64748B',
-                                    fontWeight: 500,
-                                    fontSize: '0.875rem',
-                                    cursor: 'pointer',
-                                    transition: 'all 0.2s ease'
-                                }}
-                            >
-                                Phone
-                            </button>
-                        </div>
-                    </div>
+                            <form onSubmit={loginMethod === 'email' ? handleEmailLogin : handleSendOTP}>
+                                <div className={styles.inputGroup}>
+                                    <label htmlFor="loginInput" className={styles.label}>
+                                        {loginMethod === 'email' ? 'Please Enter Your Email' : 'Mobile Number'}
+                                    </label>
+                                    {loginMethod === 'email' ? (
+                                        <input
+                                            type="email"
+                                            id="email"
+                                            className={styles.input}
+                                            placeholder="admin@caepy.com"
+                                            value={email}
+                                            onChange={(e) => setEmail(e.target.value)}
+                                            required
+                                        />
+                                    ) : (
+                                        <input
+                                            type="tel"
+                                            id="mobile"
+                                            className={styles.input}
+                                            placeholder="Enter 10-digit mobile number"
+                                            value={mobileNumber}
+                                            onChange={(e) => setMobileNumber(e.target.value)}
+                                            pattern="[0-9]{10}"
+                                            maxLength={10}
+                                            required
+                                        />
+                                    )}
+                                </div>
 
-                    <form onSubmit={handleLogin}>
-                        <div className={styles.inputGroup}>
-                            <label htmlFor="loginInput" className={styles.label}>
-                                {loginMethod === 'email' ? 'Please Enter Your Email' : 'Mobile Number'}
-                            </label>
-                            {loginMethod === 'email' ? (
+                                <div className={styles.checkboxGroup}>
+                                    <input type="checkbox" id="remember" className={styles.checkbox} />
+                                    <label htmlFor="remember" style={{ fontSize: '0.9rem', color: '#475569' }}>
+                                        Remember me
+                                    </label>
+                                </div>
+
+                                {error && <p className={styles.errorMessage} style={{ color: 'red', fontSize: '0.875rem', marginBottom: '1rem' }}>{error}</p>}
+
+                                <button type="submit" className={styles.submitButton} disabled={isLoading}>
+                                    {isLoading ? <Loader2 className="animate-spin" size={20} /> : (loginMethod === 'email' ? 'Log In →' : 'Request OTP')}
+                                </button>
+                            </form>
+                        </>
+                    ) : (
+                        <form onSubmit={handleVerifyOTP}>
+                            <div className={styles.inputGroup}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <label htmlFor="otp" className={styles.label}>
+                                        Enter OTP
+                                    </label>
+                                    <button
+                                        type="button"
+                                        onClick={handleChangeNumber}
+                                        style={{ background: 'none', border: 'none', color: '#0891b2', cursor: 'pointer', fontSize: '0.875rem' }}
+                                    >
+                                        Change Number
+                                    </button>
+                                </div>
                                 <input
-                                    type="email"
-                                    id="email"
+                                    type="text"
+                                    id="otp"
                                     className={styles.input}
-                                    placeholder="admin@caepy.com"
-                                    value={email}
-                                    onChange={(e) => setEmail(e.target.value)}
+                                    placeholder="Enter 6-digit OTP"
+                                    value={otp}
+                                    onChange={(e) => setOtp(e.target.value)}
+                                    pattern="[0-9]{6}"
+                                    maxLength={6}
                                     required
                                 />
-                            ) : (
-                                <input
-                                    type="tel"
-                                    id="mobile"
-                                    className={styles.input}
-                                    placeholder="Enter 10-digit mobile number"
-                                    value={mobileNumber}
-                                    onChange={(e) => setMobileNumber(e.target.value)}
-                                    pattern="[0-9]{10}"
-                                    maxLength={10}
-                                    required
-                                />
-                            )}
-                        </div>
+                            </div>
 
-                        <div className={styles.checkboxGroup}>
-                            <input type="checkbox" id="remember" className={styles.checkbox} />
-                            <label htmlFor="remember" style={{ fontSize: '0.9rem', color: '#475569' }}>
-                                Remember me
-                            </label>
-                        </div>
+                            {error && <p className={styles.errorMessage} style={{ color: 'red', fontSize: '0.875rem', marginTop: '0.5rem' }}>{error}</p>}
 
-                        <button type="submit" className={styles.submitButton}>
-                            Log In →
-                        </button>
-                    </form>
+                            <button type="submit" className={styles.submitButton} disabled={isLoading}>
+                                {isLoading ? <Loader2 className="animate-spin" size={20} /> : 'Verify & Login'}
+                            </button>
+
+                            <div style={{ marginTop: '1rem', textAlign: 'center' }}>
+                                <button
+                                    type="button"
+                                    onClick={handleResendOTP}
+                                    disabled={timer > 0 || isLoading}
+                                    style={{
+                                        background: 'none',
+                                        border: 'none',
+                                        color: timer > 0 ? '#94a3b8' : '#0891b2',
+                                        cursor: timer > 0 ? 'default' : 'pointer',
+                                        fontSize: '0.9rem'
+                                    }}
+                                >
+                                    {timer > 0 ? `Resend OTP in ${timer}s` : 'Resend OTP'}
+                                </button>
+                            </div>
+                        </form>
+                    )}
 
                     <div className={styles.divider}>
                         <span className={styles.dividerText}>Or login with {loginMethod === 'email' ? 'phone' : 'email'}</span>

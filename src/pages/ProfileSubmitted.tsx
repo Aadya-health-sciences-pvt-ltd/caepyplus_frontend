@@ -129,9 +129,9 @@ const ProfileSubmitted = () => {
                     </div>
                 </div>
 
-                <a href="#" className={styles.demoLink} onClick={(e) => { e.preventDefault(); navigate('/onboarding', { state: { step: 1 } }); }}>
+                {/* <a href="#" className={styles.demoLink} onClick={(e) => { e.preventDefault(); navigate('/onboarding', { state: { step: 1 } }); }}>
                     Start a new onboarding (Demo)
-                </a>
+                </a> */}
             </main>
 
             <div className={styles.helpSection}>

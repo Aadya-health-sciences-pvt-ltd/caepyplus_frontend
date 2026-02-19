@@ -1,13 +1,52 @@
-import React from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
     Users, AlertCircle, TrendingUp, Clock,
-    ChevronRight, CheckCircle, Activity, FileText
+    CheckCircle, Activity, FileText
 } from 'lucide-react';
+import { adminService, type Doctor } from '../../services/adminService';
 import styles from './AdminDashboard.module.css';
 
 const AdminDashboard = () => {
     const navigate = useNavigate();
+    const [stats, setStats] = useState({
+        total: 0,
+        pending: 0,
+        verified: 0
+    });
+    const [pendingDoctors, setPendingDoctors] = useState<Doctor[]>([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        fetchDashboardData();
+    }, []);
+
+    const fetchDashboardData = async () => {
+        try {
+            // Fetch doctors to calculate stats
+            // In a real app with many users, we should have a dedicated stats endpoint
+            // For now, fetching a larger list to calculate local stats
+            const response = await adminService.getDoctors(1, 100);
+
+            const total = response.total;
+            const pending = response.data.filter(d => d.onboarding_status === 'submitted').length;
+            const verified = response.data.filter(d => d.onboarding_status === 'verified').length;
+
+            setStats({ total, pending, verified });
+
+            // Set pending doctors for "Needs Attention"
+            // Filter strictly for 'submitted' status
+            const pendingDocs = response.data
+                .filter(d => d.onboarding_status === 'submitted')
+                .slice(0, 5); // Show top 5
+
+            setPendingDoctors(pendingDocs);
+        } catch (error) {
+            console.error("Failed to fetch dashboard data", error);
+        } finally {
+            setLoading(false);
+        }
+    };
 
     return (
         <div className={styles.container}>
@@ -23,7 +62,7 @@ const AdminDashboard = () => {
                         <Users size={24} />
                     </div>
                     <div className={styles.statInfo}>
-                        <h3>124</h3>
+                        <h3>{stats.total}</h3>
                         <p>Total Onboarded</p>
                     </div>
                 </div>
@@ -32,7 +71,7 @@ const AdminDashboard = () => {
                         <AlertCircle size={24} />
                     </div>
                     <div className={styles.statInfo}>
-                        <h3>8</h3>
+                        <h3>{stats.pending}</h3>
                         <p>Pending Review</p>
                     </div>
                 </div>
@@ -41,8 +80,8 @@ const AdminDashboard = () => {
                         <TrendingUp size={24} />
                     </div>
                     <div className={styles.statInfo}>
-                        <h3>+12%</h3>
-                        <p>Growth this week</p>
+                        <h3>{stats.verified}</h3>
+                        <p>Verified Profiles</p>
                     </div>
                 </div>
                 <div className={styles.statCard}>
@@ -88,25 +127,32 @@ const AdminDashboard = () => {
                             <button onClick={() => navigate('/admin/doctors')} style={{ color: '#3B82F6', background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.875rem' }}>View All</button>
                         </div>
 
-                        {[
-                            { name: 'Dr. Emily Rodriguez', time: '2 hours ago', issue: 'Pending Verification' },
-                            { name: 'Dr. James Chen', time: '4 hours ago', issue: 'Doc Upload Missing' }
-                        ].map((item, idx) => (
-                            <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.75rem 0', borderBottom: idx === 1 ? 'none' : '1px solid #F3F4F6' }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                                    <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: '#FEF3C7', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#B45309' }}>
-                                        <AlertCircle size={20} />
+                        {loading ? (
+                            <p style={{ color: '#6B7280', textAlign: 'center', padding: '1rem' }}>Loading...</p>
+                        ) : pendingDoctors.length === 0 ? (
+                            <p style={{ color: '#6B7280', textAlign: 'center', padding: '1rem' }}>No pending verifications.</p>
+                        ) : (
+                            pendingDoctors.map((doc) => (
+                                <div key={doc.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.75rem 0', borderBottom: '1px solid #F3F4F6' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                                        <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: '#FEF3C7', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#B45309' }}>
+                                            <AlertCircle size={20} />
+                                        </div>
+                                        <div>
+                                            <h4 style={{ margin: 0, fontSize: '0.9rem', color: '#111827' }}>
+                                                {doc.full_name || `${doc.first_name} ${doc.last_name}`}
+                                            </h4>
+                                            <p style={{ margin: 0, fontSize: '0.75rem', color: '#6B7280' }}>
+                                                Pending Verification • {new Date(doc.created_at).toLocaleDateString()}
+                                            </p>
+                                        </div>
                                     </div>
-                                    <div>
-                                        <h4 style={{ margin: 0, fontSize: '0.9rem', color: '#111827' }}>{item.name}</h4>
-                                        <p style={{ margin: 0, fontSize: '0.75rem', color: '#6B7280' }}>{item.issue} • {item.time}</p>
-                                    </div>
+                                    <button onClick={() => navigate(`/admin/doctor/${doc.id}`, { state: { doctor: doc } })} style={{ padding: '0.5rem 1rem', background: '#EFF6FF', color: '#1D4ED8', border: 'none', borderRadius: '6px', fontSize: '0.8rem', fontWeight: 500, cursor: 'pointer' }}>
+                                        Review
+                                    </button>
                                 </div>
-                                <button onClick={() => navigate('/admin/doctor/3')} style={{ padding: '0.5rem 1rem', background: '#EFF6FF', color: '#1D4ED8', border: 'none', borderRadius: '6px', fontSize: '0.8rem', fontWeight: 500, cursor: 'pointer' }}>
-                                    Review
-                                </button>
-                            </div>
-                        ))}
+                            ))
+                        )}
                     </div>
 
                 </div>

@@ -48,10 +48,44 @@ export const authService = {
         return response.data;
     },
 
+    verifyAdminOTP: async (mobileNumber: string, otp: string): Promise<OTPVerifyResponse> => {
+        const response = await api.post<OTPVerifyResponse>('/auth/admin/otp/verify', {
+            mobile_number: mobileNumber,
+            otp,
+        });
+
+        if (response.data.success && response.data.access_token) {
+            localStorage.setItem('access_token', response.data.access_token);
+            localStorage.setItem('token_type', response.data.token_type || 'Bearer');
+            localStorage.setItem('expires_in', String(response.data.expires_in));
+            // Admin might not have a doctor_id, but if they do, store it. The endpoint returns null for doctor_id typically.
+            if (response.data.doctor_id != null) {
+                localStorage.setItem('doctor_id', String(response.data.doctor_id));
+            }
+            localStorage.setItem('mobile_number', response.data.mobile_number);
+            localStorage.setItem('is_new_user', String(response.data.is_new_user));
+            localStorage.setItem('role', response.data.role || 'admin');
+        }
+
+        return response.data;
+    },
+
     resendOTP: async (mobileNumber: string): Promise<OTPRequestResponse> => {
         const response = await api.post<OTPRequestResponse>('/auth/otp/resend', {
             mobile_number: mobileNumber,
         });
         return response.data;
+    },
+
+    clearSession: () => {
+        const keysToKeep = ['caepy_doctor_profiles'];
+        const keysToRemove: string[] = [];
+        for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (key && !keysToKeep.includes(key)) {
+                keysToRemove.push(key);
+            }
+        }
+        keysToRemove.forEach(k => localStorage.removeItem(k));
     },
 };

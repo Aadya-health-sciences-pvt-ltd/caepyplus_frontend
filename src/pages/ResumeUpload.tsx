@@ -1,10 +1,11 @@
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import {
     Upload, Sparkles, Check, Lock, ShieldCheck,
-    Linkedin, Link, Share2
+    Linkedin, Link, Loader2
 } from 'lucide-react';
 import styles from './ResumeUpload.module.css';
+import { doctorService } from '../services/doctorService';
 
 const ResumeUpload = () => {
     const navigate = useNavigate();
@@ -12,16 +13,29 @@ const ResumeUpload = () => {
     const isNewUser = location.state?.isNewUser ?? true;
     const fileInputRef = useRef<HTMLInputElement>(null);
 
+    const [isUploading, setIsUploading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+
     const handleUploadClick = () => {
         fileInputRef.current?.click();
     };
 
-    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        if (e.target.files && e.target.files.length > 0) {
-            // Simulate upload
-            setTimeout(() => {
-                navigate('/onboarding', { state: { isNewUser } });
-            }, 1000);
+    const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        setIsUploading(true);
+        setError(null);
+
+        try {
+            const extractedData = await doctorService.extractResume(file);
+            console.log("Resume extracted:", extractedData);
+            navigate('/onboarding', { state: { isNewUser, formData: extractedData } });
+        } catch (err) {
+            console.error("Extraction failed:", err);
+            setError("Failed to process resume. Please try again or skip.");
+        } finally {
+            setIsUploading(false);
         }
     };
 
@@ -52,19 +66,35 @@ const ResumeUpload = () => {
                     I'm here to automate your profile setup. Upload your CV to get started instantly.
                 </p>
 
-                <button className={styles.uploadButton} onClick={handleUploadClick}>
-                    <Upload size={18} /> Upload Resume
+                {error && <p style={{ color: 'red', fontSize: '0.9rem', marginBottom: '1rem' }}>{error}</p>}
+
+                <button
+                    className={styles.uploadButton}
+                    onClick={handleUploadClick}
+                    disabled={isUploading}
+                    style={{ opacity: isUploading ? 0.7 : 1, cursor: isUploading ? 'not-allowed' : 'pointer' }}
+                >
+                    {isUploading ? (
+                        <>
+                            <Loader2 size={18} className="animate-spin" style={{ animation: 'spin 1s linear infinite' }} />
+                            Processing Resume...
+                        </>
+                    ) : (
+                        <>
+                            <Upload size={18} /> Upload Resume
+                        </>
+                    )}
                 </button>
                 <input
                     type="file"
                     ref={fileInputRef}
                     onChange={handleFileChange}
                     style={{ display: 'none' }}
-                    accept=".pdf,.doc,.docx"
+                    accept=".pdf,.doc,.docx,.png,.jpg,.jpeg"
                 />
 
                 <p className={styles.uploadMeta}>
-                    (Supports PDF, DOC, DOCX • Max 10MB) Takes less than 30 seconds
+                    (Supports PDF, DOC, DOCX, Images • Max 10MB) Takes less than 30 seconds
                 </p>
 
                 <div className={styles.importOptions}>
@@ -76,7 +106,7 @@ const ResumeUpload = () => {
                     </div>
                 </div>
 
-                <button className={styles.skipButton} onClick={handleSkip}>
+                <button className={styles.skipButton} onClick={handleSkip} disabled={isUploading}>
                     No resume? Start here
                 </button>
             </div>

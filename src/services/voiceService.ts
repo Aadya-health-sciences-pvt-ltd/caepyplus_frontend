@@ -14,7 +14,6 @@ export interface ChatResponse {
     session_id: string;
     status: string;
     ai_response: string;
-    extracted_fields: Record<string, any>;
     fields_collected: number;
     fields_total: number;
     fields_status: any[];

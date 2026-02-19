@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
 import MainLayout from "./layouts/MainLayout";
@@ -21,6 +22,14 @@ import ScrollToTop from './components/ScrollToTop';
 
 function AnimatedRoutes() {
   const location = useLocation();
+
+  useEffect(() => {
+    if (location.pathname.startsWith('/admin')) {
+      document.title = 'CAEPY ADMIN';
+    } else {
+      document.title = 'CAEPY';
+    }
+  }, [location.pathname]);
 
   return (
     <>
