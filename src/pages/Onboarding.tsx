@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Mic, Keyboard, Sparkles, Upload, ArrowLeft, MicOff } from 'lucide-react';
+import { Mic, Keyboard, Sparkles, Upload, ArrowLeft, MicOff, MapPin, ChevronDown, ChevronUp, Plus, X, Trash2 } from 'lucide-react';
 import Stepper from '../components/ui/Stepper';
 import LivePreview from '../components/ui/LivePreview';
 import WelcomeDialog from '../components/ui/WelcomeDialog';
@@ -16,6 +16,250 @@ import { validateSection1 } from '../lib/validation';
 import Toast from '../components/ui/Toast';
 import { voiceService } from '../services/voiceService';
 import { ONBOARDING_VOICE_CONTEXT } from '../lib/voiceContext';
+
+
+// --- Practice Location Accordion Component with Google Maps ---
+import { useJsApiLoader, Autocomplete, GoogleMap, MarkerF } from '@react-google-maps/api';
+
+const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || '';
+const LIBRARIES: ('places')[] = ['places'];
+
+interface PracticeLocation {
+    name: string;
+    address: string;
+    schedule: string;
+    lat?: number;
+    lng?: number;
+}
+
+interface PracticeLocationAccordionProps {
+    locations: PracticeLocation[];
+    onLocationsChange: (locations: PracticeLocation[]) => void;
+    onFocus: () => void;
+}
+
+const PracticeLocationAccordion: React.FC<PracticeLocationAccordionProps> = ({ locations, onLocationsChange, onFocus }) => {
+    const [isOpen, setIsOpen] = useState(true);
+    const [isAdding, setIsAdding] = useState(false);
+    const [addMode, setAddMode] = useState<'manual' | 'map'>('manual');
+    const [newLoc, setNewLoc] = useState<PracticeLocation>({ name: '', address: '', schedule: '' });
+    const [autocomplete, setAutocomplete] = useState<google.maps.places.Autocomplete | null>(null);
+    const [mapCenter, setMapCenter] = useState<{ lat: number; lng: number }>({ lat: 12.9716, lng: 77.5946 }); // Default: Bangalore
+    const [markerPos, setMarkerPos] = useState<{ lat: number; lng: number } | null>(null);
+
+    const { isLoaded } = useJsApiLoader({
+        googleMapsApiKey: GOOGLE_MAPS_API_KEY,
+        libraries: LIBRARIES,
+    });
+
+    const onAutocompleteLoad = (ac: google.maps.places.Autocomplete) => {
+        setAutocomplete(ac);
+    };
+
+    const onPlaceChanged = () => {
+        if (autocomplete) {
+            const place = autocomplete.getPlace();
+            const placeName = place.name || '';
+            const placeAddress = place.formatted_address || '';
+            const lat = place.geometry?.location?.lat();
+            const lng = place.geometry?.location?.lng();
+
+            setNewLoc(prev => ({
+                ...prev,
+                name: placeName || prev.name,
+                address: placeAddress,
+                lat: lat,
+                lng: lng,
+            }));
+
+            if (lat && lng) {
+                setMapCenter({ lat, lng });
+                setMarkerPos({ lat, lng });
+            }
+        }
+    };
+
+    const handleAddLocation = () => {
+        if (newLoc.name.trim()) {
+            onLocationsChange([...locations, { ...newLoc }]);
+            setNewLoc({ name: '', address: '', schedule: '' });
+            setMarkerPos(null);
+            setIsAdding(false);
+            setAddMode('manual');
+        }
+    };
+
+    const handleRemoveLocation = (index: number) => {
+        onLocationsChange(locations.filter((_, i) => i !== index));
+    };
+
+    const resetForm = () => {
+        setIsAdding(false);
+        setNewLoc({ name: '', address: '', schedule: '' });
+        setMarkerPos(null);
+        setAddMode('manual');
+    };
+
+    return (
+        <div className={styles.plAccordion} onFocus={onFocus}>
+            {/* Accordion Header */}
+            <button
+                type="button"
+                className={styles.plHeader}
+                onClick={() => setIsOpen(!isOpen)}
+            >
+                <div className={styles.plHeaderLeft}>
+                    <div className={styles.plIconCircle}>
+                        <MapPin size={18} />
+                    </div>
+                    <div>
+                        <span className={styles.plTitle}>Practice Location & Schedule <span style={{ color: '#EF4444' }}>*</span></span>
+                        <span className={styles.plSubtitle}>Add your clinic or hospital locations where</span>
+                    </div>
+                </div>
+                {isOpen ? <ChevronUp size={20} color="#6B7280" /> : <ChevronDown size={20} color="#6B7280" />}
+            </button>
+
+            {/* Accordion Body */}
+            {isOpen && (
+                <div className={styles.plBody}>
+                    {/* Existing Location Cards */}
+                    {locations.map((loc, i) => (
+                        <div key={i} className={styles.plCard}>
+                            <div className={styles.plCardIcon}></div>
+                            <div className={styles.plCardContent}>
+                                <strong className={styles.plCardName}>{loc.name}</strong>
+                                <span className={styles.plCardDetail}>
+                                    {loc.address}{loc.schedule ? ` | ${loc.schedule}` : ''}
+                                </span>
+                            </div>
+                            <button
+                                type="button"
+                                className={styles.plCardRemove}
+                                onClick={() => handleRemoveLocation(i)}
+                                title="Remove location"
+                            >
+                                <Trash2 size={14} />
+                            </button>
+                        </div>
+                    ))}
+
+                    {/* Add Location Form */}
+                    {isAdding ? (
+                        <div className={styles.plAddForm}>
+                            {/* Mode Tabs */}
+                            <div className={styles.plModeTabs}>
+                                <button
+                                    type="button"
+                                    className={`${styles.plModeTab} ${addMode === 'manual' ? styles.plModeTabActive : ''}`}
+                                    onClick={() => setAddMode('manual')}
+                                >
+                                    <Keyboard size={14} /> Manual Entry
+                                </button>
+                                <button
+                                    type="button"
+                                    className={`${styles.plModeTab} ${addMode === 'map' ? styles.plModeTabActive : ''}`}
+                                    onClick={() => setAddMode('map')}
+                                >
+                                    <MapPin size={14} /> Search on Map
+                                </button>
+                            </div>
+
+                            {addMode === 'map' && isLoaded && (
+                                <div className={styles.plMapSection}>
+                                    <Autocomplete
+                                        onLoad={onAutocompleteLoad}
+                                        onPlaceChanged={onPlaceChanged}
+                                        options={{ types: ['establishment'], componentRestrictions: { country: 'in' } }}
+                                    >
+                                        <input
+                                            className={styles.input}
+                                            placeholder="Search for a clinic, hospital, or address..."
+                                            style={{ marginBottom: '0.75rem' }}
+                                            autoFocus
+                                        />
+                                    </Autocomplete>
+
+                                    {/* Mini Map Preview */}
+                                    <div className={styles.plMapContainer}>
+                                        <GoogleMap
+                                            mapContainerStyle={{ width: '100%', height: '200px', borderRadius: '0.5rem' }}
+                                            center={mapCenter}
+                                            zoom={markerPos ? 16 : 12}
+                                            options={{
+                                                disableDefaultUI: true,
+                                                zoomControl: true,
+                                                mapTypeControl: false,
+                                                streetViewControl: false,
+                                            }}
+                                        >
+                                            {markerPos && <MarkerF position={markerPos} />}
+                                        </GoogleMap>
+                                    </div>
+                                </div>
+                            )}
+
+                            {addMode === 'map' && !isLoaded && (
+                                <div className={styles.plMapLoading}>
+                                    <span>Loading Google Maps...</span>
+                                </div>
+                            )}
+
+                            {addMode === 'map' && !GOOGLE_MAPS_API_KEY && (
+                                <div className={styles.plMapNotice}>
+                                    <span>⚠️ Google Maps API key not configured. Add <code>VITE_GOOGLE_MAPS_API_KEY</code> to your <code>.env</code> file. You can still use manual entry.</span>
+                                </div>
+                            )}
+
+                            {/* Common Fields (always visible) */}
+                            <div className={styles.plAddFormRow}>
+                                <input
+                                    className={styles.input}
+                                    placeholder="Clinic / Hospital Name"
+                                    value={newLoc.name}
+                                    onChange={(e) => setNewLoc({ ...newLoc, name: e.target.value })}
+                                    autoFocus={addMode === 'manual'}
+                                />
+                            </div>
+                            <div className={styles.plAddFormRow}>
+                                <input
+                                    className={styles.input}
+                                    placeholder="Full address"
+                                    value={newLoc.address}
+                                    onChange={(e) => setNewLoc({ ...newLoc, address: e.target.value })}
+                                />
+                            </div>
+                            <div className={styles.plAddFormRow}>
+                                <input
+                                    className={styles.input}
+                                    placeholder="Schedule (e.g. Mon - Fri, 09:00 - 17:00)"
+                                    value={newLoc.schedule}
+                                    onChange={(e) => setNewLoc({ ...newLoc, schedule: e.target.value })}
+                                />
+                            </div>
+                            <div className={styles.plAddFormActions}>
+                                <button type="button" className={styles.plSaveBtn} onClick={handleAddLocation}>
+                                    Save Location
+                                </button>
+                                <button type="button" className={styles.plCancelBtn} onClick={resetForm}>
+                                    Cancel
+                                </button>
+                            </div>
+                        </div>
+                    ) : (
+                        <button
+                            type="button"
+                            className={styles.plAddBtn}
+                            onClick={() => setIsAdding(true)}
+                        >
+                            <Plus size={16} /> Add Practice Location
+                        </button>
+                    )}
+                </div>
+            )}
+        </div>
+    );
+};
 
 const Onboarding = () => {
     const navigate = useNavigate();
@@ -151,19 +395,67 @@ const Onboarding = () => {
         });
     };
 
+    interface OnboardingFormData {
+        fullName: string;
+        email: string;
+        phone: string;
+        specialty: string;
+        primaryLocation: string;
+        practiceLocations: { name: string; address: string; schedule: string }[];
+        experience: string;
+        postSpecialisationExperience: string;
+        registrationNumber: string;
+        mbbsYear: string;
+        specialisationYear: string;
+        fellowships: string[];
+        qualifications: string;
+        memberships: string;
+        awards: string;
+        areasOfInterest: string[];
+        practiceSegments: string[];
+        commonConditions: string[];
+        knownForConditions: string[];
+        wantToTreatConditions: string;
+        trainingExperience: string[];
+        motivation: string[];
+        unwinding: string[];
+        recognition: string;
+        qualityTime: string;
+        freeText: string;
+        proudAchievement: string;
+        personalAchievement: string;
+        professionalAspiration: string;
+        personalAspiration: string;
+        patientValue: string;
+        careApproach: string;
+        practicePhilosophy: string;
+        profileImage: string;
+        languages: string[];
+        consultationFee: string;
+        contentSeed: {
+            conditionName: string;
+            presentation: string;
+            investigations: string;
+            treatment: string;
+            delayConsequences: string;
+            prevention: string;
+            additionalInsights: string;
+        };
+    }
+
     useEffect(() => {
         setMasterData(getMasterData());
     }, []);
 
     // State for all form fields
-    const defaultFormData = {
+    const defaultFormData: OnboardingFormData = {
         // Block 1: Professional Identity
         fullName: '',
         email: '',
         phone: '',
         specialty: '',
         primaryLocation: '',
-        practiceLocations: [], // Array of { name, address, timings }
+        practiceLocations: [], // Array of { name, address, schedule }
         experience: '',
         postSpecialisationExperience: '',
         registrationNumber: '',
@@ -199,6 +491,9 @@ const Onboarding = () => {
         patientValue: '',
         careApproach: '',
         practicePhilosophy: '',
+        profileImage: '',
+        languages: [],
+        consultationFee: '',
 
         // Block 6: Content Seed
         contentSeed: {
@@ -209,35 +504,48 @@ const Onboarding = () => {
             delayConsequences: '',
             prevention: '',
             additionalInsights: ''
-        }
+        },
+        profileImage: ''
     };
 
-    const [formData, setFormData] = useState(() => {
-        // Initialize state logic
-        const baseData = location.state?.formData || (savedData ? { ...defaultFormData, ...savedData, contentSeed: { ...defaultFormData.contentSeed, ...(savedData.contentSeed || {}) } } : defaultFormData);
+    const [formData, setFormData] = useState<OnboardingFormData>(() => {
+        // Start with default values
+        const baseData = { ...defaultFormData };
 
-        // Merge in data from the API-fetched doctor profile
+        // 1. Merge in savedData from localStorage (mock persistence)
+        if (savedData) {
+            Object.assign(baseData, savedData);
+            if (savedData.contentSeed) {
+                baseData.contentSeed = { ...defaultFormData.contentSeed, ...savedData.contentSeed };
+            }
+        }
+
+        // 2. Override with location state (e.g. from Resume Upload)
+        if (location.state?.formData) {
+            Object.assign(baseData, location.state.formData);
+        }
+
+        // 3. Merge in data from the API-fetched doctor profile (if already in localStorage)
         const storedProfile = doctorService.getStoredProfile();
         if (storedProfile) {
             const mappedData = doctorService.mapProfileToFormData(storedProfile);
-            // Only fill in empty/default fields — don't overwrite user edits
+            // Only fill in empty fields
             for (const [key, value] of Object.entries(mappedData)) {
-                const existing = baseData[key as keyof typeof baseData];
+                const existing = (baseData as any)[key];
                 const isEmpty = existing === '' || existing === null || existing === undefined
                     || (Array.isArray(existing) && existing.length === 0);
                 if (isEmpty && value !== '' && value !== null && value !== undefined) {
-                    (baseData as Record<string, unknown>)[key] = value;
+                    (baseData as any)[key] = value;
                 }
             }
         }
 
-        // Ensure email/phone are populated from savedUser if not in data
+        // 4. Ensure email/phone are populated from savedUser or localStorage
         if (savedUser) {
             if (!baseData.email && savedUser.email) baseData.email = savedUser.email;
             if (!baseData.phone && savedUser.phone) baseData.phone = savedUser.phone;
         }
 
-        // Also populate from localStorage auth data if still empty
         if (!baseData.phone) {
             const storedPhone = localStorage.getItem('mobile_number');
             if (storedPhone) baseData.phone = storedPhone;
@@ -301,6 +609,27 @@ const Onboarding = () => {
         }
     };
 
+    const fileInputRef = React.useRef<HTMLInputElement>(null);
+
+    const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        // Size check (e.g., 1MB limit for localStorage safety)
+        if (file.size > 1024 * 1024) {
+            showToast("Image too large. Please select an image under 1MB.", "error");
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onloadend = () => {
+            const base64String = reader.result as string;
+            setFormData(prev => ({ ...prev, profileImage: base64String }));
+            showToast("Profile photo uploaded", "success");
+        };
+        reader.readAsDataURL(file);
+    };
+
     // Helper for array fields (simple strings)
     const handleArrayChange = (field: string, value: string) => {
         setFormData((prev: any) => ({ ...prev, [field]: value.split(',').map((s: string) => s.trim()) }));
@@ -309,6 +638,7 @@ const Onboarding = () => {
     const handleMultiSelect = (field: string, value: string, max?: number) => {
         setFormData((prev: any) => {
             const current = prev[field] || [];
+            if (!Array.isArray(current)) return { ...prev, [field]: [value] };
             if (current.includes(value)) {
                 return { ...prev, [field]: current.filter((item: string) => item !== value) };
             } else {
@@ -428,10 +758,22 @@ const Onboarding = () => {
                                 <h2 className={styles.sectionTitle} style={{ marginBottom: 0 }}>Professional Identity</h2>
                                 <p style={{ fontSize: '0.875rem', color: '#10B981', marginTop: '0.25rem' }}>Profile strength: 20%</p>
                             </div>
-                            <button className={styles.uploadBtn}>
+                            <input
+                                type="file"
+                                ref={fileInputRef}
+                                onChange={handlePhotoUpload}
+                                accept="image/*"
+                                style={{ display: 'none' }}
+                            />
+                            <button
+                                className={styles.uploadBtn}
+                                onClick={() => fileInputRef.current?.click()}
+                            >
                                 <Upload size={20} color="#0F766E" strokeWidth={1.5} />
                                 <div className={styles.uploadBtnContent}>
-                                    <span className={styles.uploadBtnTitle}>Upload Profile Pic</span>
+                                    <span className={styles.uploadBtnTitle}>
+                                        {formData.profileImage ? 'Change Profile Pic' : 'Upload Profile Pic'}
+                                    </span>
                                     <span className={styles.uploadBtnSubtitle}>Recommended: Square image, at least 400x400px</span>
                                 </div>
                             </button>
@@ -508,6 +850,39 @@ const Onboarding = () => {
 
                             <div className={styles.fullWidth}>
                                 <div className={styles.inputWrapper}>
+                                    <label className={styles.label}>Languages Spoken</label>
+                                    <div className={styles.tagInput}>
+                                        <input
+                                            onKeyDown={(e) => {
+                                                if (e.key === 'Enter') {
+                                                    const val = (e.target as HTMLInputElement).value.trim();
+                                                    if (val) {
+                                                        const newLangs = [...(formData.languages || []), val];
+                                                        setFormData(prev => ({ ...prev, languages: newLangs }));
+                                                        (e.target as HTMLInputElement).value = '';
+                                                    }
+                                                }
+                                            }}
+                                            placeholder="Press Enter to add languages (e.g., English, Hindi, Spanish)"
+                                            className={styles.input}
+                                        />
+                                        <div className={styles.tagsContainer}>
+                                            {(formData.languages || []).map((lang: string, i: number) => (
+                                                <span key={i} className={styles.tag}>
+                                                    {lang}
+                                                    <button onClick={() => {
+                                                        const newLangs = formData.languages.filter((_: any, index: number) => index !== i);
+                                                        setFormData(prev => ({ ...prev, languages: newLangs }));
+                                                    }}>×</button>
+                                                </span>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className={styles.fullWidth}>
+                                <div className={styles.inputWrapper}>
                                     <label className={styles.label}>Primary Practice Location <span>*</span></label>
                                     <select
                                         name="primaryLocation"
@@ -526,18 +901,11 @@ const Onboarding = () => {
                             </div>
 
                             <div className={styles.fullWidth}>
-                                <div className={styles.inputWrapper}>
-                                    <label className={styles.label}>Practice Locations</label>
-                                    <textarea
-                                        name="practiceLocations" // Using simple text area for mock, ideally array UI
-                                        value={Array.isArray(formData.practiceLocations) ? formData.practiceLocations.join(', ') : formData.practiceLocations}
-                                        onChange={(e) => handleArrayChange('practiceLocations', e.target.value)}
-                                        onFocus={() => setFocusedField('practiceLocations')}
-                                        className={styles.input}
-                                        placeholder="List your clinics/hospitals (comma separated)"
-                                        rows={2}
-                                    />
-                                </div>
+                                <PracticeLocationAccordion
+                                    locations={formData.practiceLocations}
+                                    onLocationsChange={(locs) => setFormData((prev: any) => ({ ...prev, practiceLocations: locs }))}
+                                    onFocus={() => setFocusedField('practiceLocations')}
+                                />
                             </div>
 
                             <div className={styles.halfWidth}>
@@ -845,14 +1213,14 @@ const Onboarding = () => {
                                         {['Long hours', 'Emotional toll', 'Complexity of cases', 'Work-life balance', 'High pressure'].map(opt => (
                                             <button
                                                 key={opt}
-                                                className={`${styles.chip} ${formData.trainingExperience.includes(opt) ? styles.activeChip : ''}`}
+                                                className={`${styles.chip} ${formData.trainingExperience?.includes(opt) ? styles.activeChip : ''}`}
                                                 onClick={() => {
                                                     handleMultiSelect('trainingExperience', opt, 2);
                                                     setFocusedField('trainingExperience');
                                                 }}
                                                 style={{
-                                                    padding: '0.5rem 1rem', borderRadius: '20px', border: formData.trainingExperience.includes(opt) ? '1px solid #10B981' : '1px solid #E5E7EB',
-                                                    background: formData.trainingExperience.includes(opt) ? '#D1FAE5' : 'white', cursor: 'pointer', color: '#374151'
+                                                    padding: '0.5rem 1rem', borderRadius: '20px', border: formData.trainingExperience?.includes(opt) ? '1px solid #10B981' : '1px solid #E5E7EB',
+                                                    background: formData.trainingExperience?.includes(opt) ? '#D1FAE5' : 'white', cursor: 'pointer', color: '#374151'
                                                 }}
                                             >
                                                 {opt}
@@ -868,14 +1236,14 @@ const Onboarding = () => {
                                     {['Helping patients', 'Clinical challenges', 'Professional growth', 'Teaching / mentoring', 'Recognition', 'Work–life balance'].map(opt => (
                                         <button
                                             key={opt}
-                                            className={`${styles.chip} ${formData.motivation.includes(opt) ? styles.activeChip : ''}`}
+                                            className={`${styles.chip} ${formData.motivation?.includes(opt) ? styles.activeChip : ''}`}
                                             onClick={() => {
                                                 handleMultiSelect('motivation', opt, 2);
                                                 setFocusedField('motivation');
                                             }}
                                             style={{
-                                                padding: '0.5rem 1rem', borderRadius: '20px', border: formData.motivation.includes(opt) ? '1px solid #10B981' : '1px solid #E5E7EB',
-                                                background: formData.motivation.includes(opt) ? '#D1FAE5' : 'white', cursor: 'pointer', color: '#374151'
+                                                padding: '0.5rem 1rem', borderRadius: '20px', border: formData.motivation?.includes(opt) ? '1px solid #10B981' : '1px solid #E5E7EB',
+                                                background: formData.motivation?.includes(opt) ? '#D1FAE5' : 'white', cursor: 'pointer', color: '#374151'
                                             }}
                                         >
                                             {opt}
@@ -890,14 +1258,14 @@ const Onboarding = () => {
                                     {['Family time', 'Music', 'Reading', 'Sports', 'Meditation', 'Academic work', 'Movies / entertainment'].map(opt => (
                                         <button
                                             key={opt}
-                                            className={`${styles.chip} ${formData.unwinding.includes(opt) ? styles.activeChip : ''}`}
+                                            className={`${styles.chip} ${formData.unwinding?.includes(opt) ? styles.activeChip : ''}`}
                                             onClick={() => {
                                                 handleMultiSelect('unwinding', opt);
                                                 setFocusedField('unwinding');
                                             }}
                                             style={{
-                                                padding: '0.5rem 1rem', borderRadius: '20px', border: formData.unwinding.includes(opt) ? '1px solid #10B981' : '1px solid #E5E7EB',
-                                                background: formData.unwinding.includes(opt) ? '#D1FAE5' : 'white', cursor: 'pointer', color: '#374151'
+                                                padding: '0.5rem 1rem', borderRadius: '20px', border: formData.unwinding?.includes(opt) ? '1px solid #10B981' : '1px solid #E5E7EB',
+                                                background: formData.unwinding?.includes(opt) ? '#D1FAE5' : 'white', cursor: 'pointer', color: '#374151'
                                             }}
                                         >
                                             {opt}
@@ -1043,6 +1411,25 @@ const Onboarding = () => {
                                         className={styles.input}
                                         rows={3}
                                     />
+                                </div>
+                            </div>
+
+                            <div className={styles.halfWidth}>
+                                <div className={styles.inputWrapper}>
+                                    <label className={styles.label}>Consultation Fee (Optional)</label>
+                                    <div className={styles.feeInputWrapper}>
+                                        <span className={styles.currencyPrefix}>₹</span>
+                                        <input
+                                            name="consultationFee"
+                                            type="number"
+                                            value={formData.consultationFee}
+                                            onChange={handleInputChange}
+                                            onFocus={() => setFocusedField('consultationFee')}
+                                            className={styles.input}
+                                            placeholder="e.g. 500"
+                                            style={{ paddingLeft: '2.5rem' }}
+                                        />
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -1265,8 +1652,8 @@ const Onboarding = () => {
                             {isListening || isSpeaking ? (
                                 <>
                                     <div className={styles.listeningBadge}>
-                                        <div className={styles.listeningDot}></div>
-                                        {isSpeaking ? 'Speaking...' : 'Listening'}
+                                        <div className={`${styles.listeningDot} ${isSpeaking ? styles.isTalking : styles.isListening}`}></div>
+                                        {isSpeaking ? 'talking' : 'listening'}
                                     </div>
                                     <div className={styles.wave}>
                                         {[1, 2, 3, 4, 5].map(i => <div key={i} className={styles.waveBar} style={{ animationDelay: `${i * 0.1}s` }}></div>)}

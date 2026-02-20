@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import {
-    LayoutGrid, User, Calendar, FileText,
+    LayoutGrid, FileText, User,
     ChevronLeft, ChevronRight
 } from 'lucide-react';
 import styles from './Sidebar.module.css';
@@ -32,20 +32,14 @@ const Sidebar: React.FC = () => {
                 />
                 <NavItem
                     to="/profile"
-                    icon={<User size={20} />}
-                    label="Profile"
-                    isCollapsed={isCollapsed}
-                />
-                <NavItem
-                    to="/dashboard"
                     icon={<LayoutGrid size={20} />}
                     label="Dashboard"
                     isCollapsed={isCollapsed}
                 />
                 <NavItem
-                    to="/appointments"
-                    icon={<Calendar size={20} />}
-                    label="Appointments"
+                    to="/profile-summary"
+                    icon={<User size={20} />}
+                    label="Profile"
                     isCollapsed={isCollapsed}
                 />
 

@@ -1,6 +1,6 @@
 
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Check, Clock, UserCheck, Sparkles, MapPin, Edit2, LayoutGrid, Eye, Send } from 'lucide-react';
+import { Check, Clock, UserCheck, Sparkles, MapPin, Edit2, LayoutGrid, Eye, Send, CheckCircle } from 'lucide-react';
 import styles from './ProfileSubmitted.module.css';
 
 const ProfileSubmitted = () => {
@@ -13,7 +13,7 @@ const ProfileSubmitted = () => {
         <div className={styles.pageWrapper}>
             <main className={styles.mainContent}>
                 <div className={styles.successIcon}>
-                    <Check size={40} strokeWidth={4} />
+                    <CheckCircle size={44} strokeWidth={2.5} />
                 </div>
 
                 <h1 className={styles.title}>Profile Submitted Successfully!</h1>

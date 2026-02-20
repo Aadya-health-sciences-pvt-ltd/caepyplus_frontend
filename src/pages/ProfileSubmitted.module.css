@@ -53,16 +53,17 @@
 }
 
 .successIcon {
-    width: 72px;
-    height: 72px;
-    background-color: #10B981;
+    width: 80px;
+    height: 80px;
+    background-color: #00D26A;
+    /* More vibrant green matching the image */
     color: white;
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
     margin-bottom: 2rem;
-    box-shadow: 0 0 0 8px rgba(16, 185, 129, 0.15);
+    box-shadow: 0 4px 20px rgba(0, 210, 106, 0.3);
 }
 
 .title {

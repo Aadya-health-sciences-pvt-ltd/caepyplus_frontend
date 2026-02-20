@@ -92,4 +92,5 @@ export const setLoggedInAdmin = (email: string) => {
 
 export const logoutAdmin = () => {
     localStorage.removeItem('caepy_logged_in_email');
+    localStorage.removeItem('caepy_current_user_id');
 };

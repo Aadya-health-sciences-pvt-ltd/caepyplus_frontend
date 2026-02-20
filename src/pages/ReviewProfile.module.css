@@ -31,9 +31,60 @@
 
 .sectionHeader {
     font-size: 1.125rem;
-    font-weight: 600;
-    margin-bottom: 1.5rem;
+    font-weight: 700;
+    margin: 0;
     color: var(--text-color);
+}
+
+.sectionTitle {
+    font-size: 1.125rem;
+    font-weight: 700;
+    margin: 0;
+    color: #374151;
+}
+
+.reviewSection {
+    margin-bottom: 2.5rem;
+}
+
+.reviewSection:last-of-type {
+    margin-bottom: 0;
+}
+
+.reviewSectionHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.25rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid #F3F4F6;
+}
+
+.sectionEditBtn {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.375rem 0.75rem;
+    border-radius: 0.5rem;
+    background-color: #F3F4F6;
+    color: #4B5563;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.sectionEditBtn:hover {
+    background-color: #E5E7EB;
+    color: #111827;
+}
+
+.sectionContent {
+    background-color: #FDFFFF;
+    border-radius: 0.75rem;
+    border: 1px solid #F3F4F6;
+    padding: 0 1.25rem;
 }
 
 .row {

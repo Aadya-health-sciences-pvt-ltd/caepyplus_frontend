@@ -1,6 +1,9 @@
 import React from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Edit2, Check, User, Activity, Briefcase, Building, MapPin, Award, FileText, GraduationCap, ArrowLeft } from 'lucide-react';
+import {
+    Edit2, Check, User, Activity, Briefcase, Building, MapPin,
+    Award, FileText, GraduationCap, ArrowLeft, Target, Coffee, Heart, Lightbulb
+} from 'lucide-react';
 import Stepper from '../components/ui/Stepper';
 import Toast from '../components/ui/Toast';
 import styles from './ReviewProfile.module.css';
@@ -31,7 +34,9 @@ const ReviewProfile = () => {
 
     // Helper to safely access data
     const getVal = (key: string) => formData[key] || 'Not provided';
-    const getArr = (key: string) => Array.isArray(formData[key]) ? formData[key].join(', ') : (formData[key] || 'None');
+    const getArr = (key: string) => Array.isArray(formData[key]) && formData[key].length > 0
+        ? formData[key].join(', ')
+        : (formData[key] || 'None');
 
     const handleSubmit = async () => {
         // Validate Section 1 before submission
@@ -78,7 +83,6 @@ const ReviewProfile = () => {
     };
 
     const handleContinue = async () => {
-        // Save current progress before continuing
         const doctorId = localStorage.getItem('doctor_id');
         if (doctorId) {
             try {
@@ -90,17 +94,8 @@ const ReviewProfile = () => {
         navigate('/onboarding', { state: { formData, step: 4 } });
     };
 
-    const handleEdit = (field: string) => {
-        const fieldMap: Record<string, number> = {
-            fullName: 1, specialty: 1, experience: 1, primaryLocation: 1, practiceLocations: 1, registrationNumber: 1,
-            mbbsYear: 2, specialisationYear: 2, qualifications: 2, fellowships: 2,
-            areasOfInterest: 3, commonConditions: 3, knownForConditions: 3,
-            trainingExperience: 4, motivation: 4, unwinding: 4,
-            patientValue: 5, careApproach: 5, practicePhilosophy: 5
-        };
-
-        const step = fieldMap[field] || 1;
-        navigate('/onboarding', { state: { formData, step, focusedField: field } });
+    const handleEditSection = (step: number) => {
+        navigate('/onboarding', { state: { formData, step } });
     };
 
     return (
@@ -119,7 +114,6 @@ const ReviewProfile = () => {
             <Stepper currentStep={stage === 'intermediate' ? 3 : 6} totalSteps={6} />
 
             <div className={styles.card}>
-
                 {stage === 'intermediate' && (
                     <div className={styles.scoreBanner} style={{
                         background: '#F0FDFA', border: '1px solid #CCFBF1', borderRadius: '1rem', padding: '1.5rem',
@@ -141,24 +135,99 @@ const ReviewProfile = () => {
                     </div>
                 )}
 
-                <h2 className={styles.sectionHeader}>Basic Information</h2>
-                <ReviewRow icon={<User size={20} />} label="FULL NAME" value={getVal('fullName')} onEdit={() => handleEdit('fullName')} />
-                <ReviewRow icon={<Activity size={20} />} label="SPECIALTY" value={getVal('specialty')} onEdit={() => handleEdit('specialty')} />
-                <ReviewRow icon={<Briefcase size={20} />} label="EXPERIENCE" value={getVal('experience') ? `${getVal('experience')} years` : 'Not provided'} onEdit={() => handleEdit('experience')} />
-                <ReviewRow icon={<Building size={20} />} label="PRIMARY LOCATION" value={getVal('primaryLocation')} onEdit={() => handleEdit('primaryLocation')} />
-                <ReviewRow icon={<MapPin size={20} />} label="PRACTICE LOCATIONS" value={formData.practiceLocations?.length ? `${formData.practiceLocations.length} locations added` : 'None added'} onEdit={() => handleEdit('practiceLocations')} />
-                <ReviewRow icon={<FileText size={20} />} label="REGISTRATION NUMBER" value={getVal('registrationNumber')} onEdit={() => handleEdit('registrationNumber')} />
+                <div className={styles.profileHeaderSection} style={{ display: 'flex', alignItems: 'center', gap: '2rem', marginBottom: '2rem' }}>
+                    <div className={styles.reviewAvatar}>
+                        {formData.profileImage ? (
+                            <img src={formData.profileImage} alt="Profile" style={{ width: '120px', height: '120px', borderRadius: '50%', objectFit: 'cover', border: '4px solid white', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
+                        ) : (
+                            <div style={{ width: '120px', height: '120px', borderRadius: '50%', background: '#F3F4F6', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '3rem', color: '#9CA3AF', border: '4px solid white', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}>
+                                {formData.fullName ? formData.fullName.charAt(0).toUpperCase() : '?'}
+                            </div>
+                        )}
+                    </div>
+                    <div>
+                        <h2 className={styles.sectionHeader} style={{ marginTop: 0, marginBottom: '0.25rem' }}>Professional Profile</h2>
+                        <p style={{ color: '#6B7280', fontSize: '0.875rem', margin: 0 }}>Review your primary details and profile photo.</p>
+                    </div>
+                </div>
 
-                <h2 className={styles.sectionHeader} style={{ marginTop: '2rem' }}>Credentials</h2>
-                <ReviewRow icon={<GraduationCap size={20} />} label="MBBS YEAR" value={getVal('mbbsYear')} onEdit={() => handleEdit('mbbsYear')} />
-                <ReviewRow icon={<GraduationCap size={20} />} label="SPECIALISATION YEAR" value={getVal('specialisationYear')} onEdit={() => handleEdit('specialisationYear')} />
-                <ReviewRow icon={<FileText size={20} />} label="QUALIFICATIONS" value={getVal('qualifications')} onEdit={() => handleEdit('qualifications')} />
-                <ReviewRow icon={<Award size={20} />} label="FELLOWSHIPS" value={getArr('fellowships')} onEdit={() => handleEdit('fellowships')} />
+                <div className={styles.reviewSection}>
+                    <div className={styles.reviewSectionHeader}>
+                        <h3 className={styles.sectionTitle}>Section 1: Professional Identity</h3>
+                        <button className={styles.sectionEditBtn} onClick={() => handleEditSection(1)}>
+                            <Edit2 size={14} /> Edit Section
+                        </button>
+                    </div>
+                    <div className={styles.sectionContent}>
+                        <ReviewRow icon={<User size={20} />} label="FULL NAME" value={getVal('fullName')} />
+                        <ReviewRow icon={<Activity size={20} />} label="SPECIALTY" value={getVal('specialty')} />
+                        <ReviewRow icon={<Briefcase size={20} />} label="EXPERIENCE" value={getVal('experience') ? `${getVal('experience')} years` : 'Not provided'} />
+                        <ReviewRow icon={<Building size={20} />} label="PRIMARY LOCATION" value={getVal('primaryLocation')} />
+                        <ReviewRow icon={<MapPin size={20} />} label="PRACTICE LOCATIONS" value={formData.practiceLocations?.length ? `${formData.practiceLocations.length} locations added` : 'None added'} />
+                        <ReviewRow icon={<FileText size={20} />} label="REGISTRATION NUMBER" value={getVal('registrationNumber')} />
+                    </div>
+                </div>
 
-                <h2 className={styles.sectionHeader} style={{ marginTop: '2rem' }}>Clinical Focus</h2>
-                <ReviewRow icon={<Activity size={20} />} label="AREAS OF INTEREST" value={getArr('areasOfInterest')} onEdit={() => handleEdit('areasOfInterest')} />
-                <ReviewRow icon={<Activity size={20} />} label="COMMON CONDITIONS" value={getArr('commonConditions')} onEdit={() => handleEdit('commonConditions')} />
-                <ReviewRow icon={<Activity size={20} />} label="KNOWN FOR" value={getArr('knownForConditions')} onEdit={() => handleEdit('knownForConditions')} />
+                <div className={styles.reviewSection}>
+                    <div className={styles.reviewSectionHeader}>
+                        <h3 className={styles.sectionTitle}>Section 2: Credentials</h3>
+                        <button className={styles.sectionEditBtn} onClick={() => handleEditSection(2)}>
+                            <Edit2 size={14} /> Edit Section
+                        </button>
+                    </div>
+                    <div className={styles.sectionContent}>
+                        <ReviewRow icon={<GraduationCap size={20} />} label="MBBS YEAR" value={getVal('mbbsYear')} />
+                        <ReviewRow icon={<GraduationCap size={20} />} label="SPECIALISATION YEAR" value={getVal('specialisationYear')} />
+                        <ReviewRow icon={<FileText size={20} />} label="QUALIFICATIONS" value={getVal('qualifications')} />
+                        <ReviewRow icon={<Award size={20} />} label="FELLOWSHIPS" value={getArr('fellowships')} />
+                    </div>
+                </div>
+
+                <div className={styles.reviewSection}>
+                    <div className={styles.reviewSectionHeader}>
+                        <h3 className={styles.sectionTitle}>Section 3: Clinical Focus</h3>
+                        <button className={styles.sectionEditBtn} onClick={() => handleEditSection(3)}>
+                            <Edit2 size={14} /> Edit Section
+                        </button>
+                    </div>
+                    <div className={styles.sectionContent}>
+                        <ReviewRow icon={<Activity size={20} />} label="AREAS OF INTEREST" value={getArr('areasOfInterest')} />
+                        <ReviewRow icon={<Activity size={20} />} label="COMMON CONDITIONS" value={getArr('commonConditions')} />
+                        <ReviewRow icon={<Activity size={20} />} label="KNOWN FOR" value={getArr('knownForConditions')} />
+                    </div>
+                </div>
+
+                {stage === 'final' && (
+                    <>
+                        <div className={styles.reviewSection}>
+                            <div className={styles.reviewSectionHeader}>
+                                <h3 className={styles.sectionTitle}>Section 4: The Human Side</h3>
+                                <button className={styles.sectionEditBtn} onClick={() => handleEditSection(4)}>
+                                    <Edit2 size={14} /> Edit Section
+                                </button>
+                            </div>
+                            <div className={styles.sectionContent}>
+                                <ReviewRow icon={<GraduationCap size={20} />} label="TRAINING" value={getArr('trainingExperience')} />
+                                <ReviewRow icon={<Target size={20} />} label="MOTIVATION" value={getArr('motivation')} />
+                                <ReviewRow icon={<Coffee size={20} />} label="UNWINDING" value={getArr('unwinding')} />
+                            </div>
+                        </div>
+
+                        <div className={styles.reviewSection}>
+                            <div className={styles.reviewSectionHeader}>
+                                <h3 className={styles.sectionTitle}>Section 5: Patient Value</h3>
+                                <button className={styles.sectionEditBtn} onClick={() => handleEditSection(5)}>
+                                    <Edit2 size={14} /> Edit Section
+                                </button>
+                            </div>
+                            <div className={styles.sectionContent}>
+                                <ReviewRow icon={<Heart size={20} />} label="PATIENT VALUE" value={getVal('patientValue')} />
+                                <ReviewRow icon={<Lightbulb size={20} />} label="CARE APPROACH" value={getVal('careApproach')} />
+                                <ReviewRow icon={<Target size={20} />} label="PRACTICE PHILOSOPHY" value={getVal('practicePhilosophy')} />
+                            </div>
+                        </div>
+                    </>
+                )}
 
                 <div className={styles.submitSection}>
                     {stage === 'intermediate' ? (
@@ -182,7 +251,6 @@ const ReviewProfile = () => {
                         <ArrowLeft size={16} /> Go Back to Edit
                     </button>
                 </div>
-
             </div>
 
             <Toast
@@ -195,7 +263,7 @@ const ReviewProfile = () => {
     );
 };
 
-const ReviewRow = ({ icon, label, value, onEdit }: { icon: React.ReactNode, label: string, value: string, onEdit: () => void }) => (
+const ReviewRow = ({ icon, label, value }: { icon: React.ReactNode, label: string, value: string }) => (
     <div className={styles.row}>
         <div className={styles.rowContent}>
             <div className={styles.iconWrapper}>
@@ -203,14 +271,11 @@ const ReviewRow = ({ icon, label, value, onEdit }: { icon: React.ReactNode, labe
             </div>
             <div>
                 <p className={styles.label}>{label}</p>
-                <p className={`${styles.value} ${value === 'Not provided' ? styles.noValue : styles.hasValue}`}>
+                <p className={`${styles.value} ${value === 'None' || value === 'Not provided' ? styles.noValue : styles.hasValue}`}>
                     {value}
                 </p>
             </div>
         </div>
-        <button className={styles.editBtn} onClick={onEdit}>
-            <Edit2 size={16} />
-        </button>
     </div>
 );
 

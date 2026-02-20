@@ -146,7 +146,7 @@ const Dashboard = () => {
                         <div style={{ width: '4px', height: '4px', background: 'white', borderRadius: '50%' }}></div>
                     </div>
                     <div style={{ background: 'rgba(255,255,255,0.2)', padding: '0.25rem 0.5rem', borderRadius: '99px', fontSize: '0.75rem', fontWeight: 500 }}>
-                        CureAI 1.4 <span style={{ background: 'white', color: '#2DD4BF', padding: '0.125rem 0.25rem', borderRadius: '4px', fontSize: '0.65rem' }}>Beta</span>
+                        LinQAI&nbsp; <span style={{ background: 'white', color: '#2DD4BF', padding: '0.125rem 0.25rem', borderRadius: '4px', fontSize: '0.65rem' }}>Beta</span>
                     </div>
                     <Settings size={16} />
                 </div>

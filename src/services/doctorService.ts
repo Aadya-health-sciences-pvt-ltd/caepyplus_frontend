@@ -82,7 +82,7 @@ export interface DoctorProfile {
     approach_to_care: string | null;
     availability_philosophy: string | null;
 
-    // Block 6: Content Seed
+    onboarding_status: string;
     content_seeds: Array<Record<string, string>>;
 }
 
@@ -124,10 +124,54 @@ export const doctorService = {
      * Map the API doctor profile to the onboarding form data structure.
      */
     mapProfileToFormData: (profile: DoctorProfile): Record<string, unknown> => {
-        const formData: Record<string, unknown> = {};
+        const formData: Record<string, unknown> = {
+            // Initialize basics with defaults to avoid 'undefined' keys
+            fullName: '',
+            email: '',
+            phone: '',
+            specialty: '',
+            primaryLocation: '',
+            practiceLocations: [],
+            experience: '',
+            postSpecialisationExperience: '',
+            registrationNumber: '',
+            mbbsYear: '',
+            specialisationYear: '',
+            fellowships: [],
+            qualifications: '',
+            memberships: '',
+            awards: '',
+            areasOfInterest: [],
+            practiceSegments: [],
+            commonConditions: [],
+            knownForConditions: [],
+            wantToTreatConditions: '',
+            trainingExperience: [],
+            motivation: [],
+            unwinding: [],
+            recognition: '',
+            qualityTime: '',
+            freeText: '',
+            proudAchievement: '',
+            personalAchievement: '',
+            professionalAspiration: '',
+            personalAspiration: '',
+            patientValue: '',
+            careApproach: '',
+            practicePhilosophy: '',
+            onboarding_status: 'pending',
+            contentSeed: {
+                conditionName: '',
+                presentation: '',
+                investigations: '',
+                treatment: '',
+                delayConsequences: '',
+                prevention: '',
+                additionalInsights: ''
+            }
+        };
 
         // Block 1: Professional Identity
-        // Use full_name if set, else construct from first_name + last_name
         if (profile.full_name) {
             formData.fullName = profile.full_name;
         } else if (profile.first_name || profile.last_name) {
@@ -142,12 +186,10 @@ export const doctorService = {
             formData.specialty = profile.primary_specialization;
         }
         if (profile.primary_practice_location) formData.primaryLocation = profile.primary_practice_location;
-        // Map practice_locations (legacy) or centres_of_practice (block 1)
-        // Map practice_locations (legacy) or centres_of_practice (block 1)
+
         if (profile.centres_of_practice?.length) {
             formData.practiceLocations = profile.centres_of_practice;
         } else if (profile.practice_locations?.length) {
-            // Map to simple strings for the current UI (textarea)
             formData.practiceLocations = profile.practice_locations
                 .map(loc => loc.hospital_name || '')
                 .filter(Boolean);
@@ -172,7 +214,9 @@ export const doctorService = {
 
         // Block 3: Clinical Focus & Expertise
         if (profile.areas_of_clinical_interest?.length) formData.areasOfInterest = profile.areas_of_clinical_interest;
-        if (profile.practice_segments) formData.practiceSegments = profile.practice_segments.split(',').map(s => s.trim());
+        if (profile.practice_segments) {
+            formData.practiceSegments = profile.practice_segments.split(',').map(s => s.trim()).filter(Boolean);
+        }
         if (profile.conditions_commonly_treated?.length) formData.commonConditions = profile.conditions_commonly_treated;
         if (profile.conditions_known_for?.length) formData.knownForConditions = profile.conditions_known_for;
         if (profile.conditions_want_to_treat_more?.length) formData.wantToTreatConditions = profile.conditions_want_to_treat_more.join(', ');
@@ -194,6 +238,8 @@ export const doctorService = {
         if (profile.approach_to_care) formData.careApproach = profile.approach_to_care;
         if (profile.availability_philosophy) formData.practicePhilosophy = profile.availability_philosophy;
 
+        if (profile.onboarding_status) formData.onboarding_status = profile.onboarding_status;
+
         // Block 6: Content Seed (take first seed if available)
         if (profile.content_seeds?.length) {
             const seed = profile.content_seeds[0];
@@ -209,9 +255,9 @@ export const doctorService = {
         }
 
         // Map additional legacy fields
-        if (profile.languages?.length) formData.languages = profile.languages;
-        if (profile.sub_specialties?.length) formData.subSpecialties = profile.sub_specialties;
-        if (profile.gender) formData.gender = profile.gender;
+        if (profile.languages?.length) (formData as any).languages = profile.languages;
+        if (profile.sub_specialties?.length) (formData as any).subSpecialties = profile.sub_specialties;
+        if (profile.gender) (formData as any).gender = profile.gender;
 
         return formData;
     },

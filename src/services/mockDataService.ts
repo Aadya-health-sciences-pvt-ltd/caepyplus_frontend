@@ -62,8 +62,18 @@ class MockDataService {
                 data: {
                     personalInfo: { firstName: 'Arjun', lastName: 'Mehta', email: 'dr.arjun@caepy.com' },
                     qualifications: "MBBS, MD (General Medicine)",
-                    primaryLocation: 'Mumbai, Maharashtra',
-                    experience: '12'
+                    primaryLocation: 'Apollo Hospital, Sector 32',
+                    experience: '12',
+                    specialty: 'Cardiology',
+                    phone: '9876543210',
+                    email: 'dr.arjun@caepy.com',
+                    awards: 'Best Cardiologist Award 2023 - National Medical Association, Excellence in Patient Care 2022 - State Medical Board',
+                    areasOfInterest: ['Interventional Cardiology', 'Heart Failure Management', 'Preventive Cardiology'],
+                    practiceSegments: ['Adult Cardiology', 'Geriatric Care'],
+                    commonConditions: ['Coronary Artery Disease', 'Hypertension', 'Arrhythmia'],
+                    languages: ['English', 'Hindi', 'Marathi'],
+                    consultationFee: '800',
+                    practicePhilosophy: 'I am dedicated to providing comprehensive cardiac care with a strong focus on heart failure management and preventive cardiology. My goal is to offer clear, accessible, and expert guidance for all your cardiac needs.'
                 }
             },
             // 2. Completed & Pending

@@ -8,7 +8,7 @@ interface LivePreviewProps {
         fullName: string;
         specialty: string;
         primaryLocation: string;
-        practiceLocations: string | string[];
+        practiceLocations: string | string[] | { name: string; address: string; schedule: string }[];
         experience: string;
         postSpecialisationExperience: string;
         registrationNumber: string;
@@ -35,6 +35,7 @@ interface LivePreviewProps {
         patientValue: string;
         careApproach: string;
         practicePhilosophy: string;
+        profileImage?: string;
         contentSeed: {
             conditionName: string;
             presentation: string;
@@ -70,7 +71,16 @@ const LivePreview: React.FC<LivePreviewProps> = ({ data, focusedField, onEditFie
                     { name: 'fullName', label: 'Enter your full name:', getValue: (d) => d.fullName },
                     { name: 'specialty', label: 'What is your area of specialization?', getValue: (d) => d.specialty },
                     { name: 'primaryLocation', label: 'Where is your practice located?', getValue: (d) => d.primaryLocation },
-                    { name: 'practiceLocations', label: 'Which hospital or clinic are you associated with?', getValue: (d) => formatArray(d.practiceLocations) },
+                    {
+                        name: 'practiceLocations', label: 'Which hospital or clinic are you associated with?', getValue: (d) => {
+                            if (!d.practiceLocations) return '';
+                            if (typeof d.practiceLocations === 'string') return d.practiceLocations;
+                            if (Array.isArray(d.practiceLocations)) {
+                                return d.practiceLocations.map((loc: any) => typeof loc === 'string' ? loc : loc.name).filter(Boolean).join(', ');
+                            }
+                            return '';
+                        }
+                    },
                     { name: 'experience', label: 'How many years of experience do you have?', getValue: (d) => d.experience ? `${d.experience} years` : '' },
                     { name: 'postSpecialisationExperience', label: 'Post-Specialisation Exp.', getValue: (d) => d.postSpecialisationExperience ? `${d.postSpecialisationExperience} years` : '' },
                     { name: 'registrationNumber', label: 'Medical Registration Number', getValue: (d) => d.registrationNumber },
@@ -135,8 +145,6 @@ const LivePreview: React.FC<LivePreviewProps> = ({ data, focusedField, onEditFie
         }
     }, [focusedField]);
 
-    // Aggregate fields from all steps (1 to 6)
-    const allFields = [1, 2, 3, 4, 5, 6].flatMap(step => getFieldsForStep(step));
 
     return (
         <div className={styles.previewContainer}>
@@ -150,7 +158,11 @@ const LivePreview: React.FC<LivePreviewProps> = ({ data, focusedField, onEditFie
                 <div className={styles.profileCard}>
                     <div className={styles.profileHeader}>
                         <div className={styles.avatarPlaceholder}>
-                            {data.fullName ? data.fullName.charAt(0).toUpperCase() : '?'}
+                            {data.profileImage ? (
+                                <img src={data.profileImage} alt="Profile" className={styles.avatar} style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} />
+                            ) : (
+                                data.fullName ? data.fullName.charAt(0).toUpperCase() : '?'
+                            )}
                         </div>
                         <div className={styles.profileInfo}>
                             <div className={styles.name}>
@@ -176,31 +188,51 @@ const LivePreview: React.FC<LivePreviewProps> = ({ data, focusedField, onEditFie
                     </div>
                 </div>
 
-                {/* Field Cards - Display all fields */}
-                {allFields.map((field) => (
-                    <div
-                        key={field.name}
-                        ref={(el) => { fieldRefs.current[field.name] = el; }}
-                        className={styles.fieldCard}
-                    >
-                        <div className={styles.fieldContent}>
-                            <label className={styles.fieldLabel}>{field.label}</label>
-                            <div className={`${styles.fieldValue} ${!field.getValue(data) ? styles.empty : ''}`}>
-                                {field.getValue(data) || 'Not set'}
-                            </div>
-                        </div>
+                {/* Field Cards - Grouped by Section */}
+                {[1, 2, 3, 4, 5, 6].map((step) => {
+                    const stepFields = getFieldsForStep(step);
+                    if (stepFields.length === 0) return null;
 
-                        {onEditField && (
-                            <div
-                                className={styles.editIconBtn}
-                                onClick={() => onEditField(field.name)}
-                                title="Edit this field"
-                            >
-                                <Edit2 className={styles.editIcon} />
+                    const stepTitles: { [key: number]: string } = {
+                        1: 'Professional Identity',
+                        2: 'Credentials & Trust',
+                        3: 'Clinical Focus',
+                        4: 'The Human Side',
+                        5: 'Philosophy & Approach',
+                        6: 'Content Seed'
+                    };
+
+                    return (
+                        <div key={step} className={styles.sectionGroup}>
+                            <div className={styles.sectionHeader}>
+                                <span className={styles.sectionTitle}>{stepTitles[step]}</span>
+                                {onEditField && (
+                                    <div
+                                        className={styles.sectionEditBtn}
+                                        onClick={() => onEditField(stepFields[0].name)}
+                                    >
+                                        <Edit2 size={12} />
+                                        <span>Edit Section</span>
+                                    </div>
+                                )}
                             </div>
-                        )}
-                    </div>
-                ))}
+                            {stepFields.map((field) => (
+                                <div
+                                    key={field.name}
+                                    ref={(el) => { fieldRefs.current[field.name] = el; }}
+                                    className={styles.fieldCard}
+                                >
+                                    <div className={styles.fieldContent}>
+                                        <label className={styles.fieldLabel}>{field.label}</label>
+                                        <div className={`${styles.fieldValue} ${!field.getValue(data) ? styles.empty : ''}`}>
+                                            {field.getValue(data) || 'Not set'}
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    );
+                })}
             </div>
         </div>
     );

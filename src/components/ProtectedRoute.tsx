@@ -24,6 +24,7 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
         localStorage.removeItem('is_new_user');
         localStorage.removeItem('role');
         localStorage.removeItem('doctor_profile');
+        localStorage.removeItem('caepy_current_user_id');
 
         return <Navigate to="/login" state={{ from: location }} replace />;
     }

@@ -34,6 +34,7 @@ api.interceptors.response.use(
             localStorage.removeItem('is_new_user');
             localStorage.removeItem('role');
             localStorage.removeItem('doctor_profile');
+            localStorage.removeItem('caepy_current_user_id');
 
             // Redirect to login (use window.location since this is outside React Router)
             if (window.location.pathname !== '/login') {

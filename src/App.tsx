@@ -8,6 +8,7 @@ import Onboarding from './pages/Onboarding';
 import ReviewProfile from './pages/ReviewProfile';
 import ProfileSubmitted from './pages/ProfileSubmitted';
 import ProfileView from './pages/ProfileView';
+import ProfileSummary from './pages/ProfileSummary';
 import Dashboard from './pages/Dashboard';
 import AdminLayout from './layouts/AdminLayout';
 import AdminDashboard from './pages/admin/AdminDashboard';
@@ -59,6 +60,7 @@ function AnimatedRoutes() {
             <Route path="/review" element={<ProtectedRoute><PageTransition><ReviewProfile /></PageTransition></ProtectedRoute>} />
             <Route path="/submitted" element={<ProtectedRoute><PageTransition><ProfileSubmitted /></PageTransition></ProtectedRoute>} />
             <Route path="/profile" element={<ProtectedRoute><PageTransition><ProfileView /></PageTransition></ProtectedRoute>} />
+            <Route path="/profile-summary" element={<ProtectedRoute><PageTransition><ProfileSummary /></PageTransition></ProtectedRoute>} />
           </Route>
         </Routes>
       </AnimatePresence>

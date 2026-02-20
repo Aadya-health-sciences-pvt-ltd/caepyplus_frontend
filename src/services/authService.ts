@@ -77,7 +77,40 @@ export const authService = {
         return response.data;
     },
 
+    googleLogin: async (idToken: string): Promise<OTPVerifyResponse> => {
+        const response = await api.post<OTPVerifyResponse>('/auth/google/verify', {
+            id_token: idToken,
+        });
+
+        if (response.data.success && response.data.access_token) {
+            localStorage.setItem('access_token', response.data.access_token);
+            localStorage.setItem('token_type', response.data.token_type || 'Bearer');
+            localStorage.setItem('expires_in', String(response.data.expires_in));
+            if (response.data.doctor_id != null) {
+                localStorage.setItem('doctor_id', String(response.data.doctor_id));
+            }
+            if (response.data.mobile_number) {
+                localStorage.setItem('mobile_number', response.data.mobile_number);
+            }
+            localStorage.setItem('is_new_user', String(response.data.is_new_user));
+            localStorage.setItem('role', response.data.role || 'user');
+        }
+
+        return response.data;
+    },
+
     clearSession: () => {
+        // Explicitly remove sensitive or state-bearing keys
+        localStorage.removeItem('access_token');
+        localStorage.removeItem('token_type');
+        localStorage.removeItem('expires_in');
+        localStorage.removeItem('doctor_id');
+        localStorage.removeItem('mobile_number');
+        localStorage.removeItem('is_new_user');
+        localStorage.removeItem('role');
+        localStorage.removeItem('caepy_current_user_id');
+
+        // Optional: clear anything else except keys we want to persist
         const keysToKeep = ['caepy_doctor_profiles'];
         const keysToRemove: string[] = [];
         for (let i = 0; i < localStorage.length; i++) {

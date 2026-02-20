@@ -1,16 +1,17 @@
-
-import { useLocation } from 'react-router-dom';
 import {
     Calendar, Settings,
     Eye, FileText, CheckCircle,
     PenTool, Video, Info, TrendingUp, Users, Zap,
     ArrowRight, Edit3, Globe, Share2
 } from 'lucide-react';
+
+import { useNavigate, useLocation } from 'react-router-dom';
 import styles from './ProfileView.module.css';
 
 import { mockDataService } from '../services/mockDataService';
 
 const ProfileView = () => {
+    const navigate = useNavigate();
     const location = useLocation();
     // Prefer data from mock service if available (for direct navigation/reloads)
     // otherwise fallback to location state (e.g. preview mode)
@@ -28,7 +29,7 @@ const ProfileView = () => {
     const specialty = formData.specialty || formData.personalInfo?.specialty || 'General Practitioner';
     const loc = formData.primaryLocation || formData.personalInfo?.primaryLocation || 'India';
     const exp = formData.experience || formData.personalInfo?.experience;
-    const isVerified = formData.status === 'verified';
+    const isVerified = (formData.onboarding_status || formData.status) === 'verified';
     const hasPhoto = !!formData.profileImage;
 
     return (
@@ -82,8 +83,17 @@ const ProfileView = () => {
                                     </div>
 
                                     <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-                                        <span className={styles.verifiedBadge} style={{ backgroundColor: '#ECFDF5', color: '#059669', fontSize: '0.75rem' }}>Verified Profile</span>
-                                        <button className={styles.editBtn}>Edit Profile</button>
+                                        <span className={styles.verifiedBadge} style={{
+                                            backgroundColor: isVerified ? '#ECFDF5' : '#FEF2F2',
+                                            color: isVerified ? '#059669' : '#DC2626',
+                                            fontSize: '0.75rem'
+                                        }}>
+                                            {isVerified ? 'Verified Profile' : 'Not-Verified'}
+                                        </span>
+                                        <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                            <button className={styles.editBtn} onClick={() => navigate('/onboarding')}>Edit Profile</button>
+                                            <button className={styles.viewProfileBtn} onClick={() => navigate('/profile-summary')}>View Profile</button>
+                                        </div>
                                     </div>
                                 </div>
 

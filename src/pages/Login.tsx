@@ -158,17 +158,43 @@ const Login = () => {
     };
 
     const handleGoogleLogin = async () => {
+        setIsLoading(true);
+        setError(null);
+
         try {
             authService.clearSession();
             const result = await signInWithPopup(auth, googleProvider);
             const user = result.user;
-            const email = user.email;
 
-            if (email) {
-                console.log("Google Login Success:", user);
-                handleLoginSuccess(email, 'email');
-            } else {
+            // Get the Firebase ID token for backend verification
+            const idToken = await user.getIdToken();
+            const userEmail = user.email;
+            const userName = user.displayName;
+
+            if (!userEmail) {
                 throw new Error("No email found in Google account.");
+            }
+
+            console.log("Google Login - sending token to backend:", { email: userEmail, name: userName });
+
+            // Send ID token to backend for verification and user creation
+            const response = await authService.googleLogin(idToken);
+
+            if (response.success) {
+                console.log("Google Login Successful:", response);
+
+                // Fetch full doctor profile from API and store in localStorage
+                if (response.doctor_id != null) {
+                    try {
+                        await doctorService.fetchAndStoreProfile(response.doctor_id);
+                        console.log("Doctor profile fetched and stored.");
+                    } catch (profileErr) {
+                        console.warn("Could not fetch doctor profile, continuing:", profileErr);
+                    }
+                }
+
+                // Navigate based on user status
+                handleLoginSuccess(userEmail, 'email');
             }
 
         } catch (error: unknown) {
@@ -179,17 +205,17 @@ const Login = () => {
             const errorMessage = (error as any).message;
 
             if (errorCode === 'auth/popup-closed-by-user') {
-                alert("Login cancelled.");
-            } else if (errorCode === 'auth/configuration-not-found' || errorMessage.includes('api key')) {
-                // Fallback for dev without firebase keys - auto login as test user
-                // alert("Firebase configuration missing! Please add your keys to .env file.");
-                console.warn("Dev Mode: Simulating Google Login with 'dr.verified@caepy.com'");
-                handleLoginSuccess('dr.verified@caepy.com', 'email');
+                setError("Login cancelled. Please try again.");
+            } else if (errorCode === 'auth/configuration-not-found' || (errorMessage && errorMessage.includes('api key'))) {
+                setError("Firebase configuration error. Please check your setup.");
             } else {
-                alert("Login failed: " + errorMessage);
+                setError("Google login failed: " + (errorMessage || "Unknown error"));
             }
+        } finally {
+            setIsLoading(false);
         }
     };
+
 
     // Testimonials Data
     const testimonials = [
