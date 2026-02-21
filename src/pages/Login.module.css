@@ -180,11 +180,11 @@
     flex: 1;
     display: flex;
     flex-direction: column;
+    align-items: center;
     padding: 4rem;
-    /* Reduced padding to fit fixed height */
     background-color: white;
     justify-content: center;
-    overflow-y: auto;
+    overflow: hidden;
 }
 
 .logoWrapper {
@@ -197,8 +197,7 @@
 .formContainer {
     width: 100%;
     max-width: 480px;
-    margin: 0;
-    /* Align left */
+    margin: 0 auto;
 }
 
 .formTitle {

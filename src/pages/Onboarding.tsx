@@ -842,7 +842,7 @@ const Onboarding = () => {
                                     />
                                     <datalist id="specialties-list">
                                         {masterData.specialties.map(s => (
-                                            <option key={s} value={s} />
+                                            <option key={s.value} value={s.value} />
                                         ))}
                                     </datalist>
                                 </div>
@@ -894,7 +894,7 @@ const Onboarding = () => {
                                     >
                                         <option value="">Select location</option>
                                         {masterData.locations.map(loc => (
-                                            <option key={loc} value={loc}>{loc}</option>
+                                            <option key={loc.value} value={loc.value}>{loc.value}</option>
                                         ))}
                                     </select>
                                 </div>
@@ -1086,13 +1086,13 @@ const Onboarding = () => {
                         <div className={styles.formGrid}>
                             {/* Datalists for this section */}
                             <datalist id="areas-list">
-                                {masterData.areasOfInterest?.map(item => <option key={item} value={item} />)}
+                                {masterData.areasOfInterest?.map(item => <option key={item.value} value={item.value} />)}
                             </datalist>
                             <datalist id="segments-list">
-                                {masterData.practiceSegments.map(item => <option key={item} value={item} />)}
+                                {masterData.practiceSegments.map(item => <option key={item.value} value={item.value} />)}
                             </datalist>
                             <datalist id="conditions-list">
-                                {masterData.commonConditions.map(item => <option key={item} value={item} />)}
+                                {masterData.commonConditions.map(item => <option key={item.value} value={item.value} />)}
                             </datalist>
 
                             <div className={styles.fullWidth}>

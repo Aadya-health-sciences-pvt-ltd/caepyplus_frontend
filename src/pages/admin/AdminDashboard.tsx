@@ -162,8 +162,8 @@ const AdminDashboard = () => {
                     <h3 className={styles.sectionTitle}>Recent Activity</h3>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', marginTop: '1rem' }}>
                         {[
-                            { icon: <CheckCircle size={16} />, color: '#10B981', bg: '#D1FAE5', text: 'Dr. Sarah Wilson verified', time: '10m ago' },
-                            { icon: <FileText size={16} />, color: '#3B82F6', bg: '#EFF6FF', text: 'Dr. Michael Chang uploaded license', time: '30m ago' },
+                            { icon: <CheckCircle size={16} />, color: '#10B981', bg: '#D1FAE5', text: 'Dr. Sunil Sharma verified', time: '10m ago' },
+                            { icon: <FileText size={16} />, color: '#3B82F6', bg: '#EFF6FF', text: 'Dr. Anil Kapoor uploaded license', time: '30m ago' },
                             { icon: <Activity size={16} />, color: '#8B5CF6', bg: '#F5F3FF', text: 'System maintenance scheduled', time: '2h ago' },
                             { icon: <Users size={16} />, color: '#6B7280', bg: '#F3F4F6', text: '5 new signups today', time: '4h ago' },
                         ].map((item, idx) => (

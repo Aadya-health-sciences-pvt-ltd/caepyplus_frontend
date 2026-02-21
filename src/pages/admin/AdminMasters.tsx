@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Plus, Trash2, Database, RefreshCw, Save } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Trash2, RefreshCw } from 'lucide-react';
 import { getMasterData, addMasterItem, removeMasterItem, resetMasterData, type MasterData } from '../../lib/masterData';
 
 const AdminMasters = () => {
@@ -33,6 +33,16 @@ const AdminMasters = () => {
         if (window.confirm("Reset all master data to defaults? This cannot be undone.")) {
             const defaults = resetMasterData();
             setData(defaults);
+        }
+    };
+
+    const formatDate = (iso: string) => {
+        try {
+            const d = new Date(iso);
+            return d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) +
+                ', ' + d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
+        } catch {
+            return iso;
         }
     };
 
@@ -115,7 +125,7 @@ const AdminMasters = () => {
             {/* List */}
             <div style={{
                 background: 'white', borderRadius: '0.75rem',
-                border: '1px solid #E5E7EB', maxWidth: '800px',
+                border: '1px solid #E5E7EB',
                 overflow: 'hidden'
             }}>
                 {data[activeTab].length === 0 ? (
@@ -126,17 +136,34 @@ const AdminMasters = () => {
                     <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                         <thead style={{ background: '#F9FAFB', borderBottom: '1px solid #E5E7EB' }}>
                             <tr>
-                                <th style={{ textAlign: 'left', padding: '1rem', color: '#6B7280', fontSize: '0.875rem', fontWeight: 600 }}>Value</th>
-                                <th style={{ textAlign: 'right', padding: '1rem', color: '#6B7280', fontSize: '0.875rem', fontWeight: 600 }}>Action</th>
+                                <th style={{ textAlign: 'left', padding: '1rem', color: '#6B7280', fontSize: '0.8125rem', fontWeight: 600 }}>Value</th>
+                                <th style={{ textAlign: 'left', padding: '1rem', color: '#6B7280', fontSize: '0.8125rem', fontWeight: 600 }}>Created By</th>
+                                <th style={{ textAlign: 'left', padding: '1rem', color: '#6B7280', fontSize: '0.8125rem', fontWeight: 600 }}>Created At</th>
+                                <th style={{ textAlign: 'right', padding: '1rem', color: '#6B7280', fontSize: '0.8125rem', fontWeight: 600, width: '60px' }}>Action</th>
                             </tr>
                         </thead>
                         <tbody>
                             {data[activeTab].map((item, index) => (
                                 <tr key={index} style={{ borderBottom: '1px solid #F3F4F6' }}>
-                                    <td style={{ padding: '1rem', color: '#111827' }}>{item}</td>
-                                    <td style={{ padding: '1rem', textAlign: 'right' }}>
+                                    <td style={{ padding: '0.875rem 1rem', color: '#111827', fontWeight: 500 }}>{item.value}</td>
+                                    <td style={{ padding: '0.875rem 1rem' }}>
+                                        <span style={{
+                                            fontSize: '0.8125rem',
+                                            color: item.created_by === 'System' ? '#6B7280' : '#1D4ED8',
+                                            background: item.created_by === 'System' ? '#F3F4F6' : '#EFF6FF',
+                                            padding: '0.2rem 0.5rem',
+                                            borderRadius: '4px',
+                                            fontWeight: 500,
+                                        }}>
+                                            {item.created_by}
+                                        </span>
+                                    </td>
+                                    <td style={{ padding: '0.875rem 1rem', color: '#6B7280', fontSize: '0.8125rem' }}>
+                                        {formatDate(item.created_at)}
+                                    </td>
+                                    <td style={{ padding: '0.875rem 1rem', textAlign: 'right' }}>
                                         <button
-                                            onClick={() => handleDelete(item)}
+                                            onClick={() => handleDelete(item.value)}
                                             style={{ color: '#EF4444', background: 'none', border: 'none', cursor: 'pointer', padding: '0.25rem' }}
                                             title="Delete"
                                         >

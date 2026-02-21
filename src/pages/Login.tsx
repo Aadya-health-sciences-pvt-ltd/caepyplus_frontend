@@ -233,7 +233,7 @@ const Login = () => {
         },
         {
             quote: "Finally, a platform that understands doctors. Simple, efficient, and professional. Highly recommended.",
-            author: "Dr. Sarah Jenkins",
+            author: "Dr. Saranya Sole",
             role: "Pediatrician · Delhi",
             image: "https://randomuser.me/api/portraits/women/68.jpg"
         },
@@ -335,11 +335,11 @@ const Login = () => {
                         <>
                             <div style={{ marginBottom: '1.5rem' }}>
                                 <label className={styles.label} style={{ fontSize: '1rem', marginBottom: '1rem', display: 'block' }}>
-                                    Please Enter Your Email or Phone number
+                                    Please Enter Your Phone number
                                 </label>
 
                                 {/* Toggle Button for Email / Phone */}
-                                <div style={{ display: 'flex', marginBottom: '1rem' }}>
+                                {/* <div style={{ display: 'flex', marginBottom: '1rem' }}>
                                     <div style={{
                                         display: 'flex',
                                         background: '#F1F5F9',
@@ -383,7 +383,7 @@ const Login = () => {
                                             Email
                                         </button>
                                     </div>
-                                </div>
+                                </div> */}
 
                                 <form onSubmit={handleSendOTP}>
                                     <div className={styles.inputGroup}>

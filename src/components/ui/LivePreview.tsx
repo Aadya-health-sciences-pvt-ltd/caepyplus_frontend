@@ -169,7 +169,7 @@ const LivePreview: React.FC<LivePreviewProps> = ({ data, focusedField, onEditFie
                                 {data.fullName || 'Dr. [Name]'}
                             </div>
                             <div className={styles.specialization}>
-                                {data.specialty || 'M.D. [Specialty]'}
+                                {data.specialty || '[Specialty]'}
                             </div>
 
                             {data.primaryLocation && (

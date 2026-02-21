@@ -75,45 +75,63 @@ const STATIC_USERS: AdminUserResponse[] = [
 const STATIC_DOCTORS: Doctor[] = [
     {
         id: 8881,
-        first_name: 'John',
-        last_name: 'Doe',
-        full_name: 'Dr. John Doe',
-        email: 'john.doe@demo.com',
+        first_name: 'Prem',
+        last_name: 'Ranjan',
+        full_name: 'Dr. Prem Ranjan',
+        email: 'prem.ranjan@demo.com',
         phone: '+918888811111',
         specialty: 'Cardiology',
         primary_practice_location: 'Mumbai, MH',
         onboarding_status: 'verified',
         role: 'doctor',
         created_at: '2026-01-15T08:30:00Z',
-        updated_at: null
+        updated_at: null,
+        medical_registration_number: 'MH-2019-34521',
+        qualifications: 'MBBS, MD (Cardiology), DM',
+        experience_years: 12,
+        consultation_fee: '₹1,500',
+        languages: 'English, Hindi, Marathi',
+        bio: 'Experienced cardiologist specializing in interventional procedures and preventive cardiology. Previously at Kokilaben Hospital.',
     },
     {
         id: 8882,
-        first_name: 'Jane',
-        last_name: 'Smith',
-        full_name: 'Dr. Jane Smith',
-        email: 'jane.smith@demo.com',
+        first_name: 'Hemanth',
+        last_name: 'Kumar',
+        full_name: 'Dr. Hemanth Kumar',
+        email: 'hemanth.kumar@demo.com',
         phone: '+918888822222',
         specialty: 'Dermatology',
         primary_practice_location: 'Bangalore, KA',
         onboarding_status: 'submitted',
         role: 'doctor',
         created_at: '2026-01-20T11:45:00Z',
-        updated_at: null
+        updated_at: null,
+        medical_registration_number: 'KA-2021-18743',
+        qualifications: 'MBBS, MD (Dermatology)',
+        experience_years: 6,
+        consultation_fee: '₹800',
+        languages: 'English, Kannada, Telugu',
+        bio: 'Dermatologist with focus on cosmetic procedures and skin cancer screening.',
     },
     {
         id: 8883,
-        first_name: 'Robert',
-        last_name: 'Wilson',
-        full_name: 'Dr. Robert Wilson',
-        email: 'robert.wilson@demo.com',
+        first_name: 'Saranya',
+        last_name: 'Prabhu',
+        full_name: 'Dr. Saranya Prabhu',
+        email: 'saranya.prabhu@demo.com',
         phone: '+918888833333',
         specialty: 'Pediatrics',
         primary_practice_location: 'Delhi NCR',
         onboarding_status: 'pending',
         role: 'doctor',
         created_at: '2026-01-25T14:20:00Z',
-        updated_at: null
+        updated_at: null,
+        medical_registration_number: 'DL-2020-55612',
+        qualifications: 'MBBS, DCH, DNB (Pediatrics)',
+        experience_years: 8,
+        consultation_fee: '₹1,000',
+        languages: 'English, Hindi, Tamil',
+        bio: 'Pediatrician specializing in neonatal care and childhood development disorders.',
     }
 ];
 
@@ -220,4 +238,10 @@ export interface Doctor {
     role: string;
     created_at: string;
     updated_at: string | null;
+    medical_registration_number?: string | null;
+    qualifications?: string | null;
+    experience_years?: number | null;
+    consultation_fee?: string | null;
+    languages?: string | null;
+    bio?: string | null;
 }

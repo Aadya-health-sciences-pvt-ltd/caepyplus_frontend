@@ -12,7 +12,7 @@ const AdminLogin = () => {
     const navigate = useNavigate();
     const [email, setEmail] = useState('');
     const [mobileNumber, setMobileNumber] = useState('');
-    const [loginMethod, setLoginMethod] = useState<'email' | 'phone'>('email');
+    const [loginMethod, setLoginMethod] = useState<'email' | 'phone'>('phone');
 
     // OTP State
     const [otp, setOtp] = useState('');
@@ -273,7 +273,7 @@ const AdminLogin = () => {
                     {!isOtpSent ? (
                         <>
                             {/* Toggle Button for Email / Phone */}
-                            <div style={{ display: 'flex', marginBottom: '1rem' }}>
+                            {/* <div style={{ display: 'flex', marginBottom: '1rem' }}>
                                 <div style={{
                                     display: 'flex',
                                     background: '#F1F5F9',
@@ -317,7 +317,7 @@ const AdminLogin = () => {
                                         Phone
                                     </button>
                                 </div>
-                            </div>
+                            </div> */}
 
                             <form onSubmit={loginMethod === 'email' ? handleEmailLogin : handleSendOTP}>
                                 <div className={styles.inputGroup}>
