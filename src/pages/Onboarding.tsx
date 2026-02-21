@@ -610,6 +610,8 @@ const Onboarding = () => {
     };
 
     const fileInputRef = React.useRef<HTMLInputElement>(null);
+    const fellowshipFileRef = React.useRef<HTMLInputElement>(null);
+    const [fellowshipFiles, setFellowshipFiles] = useState<File[]>([]);
 
     const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -831,20 +833,19 @@ const Onboarding = () => {
                             <div className={styles.fullWidth}>
                                 <div className={styles.inputWrapper}>
                                     <label className={styles.label}>Specialty <span>*</span></label>
-                                    <input
+                                    <select
                                         name="specialty"
                                         value={formData.specialty}
                                         onChange={handleInputChange}
                                         onFocus={() => setFocusedField('specialty')}
                                         className={styles.input}
-                                        placeholder="Select or search specialty"
-                                        list="specialties-list"
-                                    />
-                                    <datalist id="specialties-list">
+                                        style={{ appearance: 'none', background: 'white' }}
+                                    >
+                                        <option value="">Select specialty</option>
                                         {masterData.specialties.map(s => (
-                                            <option key={s.value} value={s.value} />
+                                            <option key={s.value} value={s.value}>{s.value}</option>
                                         ))}
-                                    </datalist>
+                                    </select>
                                 </div>
                             </div>
 
@@ -964,13 +965,13 @@ const Onboarding = () => {
                             </p>
                         </div>
 
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
                             <div>
-                                <h2 className={styles.sectionTitle}>Credentials & Trust Markers</h2>
-                                <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', marginTop: '0.25rem' }}>
-                                    <p style={{ fontSize: '0.875rem', color: '#10B981', margin: 0 }}>Profile strength: 40%</p>
-                                    <span style={{ fontSize: '0.75rem', background: '#FEF3C7', color: '#D97706', padding: '2px 6px', borderRadius: '4px' }}>Authority badge unlocked</span>
-                                </div>
+                                <h2 className={styles.sectionTitle} style={{ marginBottom: 0 }}>Credentials & Trust Markers</h2>
+                                <p style={{ fontSize: '0.875rem', color: '#10B981', marginTop: '0.25rem' }}>
+                                    Profile strength: 40%
+                                    <span style={{ fontSize: '0.75rem', background: '#FEF3C7', color: '#D97706', padding: '2px 6px', borderRadius: '4px', marginLeft: '0.5rem' }}>Authority badge unlocked</span>
+                                </p>
                             </div>
                         </div>
 
@@ -1006,20 +1007,75 @@ const Onboarding = () => {
                             <div className={styles.fullWidth}>
                                 <div className={styles.inputWrapper}>
                                     <label className={styles.label}>Fellowships</label>
-                                    <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                    <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
                                         <input
-                                            // Handling array as comma-sep string for simple input
                                             value={Array.isArray(formData.fellowships) ? formData.fellowships.join(', ') : formData.fellowships}
                                             onChange={(e) => handleArrayChange('fellowships', e.target.value)}
                                             onFocus={() => setFocusedField('fellowships')}
                                             className={styles.input}
                                             placeholder="Add fellowship..."
-                                            style={{ flex: 1 }}
+                                            style={{ flex: 3 }}
                                         />
-                                        <button className={styles.uploadBtn} style={{ padding: '0.5rem' }}>
-                                            <Upload size={16} />
+                                        <input
+                                            type="file"
+                                            ref={fellowshipFileRef}
+                                            onChange={(e) => {
+                                                const files = e.target.files;
+                                                if (files && files.length > 0) {
+                                                    setFellowshipFiles(prev => [...prev, ...Array.from(files)]);
+                                                }
+                                                e.target.value = '';
+                                            }}
+                                            accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+                                            multiple
+                                            style={{ display: 'none' }}
+                                        />
+                                        <button
+                                            className={styles.uploadBtn}
+                                            style={{ padding: '0.5rem 0.75rem', whiteSpace: 'nowrap', fontSize: '0.8rem' }}
+                                            onClick={() => fellowshipFileRef.current?.click()}
+                                            type="button"
+                                        >
+                                            <Upload size={14} /> Attach
                                         </button>
                                     </div>
+                                    {fellowshipFiles.length > 0 && (
+                                        <div style={{
+                                            marginTop: '0.75rem',
+                                            border: '1px solid #86EFAC',
+                                            borderRadius: '0.5rem',
+                                            background: '#F0FDF4',
+                                            padding: '0.75rem',
+                                        }}>
+                                            <p style={{ fontSize: '0.75rem', fontWeight: 600, color: '#166534', margin: '0 0 0.5rem 0' }}>
+                                                📎 {fellowshipFiles.length} file{fellowshipFiles.length > 1 ? 's' : ''} attached
+                                            </p>
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.375rem' }}>
+                                                {fellowshipFiles.map((file, i) => (
+                                                    <div key={i} style={{
+                                                        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                                                        background: 'white', padding: '0.5rem 0.75rem',
+                                                        borderRadius: '6px', border: '1px solid #E5E7EB',
+                                                    }}>
+                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                                            <span style={{ fontSize: '1rem' }}>📄</span>
+                                                            <span style={{ fontSize: '0.8125rem', fontWeight: 500, color: '#111827' }}>{file.name}</span>
+                                                            <span style={{ fontSize: '0.75rem', color: '#9CA3AF' }}>
+                                                                ({(file.size / 1024).toFixed(0)} KB)
+                                                            </span>
+                                                        </div>
+                                                        <button
+                                                            onClick={() => setFellowshipFiles(prev => prev.filter((_, idx) => idx !== i))}
+                                                            style={{ background: 'none', border: 'none', color: '#EF4444', cursor: 'pointer', padding: '0.25rem', fontSize: '0.875rem', fontWeight: 600 }}
+                                                            title="Remove file"
+                                                        >
+                                                            ✕
+                                                        </button>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
 
@@ -1078,9 +1134,11 @@ const Onboarding = () => {
                             </p>
                         </div>
 
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <h2 className={styles.sectionTitle}>Clinical Focus & Expertise</h2>
-                            <p style={{ fontSize: '0.875rem', color: '#10B981', marginTop: '0.25rem' }}>Profile strength: 60%</p>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                            <div>
+                                <h2 className={styles.sectionTitle} style={{ marginBottom: 0 }}>Clinical Focus & Expertise</h2>
+                                <p style={{ fontSize: '0.875rem', color: '#10B981', marginTop: '0.25rem' }}>Profile strength: 60%</p>
+                            </div>
                         </div>
 
                         <div className={styles.formGrid}>
@@ -1192,13 +1250,13 @@ const Onboarding = () => {
                             </p>
                         </div>
 
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
                             <div>
-                                <h2 className={styles.sectionTitle}>The Human Side</h2>
-                                <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', marginTop: '0.25rem' }}>
-                                    <p style={{ fontSize: '0.875rem', color: '#10B981', margin: 0 }}>Profile strength: 60%</p>
-                                    <span style={{ fontSize: '0.75rem', background: '#DBEAFE', color: '#1E40AF', padding: '2px 6px', borderRadius: '4px' }}>Human Touch added</span>
-                                </div>
+                                <h2 className={styles.sectionTitle} style={{ marginBottom: 0 }}>The Human Side</h2>
+                                <p style={{ fontSize: '0.875rem', color: '#10B981', marginTop: '0.25rem' }}>
+                                    Profile strength: 60%
+                                    <span style={{ fontSize: '0.75rem', background: '#DBEAFE', color: '#1E40AF', padding: '2px 6px', borderRadius: '4px', marginLeft: '0.5rem' }}>Human Touch added</span>
+                                </p>
                             </div>
                             <div style={{ fontSize: '0.75rem', color: '#6B7280', border: '1px solid #E5E7EB', padding: '0.25rem 0.5rem', borderRadius: '4px' }}>
                                 AI Generated Disclaimer will be added
@@ -1364,9 +1422,9 @@ const Onboarding = () => {
                             </p>
                         </div>
 
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
                             <div>
-                                <h2 className={styles.sectionTitle}>Patient Value & Choice Factors</h2>
+                                <h2 className={styles.sectionTitle} style={{ marginBottom: 0 }}>Patient Value & Choice Factors</h2>
                                 <p style={{ fontSize: '0.875rem', color: '#10B981', marginTop: '0.25rem' }}>Profile strength: 90%</p>
                             </div>
                         </div>
@@ -1690,9 +1748,9 @@ const Onboarding = () => {
                             {currentStep === totalSteps ? 'Review & Complete' : (currentStep === 3 ? 'Review & Continue' : 'Next >')}
                         </button>
 
-                        <button className={styles.typeButton}>
+                        {/* <button className={styles.typeButton}>
                             <Keyboard size={16} /> Prefer typing instead
-                        </button>
+                        </button> */}
 
                         <p style={{ marginTop: '2rem', fontSize: '0.875rem', color: '#9CA3AF', textAlign: 'center' }}>
                             All information can be edited later from your profile settings
