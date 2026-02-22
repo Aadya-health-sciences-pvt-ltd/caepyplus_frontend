@@ -12,7 +12,7 @@ const Login = () => {
     const navigate = useNavigate();
     const [mobileNumber, setMobileNumber] = useState('');
     const [email, setEmail] = useState('');
-    const [loginMethod, setLoginMethod] = useState<'phone' | 'email'>('phone');
+    const [loginMethod] = useState<'phone' | 'email'>('phone');
     const [otp, setOtp] = useState('');
     const [isOtpSent, setIsOtpSent] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
@@ -38,6 +38,14 @@ const Login = () => {
             // New user - create profile
             console.log("New user detected, creating profile...");
             profile = mockDataService.createProfile(identifier, type);
+        }
+
+        // Explicitly cache email for downstream mapping if logged in via email
+        if (type === 'email') {
+            localStorage.setItem('user_email', identifier);
+        } else {
+            // Explicitly cache phone
+            localStorage.setItem('mobile_number', identifier);
         }
 
         console.log("Routing user:", profile);
@@ -426,7 +434,7 @@ const Login = () => {
                             </div>
 
                             <div className={styles.divider}>
-                                <span className={styles.dividerText}>Or continue with</span>
+                                <span className={styles.dividerText}>Or </span>
                             </div>
 
                             <button type="button" className={styles.googleButton} onClick={handleGoogleLogin}>

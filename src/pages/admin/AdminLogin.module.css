@@ -186,8 +186,8 @@
 
 .logoWrapper {
     width: 100%;
-    margin-top: 2rem;
-    margin-bottom: 2rem;
+    max-width: 480px;
+    margin: 2rem auto 2rem auto;
 }
 
 .formContainer {
@@ -311,4 +311,59 @@
 
 .dividerText {
     padding: 0 1rem;
+}
+
+/* Mobile Responsive Override */
+@media (max-width: 1024px) {
+    .pageWrapper {
+        flex-direction: column;
+        height: auto;
+        min-height: 100vh;
+        overflow-y: auto;
+    }
+
+    .heroSection {
+        padding: 3rem 1.5rem;
+    }
+
+    .heroTitle {
+        font-size: clamp(1.75rem, 6vw, 2.5rem);
+    }
+
+    .heroSubtitle {
+        font-size: 1rem;
+        margin-bottom: 2rem;
+    }
+
+    .formSection {
+        padding: 2rem 1.5rem;
+    }
+
+    .formTitle {
+        font-size: 2rem;
+    }
+
+    .logoWrapper {
+        margin: 0 auto 1.5rem auto;
+    }
+
+    .logoHeader {
+        margin-bottom: 1.5rem;
+        justify-content: center;
+    }
+
+    .formContainer {
+        width: 100%;
+    }
+
+    /* Subdue the hero curve on small screens so it doesn't overlap text awkwardly */
+    .heroSection::after {
+        right: -100px;
+        bottom: -100px;
+    }
+
+    .testimonial {
+        display: none;
+        /* Optionally hide or simplify testimonials on narrow mobile heights to focus on login */
+    }
 }

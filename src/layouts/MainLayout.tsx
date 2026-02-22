@@ -4,13 +4,15 @@ import Header from '../components/Header';
 
 import Sidebar from '../components/Sidebar';
 
+import styles from './MainLayout.module.css';
+
 const MainLayout: React.FC = () => {
     return (
-        <div style={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
+        <div className={styles.layoutWrapper}>
             <Header />
-            <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
+            <div className={styles.mainContentWrapper}>
                 <Sidebar />
-                <main style={{ flex: 1, overflowY: 'auto', backgroundColor: '#F9FAFB' }}>
+                <main className={styles.mainContent}>
                     <Outlet />
                 </main>
             </div>

@@ -1,0 +1,30 @@
+.layoutWrapper {
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.mainContentWrapper {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+}
+
+.mainContent {
+    flex: 1;
+    overflow-y: auto;
+    background-color: #F9FAFB;
+}
+
+@media (max-width: 768px) {
+    .mainContentWrapper {
+        flex-direction: column;
+        overflow: auto;
+        /* Allow scrolling on wrapper if needed */
+    }
+
+    .mainContent {
+        overflow-y: visible;
+        /* Main scrolling handled by wrapper on mobile */
+    }
+}

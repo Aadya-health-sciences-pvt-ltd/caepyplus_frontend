@@ -1,9 +1,8 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-    User, Activity, Briefcase, Building, MapPin,
-    Award, FileText, ArrowLeft,
-    CheckCircle, Mail, Phone, IndianRupee, Languages, Trophy,
+    User, Activity, Building, MapPin,
+    IndianRupee, Languages, Trophy,
     GraduationCap, ShieldCheck, Heart, Lightbulb, Coffee, Target, Sparkles
 } from 'lucide-react';
 import { mockDataService } from '../services/mockDataService';
@@ -50,11 +49,6 @@ const ProfileSummary = () => {
 
     return (
         <div className={styles.pageWrapper}>
-            <button className={styles.backBtn} onClick={() => navigate(-1)}>
-                <ArrowLeft size={18} />
-                <span>Back</span>
-            </button>
-
             <div className={styles.container}>
                 {/* Header Section */}
                 <div className={styles.profileHeader}>
@@ -120,6 +114,19 @@ const ProfileSummary = () => {
                             <div className={styles.subTitle}>Memberships</div>
                             <div className={styles.contactValue}>{getVal('memberships')}</div>
                         </Card>
+
+                        <Card title="The Human Side" icon={<Coffee size={18} />}>
+                            <div className={styles.subTitle}>Motivation in Practice</div>
+                            <PillContainer items={getArr('motivation')} />
+                            <div className={styles.subTitle}>Unwinding After Work</div>
+                            <PillContainer items={getArr('unwinding')} />
+                            <div className={styles.subTitle}>Training Experience</div>
+                            <PillContainer items={getArr('trainingExperience')} />
+                            <div className={styles.subTitle}>Recognition & Identity</div>
+                            <div className={styles.contactValue}>{getVal('recognition')}</div>
+                            <div className={styles.subTitle}>Quality Time / Interests</div>
+                            <div className={styles.contactValue}>{getVal('qualityTime')}</div>
+                        </Card>
                     </div>
 
                     {/* Column 2: Clinical Focus & Values */}
@@ -152,30 +159,12 @@ const ProfileSummary = () => {
 
                     {/* Column 3: The Human Side & Logistics */}
                     <div className={styles.column}>
-                        <Card title="The Human Side" icon={<Coffee size={18} />}>
-                            <div className={styles.subTitle}>Motivation in Practice</div>
-                            <PillContainer items={getArr('motivation')} />
-                            <div className={styles.subTitle}>Unwinding After Work</div>
-                            <PillContainer items={getArr('unwinding')} />
-                            <div className={styles.subTitle}>Training Experience</div>
-                            <PillContainer items={getArr('trainingExperience')} />
-                            <div className={styles.subTitle}>Recognition & Identity</div>
-                            <div className={styles.contactValue}>{getVal('recognition')}</div>
-                            <div className={styles.subTitle}>Quality Time / Interests</div>
-                            <div className={styles.contactValue}>{getVal('qualityTime')}</div>
-                        </Card>
-
-                        <Card title="Achievements & Aspirations" icon={<Trophy size={18} />}>
-                            <div className={styles.subTitle}>Proudest Professional Achievement</div>
-                            <div className={styles.textBlock}>{getVal('proudAchievement')}</div>
-                            <div className={styles.subTitle}>Significant Personal Achievement</div>
-                            <div className={styles.textBlock}>{getVal('personalAchievement')}</div>
-                            <div className={styles.subTitle}>Professional Aspiration</div>
-                            <div className={styles.textBlock}>{getVal('professionalAspiration')}</div>
-                            <div className={styles.subTitle}>Personal Aspiration</div>
-                            <div className={styles.textBlock}>{getVal('personalAspiration')}</div>
-                            <div className={styles.subTitle}>Awards & Honors (Academic)</div>
-                            <div className={styles.textBlock}>{getVal('awards')}</div>
+                        <Card title="Professional Standing" icon={<ShieldCheck size={18} />}>
+                            <InfoRow label="Registration No." value={getVal('registrationNumber')} />
+                            <InfoRow label="Registration Year" value={getVal('registrationYear')} />
+                            <InfoRow label="Authority" value={getVal('registrationAuthority')} />
+                            <div className={styles.subTitle}>Memberships</div>
+                            <div className={styles.contactValue}>{getVal('memberships')}</div>
                         </Card>
 
                         <Card title="Practice Logistics" icon={<MapPin size={18} />}>
@@ -200,6 +189,20 @@ const ProfileSummary = () => {
                                 )}
                             </div>
                         </Card>
+
+                        <Card title="Achievements & Aspirations" icon={<Trophy size={18} />}>
+                            <div className={styles.subTitle}>Proudest Professional Achievement</div>
+                            <div className={styles.textBlock}>{getVal('proudAchievement')}</div>
+                            <div className={styles.subTitle}>Significant Personal Achievement</div>
+                            <div className={styles.textBlock}>{getVal('personalAchievement')}</div>
+                            <div className={styles.subTitle}>Professional Aspiration</div>
+                            <div className={styles.textBlock}>{getVal('professionalAspiration')}</div>
+                            <div className={styles.subTitle}>Personal Aspiration</div>
+                            <div className={styles.textBlock}>{getVal('personalAspiration')}</div>
+                            <div className={styles.subTitle}>Awards & Honors (Academic)</div>
+                            <div className={styles.textBlock}>{getVal('awards')}</div>
+                        </Card>
+
                     </div>
                 </div>
             </div>

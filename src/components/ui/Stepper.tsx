@@ -7,11 +7,7 @@ interface StepperProps {
     onStepClick?: (step: number) => void;
 }
 
-const STEP_LABELS: Record<number, string> = {
-    1: 'Getting Started',
-    2: 'Professional Identity',
-    // Add other labels as needed, or handle generically
-};
+
 
 const Stepper: React.FC<StepperProps> = ({ currentStep, totalSteps, onStepClick }) => {
     const handleStepClick = (step: number) => {
@@ -22,15 +18,14 @@ const Stepper: React.FC<StepperProps> = ({ currentStep, totalSteps, onStepClick 
 
     return (
         <div className={styles.stepperContainer}>
-            {/* Background Line */}
-            <div className={styles.stepLine}>
-                <div
-                    className={styles.stepLineFill}
-                    style={{ width: `${((currentStep - 1) / (totalSteps - 1)) * 100}%` }}
-                />
-            </div>
-
             <div className={styles.stepsWrapper}>
+                {/* Background Line */}
+                <div className={styles.stepLine}>
+                    <div
+                        className={styles.stepLineFill}
+                        style={{ width: `${((currentStep - 1) / (totalSteps - 1)) * 100}%` }}
+                    />
+                </div>
                 {Array.from({ length: totalSteps }, (_, i) => i + 1).map((step) => {
                     const isCompleted = step < currentStep;
                     const isClickable = isCompleted && onStepClick;

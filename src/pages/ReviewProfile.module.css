@@ -1,17 +1,17 @@
 .pageWrapper {
     min-height: 100vh;
-    padding: 2rem 4rem;
+    padding: 1rem 2rem;
     background-color: #FAFAFA;
 }
 
 .header {
-    margin-bottom: 2rem;
+    margin-bottom: 1rem;
 }
 
 .title {
-    font-size: 2rem;
+    font-size: 1.5rem;
     font-weight: 700;
-    margin-bottom: 0.5rem;
+    margin-bottom: 0.25rem;
     color: var(--text-color);
 }
 
@@ -24,7 +24,7 @@
     background: white;
     border-radius: var(--radius-lg);
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-    padding: 2rem;
+    padding: 1.25rem;
     max-width: 1000px;
     margin: 0 auto;
 }
@@ -44,7 +44,7 @@
 }
 
 .reviewSection {
-    margin-bottom: 2.5rem;
+    margin-bottom: 1.5rem;
 }
 
 .reviewSection:last-of-type {
@@ -55,8 +55,8 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 1.25rem;
-    padding-bottom: 0.75rem;
+    margin-bottom: 0.75rem;
+    padding-bottom: 0.5rem;
     border-bottom: 1px solid #F3F4F6;
 }
 
@@ -84,14 +84,14 @@
     background-color: #FDFFFF;
     border-radius: 0.75rem;
     border: 1px solid #F3F4F6;
-    padding: 0 1.25rem;
+    padding: 0 1rem;
 }
 
 .row {
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
-    padding: 1rem 0;
+    padding: 0.5rem 0;
     border-bottom: 1px solid #E5E7EB;
 }
 
@@ -106,8 +106,8 @@
 }
 
 .iconWrapper {
-    width: 32px;
-    height: 32px;
+    width: 24px;
+    height: 24px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -141,7 +141,7 @@
 
 .editBtn {
     color: var(--text-secondary);
-    padding: 0.5rem;
+    padding: 0.25rem;
     border-radius: 50%;
     transition: background-color 0.2s;
 }
@@ -152,8 +152,8 @@
 }
 
 .submitSection {
-    margin-top: 2rem;
-    padding-top: 2rem;
+    margin-top: 1.5rem;
+    padding-top: 1.5rem;
     border-top: 1px solid #E5E7EB;
 }
 
@@ -179,7 +179,7 @@
 .actions {
     display: flex;
     justify-content: space-between;
-    margin-top: 2rem;
+    margin-top: 1rem;
 }
 
 .backButton {
@@ -196,4 +196,44 @@
     display: flex;
     align-items: center;
     gap: 0.5rem;
+}
+
+/* Mobile Responsive Override */
+@media (max-width: 768px) {
+    .pageWrapper {
+        padding: 1rem 0.5rem;
+    }
+
+    .card {
+        padding: 1rem;
+    }
+
+    .row {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+        position: relative;
+    }
+
+    .editBtn {
+        position: absolute;
+        top: 0.5rem;
+        right: 0;
+    }
+
+    .actions {
+        flex-direction: column-reverse;
+        gap: 1rem;
+        align-items: center;
+    }
+
+    .reviewSectionHeader {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
+
+    .sectionEditBtn {
+        align-self: flex-start;
+    }
 }

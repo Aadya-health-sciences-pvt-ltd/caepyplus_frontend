@@ -28,6 +28,10 @@
 
   /* Typography */
   --font-family: 'Inter', system-ui, -apple-system, sans-serif;
+
+  /* Breakpoints */
+  --mobile: 768px;
+  --tablet: 1024px;
 }
 
 * {

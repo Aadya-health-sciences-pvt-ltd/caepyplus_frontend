@@ -233,3 +233,24 @@
   width: 20px;
   height: 20px;
 }
+
+/* Mobile Responsive Override */
+@media (max-width: 768px) {
+  .header {
+    padding: 0.75rem 1rem;
+    height: 64px;
+  }
+
+  .tagline {
+    display: none;
+    /* Save space on small screens */
+  }
+
+  .brandName {
+    font-size: 1.125rem;
+  }
+
+  .rightSection {
+    gap: 0.75rem;
+  }
+}

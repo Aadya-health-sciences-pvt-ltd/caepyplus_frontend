@@ -17,7 +17,6 @@ const ProfileSubmitted = () => {
                 </div>
 
                 <h1 className={styles.title}>Profile Submitted Successfully!</h1>
-                <p className={styles.subtitle}>Welcome to CAEPY Healthcare Platform, Doctor</p>
 
                 {/* Profile Summary Card */}
                 <div className={styles.card}>
@@ -107,13 +106,13 @@ const ProfileSubmitted = () => {
 
                 {/* Action Buttons */}
                 <div className={styles.actionButtons}>
-                    <button className={`${styles.btn} ${styles.btnPrimary}`} onClick={() => navigate('/profile', { state: { formData } })}>
+                    <button className={`${styles.btn} ${styles.btnPrimary}`} onClick={() => navigate('/profile-summary', { state: { formData } })}>
                         <Eye size={18} /> Preview Public Profile
                     </button>
                     <button className={styles.btn} onClick={() => navigate('/onboarding', { state: { formData, step: 1 } })}>
                         <Edit2 size={18} /> Edit Details
                     </button>
-                    <button className={styles.btn} onClick={() => navigate('/admin/dashboard')}>
+                    <button className={styles.btn} onClick={() => navigate('/profile')}>
                         <LayoutGrid size={18} /> Go to Dashboard
                     </button>
                 </div>

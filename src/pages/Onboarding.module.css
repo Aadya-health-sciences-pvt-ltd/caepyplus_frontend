@@ -1,9 +1,13 @@
 /* Page Layout */
 .pageWrapper {
-    max-width: 1400px;
+    max-width: 1250px;
     margin: 0 auto;
     padding: 2rem;
-    min-height: 100vh;
+    height: calc(100vh - 80px);
+    box-sizing: border-box;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
 }
 
 .header {
@@ -41,16 +45,35 @@
     display: flex;
     gap: 3rem;
     align-items: flex-start;
+    flex: 1;
+    min-height: 0;
 }
 
 .leftColumn {
     flex: 1;
     max-width: 700px;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 0;
 }
 
 .rightColumn {
     width: 400px;
     flex-shrink: 0;
+    position: sticky;
+    top: 0;
+    /* sticky is not really needed anymore since wrapper doesn't scroll but doesn't hurt */
+    height: 100%;
+    overflow-y: auto;
+    /* Hide scrollbar for cleaner look */
+    scrollbar-width: none;
+    /* Firefox */
+}
+
+.rightColumn::-webkit-scrollbar {
+    display: none;
+    /* Chrome, Safari, Edge */
 }
 
 /* AI Banner */
@@ -232,8 +255,19 @@
     background: white;
     border-radius: 1.5rem;
     padding: 2rem;
+    overflow-y: auto;
+    flex: 1;
+    min-height: 0;
     /* No shadow as per image it looks cleaner/flat or subtle */
     /* box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1); */
+    /* Hide scrollbar for cleaner look */
+    scrollbar-width: none;
+    /* Firefox */
+}
+
+.formContainer::-webkit-scrollbar {
+    display: none;
+    /* Chrome, Safari, Edge */
 }
 
 .promptItem {
@@ -711,6 +745,49 @@
 .plMapNotice code {
     background: #FEF3C7;
     padding: 0.125rem 0.375rem;
-    border-radius: 0.25rem;
     font-size: 0.75rem;
+}
+
+/* Mobile Responsive Override */
+@media (max-width: 1024px) {
+    /* STRICT CONSTRAINT: LEAVE WEB LAYOUT ALONE.
+       Do not modify .pageWrapper, .mainContent, .leftColumn, .rightColumn here. */
+
+    .aiBanner {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        gap: 1.5rem;
+        padding: 1.5rem 1rem;
+    }
+
+    .aiContent {
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+
+    .aiIconCircle {
+        margin: 0 auto;
+    }
+
+    .aiText h4 {
+        font-size: 1.125rem;
+    }
+
+    .aiText p {
+        font-size: 0.8125rem;
+    }
+
+    .audioControls {
+        flex-direction: column-reverse;
+        gap: 1rem;
+        width: 100%;
+        align-items: center;
+    }
+
+    .micButton {
+        width: 64px;
+        height: 64px;
+        margin-bottom: 0.5rem;
+    }
 }

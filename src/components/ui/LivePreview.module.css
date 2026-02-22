@@ -30,6 +30,16 @@
     color: #111827;
 }
 
+/* Mobile Responsive Override */
+@media (max-width: 1024px) {
+    .previewContainer {
+        position: static;
+        height: auto;
+        max-height: none;
+        overflow-y: visible;
+    }
+}
+
 .badge {
     background-color: #E0F2FE;
     /* Light Cyan */

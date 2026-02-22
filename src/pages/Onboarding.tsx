@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Mic, Keyboard, Sparkles, Upload, ArrowLeft, MicOff, MapPin, ChevronDown, ChevronUp, Plus, X, Trash2 } from 'lucide-react';
+import { Mic, Keyboard, Sparkles, Upload, ArrowLeft, MicOff, MapPin, ChevronDown, ChevronUp, Plus, Trash2 } from 'lucide-react';
 import Stepper from '../components/ui/Stepper';
 import LivePreview from '../components/ui/LivePreview';
 import WelcomeDialog from '../components/ui/WelcomeDialog';
@@ -504,8 +504,7 @@ const Onboarding = () => {
             delayConsequences: '',
             prevention: '',
             additionalInsights: ''
-        },
-        profileImage: ''
+        }
     };
 
     const [formData, setFormData] = useState<OnboardingFormData>(() => {
@@ -551,12 +550,17 @@ const Onboarding = () => {
             if (storedPhone) baseData.phone = storedPhone;
         }
 
+        if (!baseData.email) {
+            const storedEmail = localStorage.getItem('user_email');
+            if (storedEmail) baseData.email = storedEmail;
+        }
+
         return baseData;
     });
 
     // Determine login method to disable fields
-    const isPhoneLogin = !!savedUser?.phone;
-    const isEmailLogin = !!savedUser?.email;
+    const isPhoneLogin = !!savedUser?.phone || !!localStorage.getItem('mobile_number');
+    const isEmailLogin = !!savedUser?.email || !!localStorage.getItem('user_email');
 
     // Auto-save effect
     useEffect(() => {
@@ -1150,89 +1154,100 @@ const Onboarding = () => {
                         </div>
 
                         <div className={styles.formGrid}>
-                            {/* Datalists for this section */}
-                            <datalist id="areas-list">
-                                {masterData.areasOfInterest?.map(item => <option key={item.value} value={item.value} />)}
-                            </datalist>
-                            <datalist id="segments-list">
-                                {masterData.practiceSegments.map(item => <option key={item.value} value={item.value} />)}
-                            </datalist>
-                            <datalist id="conditions-list">
-                                {masterData.commonConditions.map(item => <option key={item.value} value={item.value} />)}
-                            </datalist>
+                            {/* Dropdowns use select natively now, datalists removed */}
 
                             <div className={styles.fullWidth}>
                                 <div className={styles.inputWrapper}>
                                     <label className={styles.label}>Areas of Interest</label>
-                                    <input
+                                    <select
                                         name="areasOfInterest"
-                                        value={Array.isArray(formData.areasOfInterest) ? formData.areasOfInterest.join(', ') : formData.areasOfInterest}
+                                        value={Array.isArray(formData.areasOfInterest) ? formData.areasOfInterest[0] || '' : formData.areasOfInterest}
                                         onChange={(e) => handleArrayChange('areasOfInterest', e.target.value)}
                                         onFocus={() => setFocusedField('areasOfInterest')}
                                         className={styles.input}
-                                        placeholder="Add areas (comma separated)"
-                                        list="areas-list"
-                                    />
+                                        style={{ appearance: 'none', background: 'white' }}
+                                    >
+                                        <option value="">Select an area</option>
+                                        {masterData.areasOfInterest?.map(item => (
+                                            <option key={item.value} value={item.value}>{item.value}</option>
+                                        ))}
+                                    </select>
                                 </div>
                             </div>
 
                             <div className={styles.fullWidth}>
                                 <div className={styles.inputWrapper}>
                                     <label className={styles.label}>Practice Segments</label>
-                                    <input
+                                    <select
                                         name="practiceSegments"
-                                        value={Array.isArray(formData.practiceSegments) ? formData.practiceSegments.join(', ') : formData.practiceSegments}
-                                        onChange={(e) => handleArrayChange('practiceSegments', e.target.value)} // Changed to array handling
+                                        value={Array.isArray(formData.practiceSegments) ? formData.practiceSegments[0] || '' : formData.practiceSegments}
+                                        onChange={(e) => handleArrayChange('practiceSegments', e.target.value)}
                                         onFocus={() => setFocusedField('practiceSegments')}
                                         className={styles.input}
-                                        placeholder="Add segments (comma separated)"
-                                        list="segments-list"
-                                    />
+                                        style={{ appearance: 'none', background: 'white' }}
+                                    >
+                                        <option value="">Select a segment</option>
+                                        {masterData.practiceSegments.map((item: any) => (
+                                            <option key={item.value} value={item.value}>{item.value}</option>
+                                        ))}
+                                    </select>
                                 </div>
                             </div>
 
                             <div className={styles.fullWidth}>
                                 <div className={styles.inputWrapper}>
                                     <label className={styles.label}>Most Common Conditions Treated <span>*</span></label>
-                                    <input
+                                    <select
                                         name="commonConditions"
-                                        value={Array.isArray(formData.commonConditions) ? formData.commonConditions.join(', ') : formData.commonConditions}
+                                        value={Array.isArray(formData.commonConditions) ? formData.commonConditions[0] || '' : formData.commonConditions}
                                         onChange={(e) => handleArrayChange('commonConditions', e.target.value)}
                                         onFocus={() => setFocusedField('commonConditions')}
                                         className={styles.input}
-                                        placeholder="Add conditions (comma separated)"
-                                        list="conditions-list"
-                                    />
+                                        style={{ appearance: 'none', background: 'white' }}
+                                    >
+                                        <option value="">Select a condition</option>
+                                        {masterData.commonConditions.map((item: any) => (
+                                            <option key={item.value} value={item.value}>{item.value}</option>
+                                        ))}
+                                    </select>
                                 </div>
                             </div>
 
                             <div className={styles.fullWidth}>
                                 <div className={styles.inputWrapper}>
                                     <label className={styles.label}>Known For (Specific Expertise) <span>*</span></label>
-                                    <input
+                                    <select
                                         name="knownForConditions"
-                                        value={Array.isArray(formData.knownForConditions) ? formData.knownForConditions.join(', ') : formData.knownForConditions}
+                                        value={Array.isArray(formData.knownForConditions) ? formData.knownForConditions[0] || '' : formData.knownForConditions}
                                         onChange={(e) => handleArrayChange('knownForConditions', e.target.value)}
                                         onFocus={() => setFocusedField('knownForConditions')}
                                         className={styles.input}
-                                        placeholder="Add conditions (comma separated)"
-                                        list="conditions-list" // Reusing conditions list
-                                    />
+                                        style={{ appearance: 'none', background: 'white' }}
+                                    >
+                                        <option value="">Select a condition</option>
+                                        {masterData.commonConditions.map((item: any) => (
+                                            <option key={item.value} value={item.value}>{item.value}</option>
+                                        ))}
+                                    </select>
                                 </div>
                             </div>
 
                             <div className={styles.fullWidth}>
                                 <div className={styles.inputWrapper}>
                                     <label className={styles.label}>Conditions You Want to Treat More</label>
-                                    <input
+                                    <select
                                         name="wantToTreatConditions"
                                         value={formData.wantToTreatConditions}
                                         onChange={handleInputChange}
                                         onFocus={() => setFocusedField('wantToTreatConditions')}
                                         className={styles.input}
-                                        placeholder="(Optional)"
-                                        list="conditions-list" // Reusing conditions list
-                                    />
+                                        style={{ appearance: 'none', background: 'white' }}
+                                    >
+                                        <option value="">Select a condition</option>
+                                        {masterData.commonConditions.map((item: any) => (
+                                            <option key={item.value} value={item.value}>{item.value}</option>
+                                        ))}
+                                    </select>
                                 </div>
                             </div>
                         </div>
