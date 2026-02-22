@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { ReactNode } from 'react';
+import type { ReactNode } from 'react';
 
 interface PageTransitionProps {
     children: ReactNode;
@@ -35,7 +35,7 @@ const PageTransition = ({ children, className }: PageTransitionProps) => {
             initial="initial"
             animate="animate"
             exit="exit"
-            variants={pageVariants}
+            variants={pageVariants as any}
             className={className}
             style={{ width: '100%', height: '100%' }} // Ensure it takes full space
         >

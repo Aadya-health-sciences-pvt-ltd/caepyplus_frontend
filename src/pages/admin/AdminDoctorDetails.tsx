@@ -18,7 +18,7 @@ const AdminDoctorDetails = () => {
     const navDoctor = location.state?.doctor as Doctor | undefined;
 
     const [profile, setProfile] = useState<DoctorFullProfile | null>(null);
-    const [doctor, setDoctor] = useState<Doctor | null>(navDoctor || null);
+    const [doctor] = useState<Doctor | null>(navDoctor || null);
     const [status, setStatus] = useState(navDoctor?.onboarding_status || 'pending');
     const [isLoading, setIsLoading] = useState(false);
     const [fetchError, setFetchError] = useState<string | null>(null);

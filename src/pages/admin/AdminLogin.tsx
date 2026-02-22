@@ -12,7 +12,7 @@ const AdminLogin = () => {
     const navigate = useNavigate();
     const [email, setEmail] = useState('');
     const [mobileNumber, setMobileNumber] = useState('');
-    const [loginMethod, setLoginMethod] = useState<'email' | 'phone'>('phone');
+    const [loginMethod] = useState<'email' | 'phone'>('phone');
 
     // OTP State
     const [otp, setOtp] = useState('');
