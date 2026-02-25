@@ -457,7 +457,7 @@ export const adminService = {
 
     /** Fetch a single doctor's full profile (identity + details + media + history). */
     getDoctorFullProfile: async (doctorId: number): Promise<DoctorFullProfile> => {
-        const response = await api.get<DoctorFullProfile>(`/onboarding-admin/doctors/${doctorId}/full`);
+        const response = await api.get<DoctorFullProfile>(`/onboarding-admin/doctors/lookup?doctor_id=${doctorId}`);
         return response.data;
     },
 
