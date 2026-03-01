@@ -12,6 +12,8 @@ interface LivePreviewProps {
         experience: string;
         postSpecialisationExperience: string;
         registrationNumber: string;
+        medicalCouncil: string;
+        languages: string[];
         mbbsYear: string;
         specialisationYear: string;
         fellowships: string | string[];
@@ -84,6 +86,8 @@ const LivePreview: React.FC<LivePreviewProps> = ({ data, focusedField, onEditFie
                     { name: 'experience', label: 'How many years of experience do you have?', getValue: (d) => d.experience ? `${d.experience} years` : '' },
                     { name: 'postSpecialisationExperience', label: 'Post-Specialisation Exp.', getValue: (d) => d.postSpecialisationExperience ? `${d.postSpecialisationExperience} years` : '' },
                     { name: 'registrationNumber', label: 'Medical Registration Number', getValue: (d) => d.registrationNumber },
+                    { name: 'medicalCouncil', label: 'Medical Council', getValue: (d) => d.medicalCouncil },
+                    { name: 'languages', label: 'Languages Spoken', getValue: (d) => formatArray(d.languages) },
                 ];
             case 2: // Credentials & Trust Markers
                 return [

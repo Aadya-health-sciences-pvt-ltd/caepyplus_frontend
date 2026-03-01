@@ -559,6 +559,7 @@ const Onboarding = () => {
         experience: string;
         postSpecialisationExperience: string;
         registrationNumber: string;
+        medicalCouncil: string;
         mbbsYear: string;
         specialisationYear: string;
         fellowships: string[];
@@ -682,6 +683,7 @@ const Onboarding = () => {
         experience: '',
         postSpecialisationExperience: '',
         registrationNumber: '',
+        medicalCouncil: '',
 
         // Block 2: Credentials & Trust Markers
         mbbsYear: '',
@@ -864,23 +866,23 @@ const Onboarding = () => {
         setFormData((prev: any) => ({ ...prev, [field]: value.split(',').map((s: string) => s.trim()) }));
     };
 
-    const handleMultiSelect = (field: string, value: string, max?: number) => {
-        setFormData((prev: any) => {
-            const current = prev[field] || [];
-            if (!Array.isArray(current)) return { ...prev, [field]: [value] };
-            if (current.includes(value)) {
-                return { ...prev, [field]: current.filter((item: string) => item !== value) };
-            } else {
-                if (max && current.length >= max) return prev;
-                return { ...prev, [field]: [...current, value] };
-            }
-        });
-    };
+    // const handleMultiSelect = (field: string, value: string, max?: number) => {
+    //     setFormData((prev: any) => {
+    //         const current = prev[field] || [];
+    //         if (!Array.isArray(current)) return { ...prev, [field]: [value] };
+    //         if (current.includes(value)) {
+    //             return { ...prev, [field]: current.filter((item: string) => item !== value) };
+    //         } else {
+    //             if (max && current.length >= max) return prev;
+    //             return { ...prev, [field]: [...current, value] };
+    //         }
+    //     });
+    // };
 
     // Map field names to their corresponding step numbers
     const getStepForField = (fieldName: string): number => {
         // Block 1: Professional Identity
-        if (['fullName', 'email', 'phone', 'specialty', 'primaryLocation', 'practiceLocations', 'experience', 'postSpecialisationExperience'].includes(fieldName)) return 1;
+        if (['fullName', 'email', 'phone', 'specialty', 'primaryLocation', 'practiceLocations', 'experience', 'postSpecialisationExperience', 'registrationNumber', 'medicalCouncil'].includes(fieldName)) return 1;
         // Block 2: Credentials
         if (['mbbsYear', 'specialisationYear', 'fellowships', 'qualifications', 'memberships', 'awards'].includes(fieldName)) return 2;
         // Block 3: Clinical Focus
@@ -1088,6 +1090,14 @@ const Onboarding = () => {
                                                     }
                                                 }
                                             }}
+                                            onBlur={(e) => {
+                                                const val = e.target.value.trim();
+                                                if (val) {
+                                                    const newLangs = [...(formData.languages || []), val];
+                                                    setFormData(prev => ({ ...prev, languages: newLangs }));
+                                                    e.target.value = '';
+                                                }
+                                            }}
                                             placeholder="Press Enter to add languages (e.g., English, Hindi, Spanish)"
                                             className={styles.input}
                                         />
@@ -1160,7 +1170,7 @@ const Onboarding = () => {
                                 </div>
                             </div>
 
-                            <div className={styles.fullWidth}>
+                            <div className={styles.halfWidth}>
                                 <div className={styles.inputWrapper}>
                                     <label className={styles.label}>Medical Registration Number <span>*</span></label>
                                     <input
@@ -1169,7 +1179,21 @@ const Onboarding = () => {
                                         onChange={handleInputChange}
                                         onFocus={() => setFocusedField('registrationNumber')}
                                         className={styles.input}
-                                        placeholder="Enter your registration/license number"
+                                        placeholder="Enter your registration number"
+                                    />
+                                </div>
+                            </div>
+
+                            <div className={styles.halfWidth}>
+                                <div className={styles.inputWrapper}>
+                                    <label className={styles.label}>Medical Council <span>*</span></label>
+                                    <input
+                                        name="medicalCouncil"
+                                        value={formData.medicalCouncil}
+                                        onChange={handleInputChange}
+                                        onFocus={() => setFocusedField('medicalCouncil')}
+                                        className={styles.input}
+                                        placeholder="Enter your medical council"
                                     />
                                 </div>
                             </div>

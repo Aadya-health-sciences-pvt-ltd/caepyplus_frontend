@@ -107,14 +107,6 @@ const ProfileSummary = () => {
                             <PillContainer items={getArr('fellowships')} />
                         </Card>
 
-                        <Card title="Professional Standing" icon={<ShieldCheck size={18} />}>
-                            <InfoRow label="Registration No." value={getVal('registrationNumber')} />
-                            <InfoRow label="Registration Year" value={getVal('registrationYear')} />
-                            <InfoRow label="Authority" value={getVal('registrationAuthority')} />
-                            <div className={styles.subTitle}>Memberships</div>
-                            <div className={styles.contactValue}>{getVal('memberships')}</div>
-                        </Card>
-
                         <Card title="The Human Side" icon={<Coffee size={18} />}>
                             <div className={styles.subTitle}>Motivation in Practice</div>
                             <PillContainer items={getArr('motivation')} />
@@ -161,8 +153,7 @@ const ProfileSummary = () => {
                     <div className={styles.column}>
                         <Card title="Professional Standing" icon={<ShieldCheck size={18} />}>
                             <InfoRow label="Registration No." value={getVal('registrationNumber')} />
-                            <InfoRow label="Registration Year" value={getVal('registrationYear')} />
-                            <InfoRow label="Authority" value={getVal('registrationAuthority')} />
+                            <InfoRow label="Medical Council" value={getVal('medicalCouncil')} />
                             <div className={styles.subTitle}>Memberships</div>
                             <div className={styles.contactValue}>{getVal('memberships')}</div>
                         </Card>

@@ -107,8 +107,6 @@ export interface Doctor {
 
     // Legacy / compatibility fields
     medical_registration_number?: string | null;
-    registration_year?: number | null;
-    registration_authority?: string | null;
     years_of_experience?: number | null;
     consultation_fee?: number | string | null;
     consultation_currency?: string | null;
@@ -210,8 +208,6 @@ export interface DoctorDetails {
     sub_specialities?: string[] | null;
     areas_of_expertise?: string[] | null;
     registration_number?: string | null;
-    registration_year?: number | null;
-    registration_authority?: string | null;
     consultation_fee?: number | null;
     years_of_experience?: number | null;
     conditions_treated?: string[] | null;

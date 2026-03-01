@@ -13,8 +13,7 @@ export interface DoctorProfile {
     consultation_fee: number | null;
     consultation_currency: string | null;
     medical_registration_number: string | null;
-    registration_year: number | null;
-    registration_authority: string | null;
+    medical_council: string | null;
     sub_specialties: string[];
     areas_of_expertise: string[];
     languages: string[];
@@ -138,6 +137,7 @@ export const doctorService = {
             experience: '',
             postSpecialisationExperience: '',
             registrationNumber: '',
+            medicalCouncil: '',
             mbbsYear: '',
             specialisationYear: '',
             fellowships: [],
@@ -228,8 +228,7 @@ export const doctorService = {
         if (profile.professional_memberships?.length) formData.memberships = profile.professional_memberships.join(', ');
         if (profile.awards_academic_honours?.length) formData.awards = profile.awards_academic_honours.join(', ');
         if (profile.medical_registration_number) formData.registrationNumber = profile.medical_registration_number;
-        if (profile.registration_year != null) formData.registrationYear = String(profile.registration_year);
-        if (profile.registration_authority) formData.registrationAuthority = profile.registration_authority;
+        if (profile.medical_council) formData.medicalCouncil = profile.medical_council;
 
         // Block 3: Clinical Focus & Expertise
         if (profile.areas_of_clinical_interest?.length) formData.areasOfInterest = profile.areas_of_clinical_interest;
@@ -412,9 +411,9 @@ export const doctorService = {
             years_of_experience: toNumberOrNull(formData.experience),
             consultation_fee: toNumberOrNull(formData.consultationFee),
             medical_registration_number: toStringOrNull(formData.registrationNumber),
+            medical_council: toStringOrNull(formData.medicalCouncil),
             registration_number: toStringOrNull(formData.registrationNumber),
-            registration_year: toNumberOrNull(formData.registrationYear),
-            registration_authority: toStringOrNull(formData.registrationAuthority),
+            languages: toArrayOrNull(formData.languages),
             practice_locations: practiceLocations,
         };
     },
@@ -475,12 +474,6 @@ export const doctorService = {
         // Registration
         if (data.registration?.medical_registration_number) {
             formData.registrationNumber = data.registration.medical_registration_number;
-        }
-        if (data.registration?.registration_authority) {
-            formData.registrationAuthority = data.registration.registration_authority;
-        }
-        if (data.registration?.registration_year) {
-            formData.registrationYear = String(data.registration.registration_year);
         }
 
         // Qualifications
@@ -559,8 +552,6 @@ export interface ResumeExtractedData {
     };
     registration: {
         medical_registration_number: string | null;
-        registration_authority: string | null;
-        registration_year: number | null;
         state: string | null;
     };
     qualifications: Array<{
