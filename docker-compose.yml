@@ -1,0 +1,52 @@
+# ============================================================
+# docker-compose.yml — Local container testing
+# ============================================================
+# Lets you test the production Docker build locally without
+# needing to remember any --build-arg commands.
+#
+# USAGE:
+#   1. Copy .env.example → .env.docker and fill in real values
+#   2. docker compose up --build
+#   3. Open http://localhost:3000
+#
+# The frontend will proxy /api/* to the backend container.
+# If you're running the backend separately (e.g. `npm run dev`
+# in the backend repo), change BACKEND_URL below to:
+#   BACKEND_URL=http://host.docker.internal:8000
+# ============================================================
+
+version: "3.9"
+
+services:
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        # These are Vite build-time variables — baked into the JS bundle.
+        # They are NOT available at runtime; change them requires a rebuild.
+        VITE_API_URL: /api/v1
+        VITE_GOOGLE_MAPS_API_KEY: ${VITE_GOOGLE_MAPS_API_KEY}
+        VITE_FIREBASE_API_KEY: ${VITE_FIREBASE_API_KEY}
+        VITE_FIREBASE_AUTH_DOMAIN: ${VITE_FIREBASE_AUTH_DOMAIN}
+        VITE_FIREBASE_PROJECT_ID: ${VITE_FIREBASE_PROJECT_ID}
+        VITE_FIREBASE_STORAGE_BUCKET: ${VITE_FIREBASE_STORAGE_BUCKET}
+        VITE_FIREBASE_MESSAGING_SENDER_ID: ${VITE_FIREBASE_MESSAGING_SENDER_ID}
+        VITE_FIREBASE_APP_ID: ${VITE_FIREBASE_APP_ID}
+    environment:
+      # This IS available at runtime (controls which backend nginx proxies to).
+      # No rebuild needed when changing this.
+      BACKEND_URL: http://backend:8000
+    ports:
+      - "3000:80" # Visit http://localhost:3000 in your browser
+    depends_on:
+      - backend
+
+  # ── Placeholder for your backend service ──────────────────
+  # Replace this with your actual backend image / build config.
+  # Remove this block if you're running the backend separately.
+  backend:
+    image: your-backend-image:latest # ← UPDATE THIS
+    ports:
+      - "8000:8000"
+    # env_file: ../caepy_backend/.env   # ← uncomment if backend has its own .env

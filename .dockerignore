@@ -6,3 +6,10 @@ dist
 .env
 .env.*
 !.env.example
+Dockerfile
+docker-compose*.yml
+.dockerignore
+coverage
+.github
+.vscode
+*.log
