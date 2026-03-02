@@ -34,11 +34,11 @@ services:
         VITE_FIREBASE_MESSAGING_SENDER_ID: ${VITE_FIREBASE_MESSAGING_SENDER_ID}
         VITE_FIREBASE_APP_ID: ${VITE_FIREBASE_APP_ID}
     environment:
-      # This IS available at runtime (controls which backend nginx proxies to).
-      # No rebuild needed when changing this.
-      BACKEND_URL: http://backend:8000
+      # Since we are using Node 'serve' to host static files (no NGINX proxy),
+      # runtime VITE_ vars are not available unless re-built or window injecting is used.
+      NODE_ENV: production
     ports:
-      - "3000:80" # Visit http://localhost:3000 in your browser
+      - "3000:3000" # Visit http://localhost:3000 in your browser
     depends_on:
       - backend
 
