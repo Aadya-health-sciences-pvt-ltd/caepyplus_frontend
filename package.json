@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "generate-healthz": "node scripts/generate-healthz.cjs",
+    "build": "npm run generate-healthz && tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview"
   },

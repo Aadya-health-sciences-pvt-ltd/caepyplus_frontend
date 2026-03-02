@@ -13,6 +13,7 @@ COPY . .
 
 # VITE_* vars must be passed at build time (--build-arg); Vite embeds them into the static bundle
 ARG VITE_API_URL=/api/v1
+ARG VITE_BASE_PATH=
 ARG VITE_GOOGLE_MAPS_API_KEY
 ARG VITE_FIREBASE_API_KEY
 ARG VITE_FIREBASE_AUTH_DOMAIN
@@ -23,6 +24,7 @@ ARG VITE_FIREBASE_APP_ID
 
 # Set as ENV so Vite build can read them directly
 ENV VITE_API_URL=$VITE_API_URL \
+    VITE_BASE_PATH=$VITE_BASE_PATH \
     VITE_GOOGLE_MAPS_API_KEY=$VITE_GOOGLE_MAPS_API_KEY \
     VITE_FIREBASE_API_KEY=$VITE_FIREBASE_API_KEY \
     VITE_FIREBASE_AUTH_DOMAIN=$VITE_FIREBASE_AUTH_DOMAIN \
@@ -48,6 +50,9 @@ ENV HOSTNAME=0.0.0.0
 # Install serve to run the static site
 RUN npm install -g serve
 
+# Install curl for the healthcheck
+RUN apk add --no-cache curl
+
 # Drop root - required for ECS/K8s security policies
 RUN addgroup -S appgroup && adduser -S appuser -G appgroup
 USER appuser
@@ -56,4 +61,11 @@ USER appuser
 COPY --from=builder --chown=appuser:appgroup /app/dist ./dist
 
 EXPOSE 3000
+
+# healthz.json is generated at build time (npm run generate-healthz) and
+# served as a static file by `serve`. It contains build SHA, version, and
+# timestamp — confirming the *correct* build is deployed, not just the server.
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+    CMD curl -sf http://localhost:3000/healthz.json | grep '"status":' || exit 1
+
 CMD ["serve", "-s", "dist", "-l", "3000"]

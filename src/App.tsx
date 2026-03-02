@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { BASE_PATH } from './config/basePath';
 import { AnimatePresence } from 'framer-motion';
 import MainLayout from "./layouts/MainLayout";
 import Login from './pages/Login';
@@ -70,7 +71,7 @@ function AnimatedRoutes() {
 
 function App() {
   return (
-    <Router>
+    <Router basename={BASE_PATH}>
       <AnimatedRoutes />
     </Router>
   );
