@@ -116,7 +116,13 @@ const Header: React.FC<HeaderProps> = ({ centerTitle }) => {
                             <button className={styles.dropdownItem}>
                                 <HelpCircle size={16} /> Help Center
                             </button>
-                            <button className={styles.dropdownItem}>
+                            <button
+                                className={styles.dropdownItem}
+                                onClick={() => {
+                                    window.dispatchEvent(new CustomEvent('openSupportModal'));
+                                    setOpenDropdown(null);
+                                }}
+                            >
                                 <Phone size={16} /> Contact Support
                             </button>
                         </div>
