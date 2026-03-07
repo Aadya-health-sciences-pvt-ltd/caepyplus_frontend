@@ -24,7 +24,7 @@ const AdminDoctorDetails = () => {
             const s = JSON.parse(sessionStorage.getItem('nav_state') || '{}');
             if (s.doctor) setNavDoctor(s.doctor);
             sessionStorage.removeItem('nav_state');
-        } catch {}
+        } catch { }
     }, []);
 
     const [profile, setProfile] = useState<DoctorFullProfile | null>(null);
@@ -55,7 +55,7 @@ const AdminDoctorDetails = () => {
 
     // Build display data — prefer profile (API) over navigation-state doctor
     const identity = profile?.identity;
-    const details = profile?.details;
+    const details = (profile as any)?.doctor || profile?.details;
     const media = profile?.media || [];
 
     const doctorName = identity
@@ -64,10 +64,11 @@ const AdminDoctorDetails = () => {
 
     const email = identity?.email || doctor?.email || '';
     const phone = identity?.phone_number || doctor?.phone || '';
-    const specialty = details?.specialty || doctor?.specialty || 'Specialty not set';
+    const specialty = details?.primary_specialization || details?.specialty || doctor?.specialty || 'Specialty not set';
     const locationStr = details?.primary_practice_location || doctor?.primary_practice_location || 'Location not set';
     const joinedDate = identity?.registered_at || doctor?.created_at;
-    const regNumber = details?.registration_number || doctor?.medical_registration_number || null;
+    const regNumber = details?.medical_registration_number || details?.registration_number || doctor?.medical_registration_number || null;
+    const medCouncil = details?.medical_council || 'Not Provided';
 
     // ---- Email Action Dialog state ----
     type DialogAction = 'verify' | 'reject' | null;
@@ -188,9 +189,22 @@ The Caepy Team`,
 
                 {/* Header */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '2rem' }}>
-                    <div>
-                        <h1 className={styles.title}>{doctorName}</h1>
-                        <p className={styles.subtitle}>{specialty} • {locationStr}</p>
+                    <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'center' }}>
+                        {details?.profile_photo ? (
+                            <img
+                                src={details.profile_photo}
+                                alt={doctorName}
+                                style={{ width: '80px', height: '80px', borderRadius: '50%', objectFit: 'cover', border: '3px solid white', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }}
+                            />
+                        ) : (
+                            <div style={{ width: '80px', height: '80px', borderRadius: '50%', background: '#EEF2FF', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#4F46E5', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }}>
+                                <User size={40} />
+                            </div>
+                        )}
+                        <div>
+                            <h1 className={styles.title} style={{ margin: '0 0 0.25rem 0' }}>{doctorName}</h1>
+                            <p className={styles.subtitle} style={{ margin: 0 }}>{specialty} • {locationStr}</p>
+                        </div>
                     </div>
                     <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
                         <span className={`${styles.statusBadge} ${isVerified ? styles.statusVerified : isRejected ? styles.statusRejected : styles.statusPending}`} style={{ fontSize: '1rem', padding: '0.5rem 1rem' }}>
@@ -221,6 +235,11 @@ The Caepy Team`,
                             <p style={{ fontSize: '1.5rem', fontWeight: 700, color: regNumber ? '#1E1B4B' : '#78350F', margin: 0, letterSpacing: '0.02em', fontFamily: 'monospace' }}>
                                 {regNumber || 'Not Provided'}
                             </p>
+                            {regNumber && medCouncil !== 'Not Provided' && (
+                                <p style={{ fontSize: '0.875rem', color: '#4338CA', marginTop: '0.25rem', fontWeight: 500 }}>
+                                    {medCouncil}
+                                </p>
+                            )}
                         </div>
                     </div>
                     {regNumber && (
@@ -264,7 +283,7 @@ The Caepy Team`,
                                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
                                     <DetailRow icon={<Calendar size={18} />} label="Year of MBBS" value={details.year_of_mbbs?.toString() || 'N/A'} />
                                     <DetailRow icon={<Calendar size={18} />} label="Year of Specialisation" value={details.year_of_specialisation?.toString() || 'N/A'} />
-                                    <DetailRow icon={<Clock size={18} />} label="Years of Clinical Experience" value={details.years_of_clinical_experience?.toString() || doctor?.years_of_experience?.toString() || 'N/A'} />
+                                    <DetailRow icon={<Clock size={18} />} label="Years of Clinical Experience" value={details.years_of_clinical_experience?.toString() || details.years_of_experience?.toString() || doctor?.years_of_experience?.toString() || 'N/A'} />
                                     <DetailRow icon={<Clock size={18} />} label="Years Post Specialisation" value={details.years_post_specialisation?.toString() || 'N/A'} />
                                 </div>
                                 <TagList label="Qualifications" items={details.qualifications} fallback={doctor?.qualifications} />
@@ -393,7 +412,8 @@ The Caepy Team`,
                                 <SummaryItem label="Specialty" value={specialty} />
                                 <SummaryItem label="Experience" value={
                                     details?.years_of_clinical_experience ? `${details.years_of_clinical_experience} yrs` :
-                                        doctor?.years_of_experience ? `${doctor.years_of_experience} yrs` : 'N/A'
+                                        details?.years_of_experience ? `${details.years_of_experience} yrs` :
+                                            doctor?.years_of_experience ? `${doctor.years_of_experience} yrs` : 'N/A'
                                 } />
                                 <SummaryItem label="Status" value={status} badge isVerified={isVerified} isRejected={isRejected} />
                             </div>
@@ -404,7 +424,7 @@ The Caepy Team`,
                             <div style={{ background: 'white', padding: '1.5rem', borderRadius: '1rem', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
                                 <h3 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: '1rem' }}>Languages</h3>
                                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
-                                    {(details?.languages_spoken || doctor?.languages || []).map((lang, i) => (
+                                    {(details?.languages_spoken || doctor?.languages || []).map((lang: string, i: number) => (
                                         <span key={i} style={{
                                             background: '#EFF6FF', color: '#1D4ED8', padding: '0.25rem 0.75rem',
                                             borderRadius: '999px', fontSize: '0.8125rem', fontWeight: 500,
