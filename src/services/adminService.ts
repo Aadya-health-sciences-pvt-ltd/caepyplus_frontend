@@ -548,13 +548,13 @@ export const adminService = {
         return response.data;
     },
 
-    verifyDoctor: async (doctorId: number) => {
-        const response = await api.post(`/onboarding/verify/${doctorId}`);
+    verifyDoctor: async (doctorId: number, payload?: { send_email?: boolean, email_subject?: string, email_body?: string }) => {
+        const response = await api.post(`/onboarding/verify/${doctorId}`, payload || {});
         return response.data;
     },
 
-    rejectDoctor: async (doctorId: number, reason?: string) => {
-        const response = await api.post(`/onboarding/reject/${doctorId}`, { reason });
+    rejectDoctor: async (doctorId: number, payload?: { reason?: string, send_email?: boolean, email_subject?: string, email_body?: string }) => {
+        const response = await api.post(`/onboarding/reject/${doctorId}`, payload || {});
         return response.data;
     },
 

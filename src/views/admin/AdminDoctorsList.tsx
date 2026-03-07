@@ -420,7 +420,7 @@ const AdminDoctorsList = () => {
         const reason = window.prompt("Please provide a reason for rejection:");
         if (reason !== null) { // User didn't cancel
             try {
-                await adminService.rejectDoctor(id, reason);
+                await adminService.rejectDoctor(id, { reason });
                 fetchDoctors(); // Refresh list
             } catch (error) {
                 console.error("Rejection failed", error);

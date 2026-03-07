@@ -151,11 +151,20 @@ The Caepy Team`,
         setIsLoading(true);
         try {
             if (dialogAction === 'verify') {
-                await adminService.verifyDoctor(id);
+                await adminService.verifyDoctor(id, {
+                    send_email: true,
+                    email_subject: emailSubject,
+                    email_body: emailBody
+                });
                 setStatus('verified');
                 alert('Doctor verified successfully. Notification email will be sent.');
             } else if (dialogAction === 'reject') {
-                await adminService.rejectDoctor(id, emailBody);
+                await adminService.rejectDoctor(id, {
+                    reason: "Rejection email sent",
+                    send_email: true,
+                    email_subject: emailSubject,
+                    email_body: emailBody
+                });
                 setStatus('rejected');
                 alert('Doctor rejected. Notification email will be sent.');
             }
@@ -214,49 +223,51 @@ The Caepy Team`,
                 </div>
 
                 {/* Registration Number - Highlighted Card */}
-                <div style={{
-                    background: regNumber ? 'linear-gradient(135deg, #EEF2FF 0%, #E0E7FF 100%)' : '#FEF3C7',
-                    border: regNumber ? '2px solid #818CF8' : '2px solid #F59E0B',
-                    borderRadius: '1rem', padding: '1.5rem 2rem', marginBottom: '2rem',
-                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                        <div style={{
-                            width: '48px', height: '48px', borderRadius: '12px',
-                            background: regNumber ? '#4F46E5' : '#F59E0B',
-                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        }}>
-                            {regNumber ? <FileText size={24} color="white" /> : <AlertTriangle size={24} color="white" />}
-                        </div>
-                        <div>
-                            <p style={{ fontSize: '0.8125rem', color: regNumber ? '#4338CA' : '#92400E', fontWeight: 500, margin: '0 0 0.25rem 0', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                                Medical Registration Number
-                            </p>
-                            <p style={{ fontSize: '1.5rem', fontWeight: 700, color: regNumber ? '#1E1B4B' : '#78350F', margin: 0, letterSpacing: '0.02em', fontFamily: 'monospace' }}>
-                                {regNumber || 'Not Provided'}
-                            </p>
-                            {regNumber && medCouncil !== 'Not Provided' && (
-                                <p style={{ fontSize: '0.875rem', color: '#4338CA', marginTop: '0.25rem', fontWeight: 500 }}>
-                                    {medCouncil}
+                {!isVerified && (
+                    <div style={{
+                        background: regNumber ? 'linear-gradient(135deg, #EEF2FF 0%, #E0E7FF 100%)' : '#FEF3C7',
+                        border: regNumber ? '2px solid #818CF8' : '2px solid #F59E0B',
+                        borderRadius: '1rem', padding: '1.5rem 2rem', marginBottom: '2rem',
+                        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                    }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                            <div style={{
+                                width: '48px', height: '48px', borderRadius: '12px',
+                                background: regNumber ? '#4F46E5' : '#F59E0B',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            }}>
+                                {regNumber ? <FileText size={24} color="white" /> : <AlertTriangle size={24} color="white" />}
+                            </div>
+                            <div>
+                                <p style={{ fontSize: '0.8125rem', color: regNumber ? '#4338CA' : '#92400E', fontWeight: 500, margin: '0 0 0.25rem 0', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                                    Medical Registration Number
                                 </p>
-                            )}
+                                <p style={{ fontSize: '1.5rem', fontWeight: 700, color: regNumber ? '#1E1B4B' : '#78350F', margin: 0, letterSpacing: '0.02em', fontFamily: 'monospace' }}>
+                                    {regNumber || 'Not Provided'}
+                                </p>
+                                {regNumber && medCouncil !== 'Not Provided' && (
+                                    <p style={{ fontSize: '0.875rem', color: '#4338CA', marginTop: '0.25rem', fontWeight: 500 }}>
+                                        {medCouncil}
+                                    </p>
+                                )}
+                            </div>
                         </div>
+                        {regNumber && (
+                            <a
+                                href="https://www.nmc.org.in/information-desk/indian-medical-register/"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                style={{
+                                    padding: '0.625rem 1.25rem', background: '#4F46E5', color: 'white',
+                                    border: 'none', borderRadius: '0.5rem', fontWeight: 500,
+                                    fontSize: '0.875rem', cursor: 'pointer', textDecoration: 'none', whiteSpace: 'nowrap',
+                                }}
+                            >
+                                Verify on NMC ↗
+                            </a>
+                        )}
                     </div>
-                    {regNumber && (
-                        <a
-                            href="https://www.nmc.org.in/information-desk/indian-medical-register/"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            style={{
-                                padding: '0.625rem 1.25rem', background: '#4F46E5', color: 'white',
-                                border: 'none', borderRadius: '0.5rem', fontWeight: 500,
-                                fontSize: '0.875rem', cursor: 'pointer', textDecoration: 'none', whiteSpace: 'nowrap',
-                            }}
-                        >
-                            Verify on NMC ↗
-                        </a>
-                    )}
-                </div>
+                )}
 
                 <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '2rem' }}>
                     {/* Main Profile Info */}
