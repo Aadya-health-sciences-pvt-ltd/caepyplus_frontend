@@ -356,8 +356,10 @@ export interface DropdownOption {
 }
 
 export interface DropdownListResponse {
-    options: DropdownOption[];
+    items: DropdownOption[];
     total: number;
+    skip?: number;
+    limit?: number;
     pending_count: number;
 }
 

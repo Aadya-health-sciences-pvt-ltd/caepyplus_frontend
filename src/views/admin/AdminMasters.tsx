@@ -281,7 +281,7 @@ const AdminMasters = () => {
                 result = await adminService.getDropdownOptions(params);
             }
 
-            setOptions(result.options ?? []);
+            setOptions(result.items ?? []);
             setTotal(result.total ?? 0);
             setPendingCount(result.pending_count ?? 0);
         } catch (err) {
