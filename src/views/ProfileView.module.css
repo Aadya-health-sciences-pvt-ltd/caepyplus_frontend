@@ -395,9 +395,6 @@
 }
 
 /* 5. Clinical Insights (Right Col) */
-.insightCard {
-    /* reuse card */
-}
 
 .insightIllustration {
     display: flex;
@@ -563,4 +560,105 @@
     align-items: center;
     justify-content: center;
     gap: 0.5rem;
+}
+
+/* Responsive Utilities & Layouts */
+.profInfo {
+    flex: 1;
+    padding-right: 2rem;
+}
+
+.profActions {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+}
+
+.profActionGroup {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.contentWrapper {
+    display: flex;
+    gap: 2rem;
+}
+
+.illustrationWrapper {
+    width: 150px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+@media (max-width: 768px) {
+    .container {
+        padding: 1rem;
+    }
+
+    .header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+
+    .dashboardGrid {
+        grid-template-columns: 1fr;
+    }
+
+    .profHeader {
+        flex-direction: column-reverse;
+        align-items: center;
+        gap: 1.5rem;
+    }
+
+    .profInfo {
+        padding-right: 0;
+        width: 100%;
+    }
+
+    .profActions {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .profActionGroup {
+        width: 100%;
+        display: flex;
+        gap: 0.5rem;
+    }
+
+    .avatarContainer {
+        position: relative;
+        top: 0;
+        right: 0;
+    }
+
+    .hubGrid {
+        flex-direction: column;
+        align-items: center;
+        gap: 1.5rem;
+    }
+
+    .hubButtons {
+        justify-content: center;
+    }
+
+    .sectionList {
+        grid-template-columns: 1fr;
+    }
+
+    .contentWrapper {
+        flex-direction: column;
+        gap: 1.5rem;
+    }
+
+    .illustrationWrapper {
+        display: none;
+        /* Hide large illustrations on mobile */
+    }
+
+    .illustration {
+        display: none;
+    }
 }

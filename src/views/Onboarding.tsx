@@ -996,7 +996,7 @@ const Onboarding = () => {
                             </p>
                         </div>
 
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                        <div className={styles.sectionHeaderWrap}>
                             <div>
                                 <h2 className={styles.sectionTitle} style={{ marginBottom: 0 }}>Professional Identity</h2>
                                 <p style={{ fontSize: '0.875rem', color: '#10B981', marginTop: '0.25rem' }}>Profile strength: 20%</p>
@@ -1273,74 +1273,7 @@ const Onboarding = () => {
                                             placeholder="Add fellowship..."
                                             style={{ flex: 3 }}
                                         />
-                                        <input
-                                            type="file"
-                                            ref={fellowshipFileRef}
-                                            onChange={(e) => {
-                                                const files = e.target.files;
-                                                if (files && files.length > 0) {
-                                                    setFellowshipFiles(prev => [...prev, ...Array.from(files)]);
-                                                }
-                                                e.target.value = '';
-                                            }}
-                                            accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
-                                            multiple
-                                            style={{ display: 'none' }}
-                                        />
-                                        <button
-                                            className={styles.uploadBtn}
-                                            style={{
-                                                padding: '0.5rem 0.75rem', whiteSpace: 'nowrap', fontSize: '0.8rem',
-                                                ...(fellowshipFiles.length > 0 ? {
-                                                    background: '#D1FAE5', color: '#065F46', borderColor: '#86EFAC',
-                                                } : {})
-                                            }}
-                                            onClick={() => fellowshipFileRef.current?.click()}
-                                            type="button"
-                                        >
-                                            {fellowshipFiles.length > 0
-                                                ? <>✓ {fellowshipFiles.length} file{fellowshipFiles.length > 1 ? 's' : ''}</>
-                                                : <><Upload size={14} /> Attach</>
-                                            }
-                                        </button>
                                     </div>
-                                    {fellowshipFiles.length > 0 && (
-                                        <div style={{
-                                            marginTop: '0.75rem',
-                                            border: '1px solid #86EFAC',
-                                            borderRadius: '0.5rem',
-                                            background: '#F0FDF4',
-                                            padding: '0.75rem',
-                                        }}>
-                                            <p style={{ fontSize: '0.75rem', fontWeight: 600, color: '#166534', margin: '0 0 0.5rem 0' }}>
-                                                📎 {fellowshipFiles.length} file{fellowshipFiles.length > 1 ? 's' : ''} attached
-                                            </p>
-                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.375rem' }}>
-                                                {fellowshipFiles.map((file, i) => (
-                                                    <div key={i} style={{
-                                                        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                                                        background: 'white', padding: '0.5rem 0.75rem',
-                                                        borderRadius: '6px', border: '1px solid #E5E7EB',
-                                                    }}>
-                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                                            <span style={{ fontSize: '1rem' }}>📄</span>
-                                                            <span style={{ fontSize: '0.8125rem', fontWeight: 500, color: '#111827' }}>{file.name}</span>
-                                                            <span style={{ fontSize: '0.75rem', color: '#9CA3AF' }}>
-                                                                ({(file.size / 1024).toFixed(0)} KB)
-                                                            </span>
-                                                        </div>
-                                                        <button
-                                                            onClick={() => setFellowshipFiles(prev => prev.filter((_, idx) => idx !== i))}
-                                                            style={{ background: 'none', border: 'none', color: '#EF4444', cursor: 'pointer', padding: '0.25rem', fontSize: '0.875rem', fontWeight: 600 }}
-                                                            title="Remove file"
-                                                        >
-                                                            ✕
-                                                        </button>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        </div>
-                                    )}
                                 </div>
                             </div>
 
@@ -1958,7 +1891,7 @@ const Onboarding = () => {
                     <h1 className={styles.title}>Complete Your Profile</h1>
                     <p className={styles.subtitle}>This will take just 2-3 minutes.</p>
                 </div>
-                <div style={{ flex: 1, maxWidth: '600px', marginLeft: 'auto' }} data-tour="stepper">
+                <div className={styles.stepperContainer} data-tour="stepper">
                     <Stepper currentStep={currentStep} totalSteps={6} onStepClick={handleStepJump} />
                 </div>
             </div>
