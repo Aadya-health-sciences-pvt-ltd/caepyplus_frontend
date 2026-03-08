@@ -388,14 +388,14 @@ export const adminService = {
                 }
             });
 
-            // Merge with static data for demonstration
-            const apiUsers = response.data.users || [];
+            const apiData = parseResponse<UserListResponse>(response);
+            const apiUsers = apiData.users || [];
             const mergedUsers = [...apiUsers, ...STATIC_USERS];
 
             return {
-                ...response.data,
+                ...apiData,
                 users: mergedUsers,
-                total: (response.data.total || 0) + STATIC_USERS.length
+                total: (apiData.total || 0) + STATIC_USERS.length
             };
         } catch (error) {
             console.warn('API error fetching users, using static data only', error);
@@ -411,12 +411,12 @@ export const adminService = {
 
     createUser: async (payload: CreateUserPayload) => {
         const response = await api.post('/admin/users', payload);
-        return response.data;
+        return parseResponse(response);
     },
 
     updateUser: async (userId: number, payload: UpdateUserPayload) => {
         const response = await api.patch(`/admin/users/${userId}`, payload);
-        return response.data;
+        return parseResponse(response);
     },
 
     // Doctor Management
@@ -446,23 +446,23 @@ export const adminService = {
 
     /** Fetch a single doctor's full profile (identity + details + media + history). */
     getDoctorFullProfile: async (doctorId: number): Promise<DoctorFullProfile> => {
-        const response = await api.get<DoctorFullProfile>(`/doctors/lookup?doctor_id=${doctorId}`);
-        return response.data;
+        const response = await api.get(`/doctors/lookup?doctor_id=${doctorId}`);
+        return parseResponse<DoctorFullProfile>(response);
     },
 
     verifyDoctor: async (doctorId: number, payload?: { send_email?: boolean, email_subject?: string, email_body?: string }) => {
         const response = await api.post(`/onboarding/verify/${doctorId}`, payload || {});
-        return response.data;
+        return parseResponse(response);
     },
 
     rejectDoctor: async (doctorId: number, payload?: { reason?: string, send_email?: boolean, email_subject?: string, email_body?: string }) => {
         const response = await api.post(`/onboarding/reject/${doctorId}`, payload || {});
-        return response.data;
+        return parseResponse(response);
     },
 
     syncLinqMDProfile: async (doctorId: number) => {
         const response = await api.get(`/onboarding-admin/linqmd-sync/${doctorId}`);
-        return response.data;
+        return parseResponse(response);
     },
 
     /** Download the official bulk upload CSV template from the backend. */
@@ -483,24 +483,24 @@ export const adminService = {
     validateBulkCsv: async (file: File): Promise<CsvValidationResponse> => {
         const formData = new FormData();
         formData.append('file', file);
-        const response = await api.post<CsvValidationResponse>(
+        const response = await api.post(
             '/doctors/bulk-upload/csv/validate',
             formData,
             { headers: { 'Content-Type': 'multipart/form-data' } }
         );
-        return response.data;
+        return parseResponse<CsvValidationResponse>(response);
     },
 
     /** Confirm a previously validated CSV upload — writes records to the database. */
     confirmBulkUpload: async (file: File): Promise<CsvUploadResponse> => {
         const formData = new FormData();
         formData.append('file', file);
-        const response = await api.post<CsvUploadResponse>(
+        const response = await api.post(
             '/doctors/bulk-upload/csv',
             formData,
             { headers: { 'Content-Type': 'multipart/form-data' } }
         );
-        return response.data;
+        return parseResponse<CsvUploadResponse>(response);
     },
 
     // -----------------------------------------------------------------------

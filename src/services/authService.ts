@@ -1,4 +1,4 @@
-import api from '../lib/api';
+import api, { parseResponse } from '../lib/api';
 
 export interface OTPRequestResponse {
     success: boolean;
@@ -22,85 +22,87 @@ export interface OTPVerifyResponse {
 
 export const authService = {
     requestOTP: async (mobileNumber: string): Promise<OTPRequestResponse> => {
-        const response = await api.post<OTPRequestResponse>('/auth/otp/request', {
+        const response = await api.post('/auth/otp/request', {
             mobile_number: mobileNumber,
         });
-        return response.data;
+        return parseResponse<OTPRequestResponse>(response);
     },
 
     verifyOTP: async (mobileNumber: string, otp: string): Promise<OTPVerifyResponse> => {
-        const response = await api.post<OTPVerifyResponse>('/auth/otp/verify', {
+        const response = await api.post('/auth/otp/verify', {
             mobile_number: mobileNumber,
             otp,
         });
+        const result = parseResponse<OTPVerifyResponse>(response);
 
-        if (response.data.success && response.data.access_token) {
-            localStorage.setItem('access_token', response.data.access_token);
-            localStorage.setItem('token_type', response.data.token_type || 'Bearer');
-            localStorage.setItem('expires_in', String(response.data.expires_in));
-            if (response.data.doctor_id != null) {
-                localStorage.setItem('doctor_id', String(response.data.doctor_id));
+        if (result.success && result.access_token) {
+            localStorage.setItem('access_token', result.access_token);
+            localStorage.setItem('token_type', result.token_type || 'Bearer');
+            localStorage.setItem('expires_in', String(result.expires_in));
+            if (result.doctor_id != null) {
+                localStorage.setItem('doctor_id', String(result.doctor_id));
             }
-            localStorage.setItem('mobile_number', response.data.mobile_number);
-            localStorage.setItem('is_new_user', String(response.data.is_new_user));
-            localStorage.setItem('role', response.data.role || 'user');
+            localStorage.setItem('mobile_number', result.mobile_number);
+            localStorage.setItem('is_new_user', String(result.is_new_user));
+            localStorage.setItem('role', result.role || 'user');
         }
 
-        return response.data;
+        return result;
     },
 
     verifyAdminOTP: async (mobileNumber: string, otp: string): Promise<OTPVerifyResponse> => {
-        const response = await api.post<OTPVerifyResponse>('/auth/admin/otp/verify', {
+        const response = await api.post('/auth/admin/otp/verify', {
             mobile_number: mobileNumber,
             otp,
         });
+        const result = parseResponse<OTPVerifyResponse>(response);
 
-        if (response.data.success && response.data.access_token) {
-            localStorage.setItem('access_token', response.data.access_token);
-            localStorage.setItem('token_type', response.data.token_type || 'Bearer');
-            localStorage.setItem('expires_in', String(response.data.expires_in));
-            // Admin might not have a doctor_id, but if they do, store it. The endpoint returns null for doctor_id typically.
-            if (response.data.doctor_id != null) {
-                localStorage.setItem('doctor_id', String(response.data.doctor_id));
+        if (result.success && result.access_token) {
+            localStorage.setItem('access_token', result.access_token);
+            localStorage.setItem('token_type', result.token_type || 'Bearer');
+            localStorage.setItem('expires_in', String(result.expires_in));
+            if (result.doctor_id != null) {
+                localStorage.setItem('doctor_id', String(result.doctor_id));
             }
-            localStorage.setItem('mobile_number', response.data.mobile_number);
-            localStorage.setItem('is_new_user', String(response.data.is_new_user));
-            localStorage.setItem('role', response.data.role || 'admin');
-            if (response.data.full_name != null && response.data.full_name !== '') {
-                localStorage.setItem('caepy_admin_full_name', response.data.full_name);
+            localStorage.setItem('mobile_number', result.mobile_number);
+            localStorage.setItem('is_new_user', String(result.is_new_user));
+            localStorage.setItem('role', result.role || 'admin');
+            if (result.full_name != null && result.full_name !== '') {
+                localStorage.setItem('caepy_admin_full_name', result.full_name);
             }
         }
 
-        return response.data;
+        return result;
     },
 
     resendOTP: async (mobileNumber: string): Promise<OTPRequestResponse> => {
-        const response = await api.post<OTPRequestResponse>('/auth/otp/resend', {
+        const response = await api.post('/auth/otp/resend', {
             mobile_number: mobileNumber,
         });
-        return response.data;
+        return parseResponse<OTPRequestResponse>(response);
     },
 
     googleLogin: async (idToken: string): Promise<OTPVerifyResponse> => {
-        const response = await api.post<OTPVerifyResponse>('/auth/google/verify', {
+        const response = await api.post('/auth/google/verify', {
             id_token: idToken,
         });
+        const result = parseResponse<OTPVerifyResponse>(response);
 
-        if (response.data.success && response.data.access_token) {
-            localStorage.setItem('access_token', response.data.access_token);
-            localStorage.setItem('token_type', response.data.token_type || 'Bearer');
-            localStorage.setItem('expires_in', String(response.data.expires_in));
-            if (response.data.doctor_id != null) {
-                localStorage.setItem('doctor_id', String(response.data.doctor_id));
+        if (result.success && result.access_token) {
+            localStorage.setItem('access_token', result.access_token);
+            localStorage.setItem('token_type', result.token_type || 'Bearer');
+            localStorage.setItem('expires_in', String(result.expires_in));
+            if (result.doctor_id != null) {
+                localStorage.setItem('doctor_id', String(result.doctor_id));
             }
-            if (response.data.mobile_number) {
-                localStorage.setItem('mobile_number', response.data.mobile_number);
+            if (result.mobile_number) {
+                localStorage.setItem('mobile_number', result.mobile_number);
             }
-            localStorage.setItem('is_new_user', String(response.data.is_new_user));
-            localStorage.setItem('role', response.data.role || 'user');
+            localStorage.setItem('is_new_user', String(result.is_new_user));
+            localStorage.setItem('role', result.role || 'user');
         }
 
-        return response.data;
+        return result;
     },
 
     clearSession: () => {

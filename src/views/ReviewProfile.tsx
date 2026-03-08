@@ -127,10 +127,7 @@ const ReviewProfile = () => {
 
             <div className={styles.card}>
                 {stage === 'intermediate' && (
-                    <div className={styles.scoreBanner} style={{
-                        background: '#F0FDFA', border: '1px solid #CCFBF1', borderRadius: '1rem', padding: '1.5rem',
-                        marginBottom: '2rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between'
-                    }}>
+                    <div className={styles.scoreBanner}>
                         <div>
                             <h3 style={{ fontSize: '1.125rem', fontWeight: 600, color: '#0F766E', marginBottom: '0.5rem' }}>
                                 Profile Score: 60%
@@ -139,7 +136,7 @@ const ReviewProfile = () => {
                                 Completing the next 3 optional sections will boost your visibility by 40%.
                             </p>
                         </div>
-                        <div style={{ display: 'flex', gap: '1rem' }}>
+                        <div className={styles.scoreBannerActions}>
                             <button onClick={handleContinue} className={styles.submitButton} style={{ width: 'auto', padding: '0.75rem 1.5rem' }}>
                                 Continue to Section 4
                             </button>
@@ -147,7 +144,7 @@ const ReviewProfile = () => {
                     </div>
                 )}
 
-                <div className={styles.profileHeaderSection} style={{ display: 'flex', alignItems: 'center', gap: '2rem', marginBottom: '2rem' }}>
+                <div className={styles.profileHeaderSection}>
                     <div className={styles.reviewAvatar}>
                         {formData.profileImage ? (
                             <img src={formData.profileImage} alt="Profile" style={{ width: '120px', height: '120px', borderRadius: '50%', objectFit: 'cover', border: '4px solid white', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />

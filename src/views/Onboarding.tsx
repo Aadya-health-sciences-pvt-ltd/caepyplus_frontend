@@ -405,10 +405,16 @@ const PracticeLocationAccordion: React.FC<PracticeLocationAccordionProps> = ({ l
 
 const Onboarding = () => {
     const router = useAppRouter();
-    const [navState, setNavState] = useState<Record<string, any>>({});
-    useEffect(() => {
-        try { const s = JSON.parse(sessionStorage.getItem('nav_state') || '{}'); setNavState(s); sessionStorage.removeItem('nav_state'); } catch { }
-    }, []);
+    // Read nav_state synchronously so it's available for useState initializers
+    const [navState] = useState<Record<string, any>>(() => {
+        try {
+            const s = JSON.parse(sessionStorage.getItem('nav_state') || '{}');
+            sessionStorage.removeItem('nav_state');
+            return s;
+        } catch {
+            return {};
+        }
+    });
 
     // Toast State
     const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info'; isVisible: boolean }>({
