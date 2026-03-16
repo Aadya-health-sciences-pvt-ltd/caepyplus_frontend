@@ -5,6 +5,7 @@ import { useAppRouter } from '../../lib/router';
 import { Search, Users, AlertCircle, CheckCircle, Eye, Upload, X, Download, FileSpreadsheet, Loader2, ShieldCheck, UserPlus } from 'lucide-react';
 import styles from './AdminDashboard.module.css';
 import { adminService, type Doctor, type CsvValidationResponse, type CsvUploadResponse } from '../../services/adminService';
+import { calculateProfileProgressFromApi } from '../../lib/profileProgress';
 
 // ---------------------------------------------------------------------------
 // Bulk Upload Modal — 3-step flow: Upload → Validate → Confirm
@@ -485,6 +486,7 @@ const AdminDoctorsList = () => {
                                 <th>Specialty</th>
                                 <th>Location</th>
                                 <th>Date Joined</th>
+                                <th>Profile %</th>
                                 <th>Status</th>
                                 <th>Actions</th>
                             </tr>
@@ -500,6 +502,37 @@ const AdminDoctorsList = () => {
                                         <td>{doc.specialty || '-'}</td>
                                         <td>{doc.primary_practice_location || '-'}</td>
                                         <td>{new Date(doc.created_at).toLocaleDateString()}</td>
+                                        <td>
+                                            {(() => {
+                                                const p = calculateProfileProgressFromApi({
+                                                    full_name: doc.full_name || `${doc.first_name} ${doc.last_name}`,
+                                                    specialty: doc.specialty || doc.primary_specialization,
+                                                    primary_practice_location: doc.primary_practice_location,
+                                                    years_of_clinical_experience: doc.years_of_clinical_experience || doc.years_of_experience,
+                                                    medical_registration_number: doc.medical_registration_number,
+                                                    profile_photo: null,
+                                                    year_of_mbbs: doc.year_of_mbbs,
+                                                    conditions_commonly_treated: doc.conditions_commonly_treated,
+                                                    conditions_known_for: doc.conditions_known_for,
+                                                    training_experience: doc.training_experience,
+                                                    motivation_in_practice: doc.motivation_in_practice,
+                                                    unwinding_after_work: doc.unwinding_after_work,
+                                                    what_patients_value_most: doc.what_patients_value_most,
+                                                    approach_to_care: doc.approach_to_care,
+                                                    availability_philosophy: doc.availability_philosophy,
+                                                    content_seeds: doc.content_seeds,
+                                                });
+                                                const color = p.totalPercentage >= 80 ? '#10B981' : p.totalPercentage >= 50 ? '#F59E0B' : '#EF4444';
+                                                return (
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                                                        <div style={{ width: '48px', height: '5px', borderRadius: '3px', background: '#F3F4F6', overflow: 'hidden' }}>
+                                                            <div style={{ height: '100%', width: `${p.totalPercentage}%`, background: color, borderRadius: '3px' }} />
+                                                        </div>
+                                                        <span style={{ fontSize: '0.75rem', fontWeight: 600, color }}>{p.totalPercentage}%</span>
+                                                    </div>
+                                                );
+                                            })()}
+                                        </td>
                                         <td>
                                             <span className={`${styles.statusBadge} ${(status === 'verified' || status === 'VERIFIED') ? styles.statusVerified :
                                                 (status === 'rejected' || status === 'REJECTED') ? styles.statusRejected :

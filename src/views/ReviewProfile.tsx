@@ -11,6 +11,7 @@ import styles from './ReviewProfile.module.css';
 import { mockDataService } from '../services/mockDataService';
 import { doctorService } from '../services/doctorService';
 import { validateSection1 } from '../lib/validation';
+import { calculateProfileProgress } from '../lib/profileProgress';
 
 const ReviewProfile = () => {
     const router = useAppRouter();
@@ -130,10 +131,10 @@ const ReviewProfile = () => {
                     <div className={styles.scoreBanner}>
                         <div>
                             <h3 style={{ fontSize: '1.125rem', fontWeight: 600, color: '#0F766E', marginBottom: '0.5rem' }}>
-                                Profile Score: 60%
+                                Profile Score: {calculateProfileProgress(formData).sections.slice(0, 3).reduce((s, x) => s + x.earned, 0)}%
                             </h3>
                             <p style={{ color: '#0F766E' }}>
-                                Completing the next 3 optional sections will boost your visibility by 40%.
+                                Completing the next 3 optional sections will boost your visibility by {100 - calculateProfileProgress(formData).sections.slice(0, 3).reduce((s, x) => s + x.earned, 0)}%.
                             </p>
                         </div>
                         <div className={styles.scoreBannerActions}>

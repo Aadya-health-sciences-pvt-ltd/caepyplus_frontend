@@ -12,6 +12,7 @@ import {
 import styles from './AdminDashboard.module.css';
 
 import { adminService, type Doctor, type DoctorFullProfile, type DoctorDetails } from '../../services/adminService';
+import { calculateProfileProgressFromApi } from '../../lib/profileProgress';
 
 const AdminDoctorDetails = () => {
     const router = useAppRouter();
@@ -408,6 +409,75 @@ The Caepy Team`,
                                 )}
                             </div>
                         </div>
+
+                        {/* Profile Completeness Card */}
+                        {(() => {
+                            const profileData: Record<string, any> = {
+                                full_name: doctorName,
+                                specialty: specialty,
+                                primary_practice_location: locationStr !== 'Location not set' ? locationStr : null,
+                                years_of_clinical_experience: details?.years_of_clinical_experience || details?.years_of_experience || doctor?.years_of_experience,
+                                medical_registration_number: regNumber,
+                                medical_council: medCouncil !== 'Not Provided' ? medCouncil : null,
+                                profile_photo: details?.profile_photo || null,
+                                year_of_mbbs: details?.year_of_mbbs,
+                                conditions_commonly_treated: details?.conditions_commonly_treated,
+                                conditions_known_for: details?.conditions_known_for,
+                                training_experience: details?.training_experience,
+                                motivation_in_practice: details?.motivation_in_practice,
+                                unwinding_after_work: details?.unwinding_after_work,
+                                recognition_identity: details?.recognition_identity,
+                                quality_time_interests: details?.quality_time_interests,
+                                professional_achievement: details?.professional_achievement,
+                                personal_achievement: details?.personal_achievement,
+                                professional_aspiration: details?.professional_aspiration,
+                                personal_aspiration: details?.personal_aspiration,
+                                what_patients_value_most: details?.what_patients_value_most,
+                                approach_to_care: details?.approach_to_care,
+                                availability_philosophy: details?.availability_philosophy,
+                                content_seeds: details?.content_seeds,
+                            };
+                            const progress = calculateProfileProgressFromApi(profileData);
+                            const barColor = progress.totalPercentage >= 80 ? '#10B981' : progress.totalPercentage >= 50 ? '#F59E0B' : '#EF4444';
+                            return (
+                                <div style={{ background: 'white', padding: '1.5rem', borderRadius: '1rem', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+                                    <h3 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: '0.75rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                        Profile Completeness
+                                        <span style={{ fontSize: '1.25rem', fontWeight: 700, color: barColor }}>{progress.totalPercentage}%</span>
+                                    </h3>
+                                    {/* Overall bar */}
+                                    <div style={{ height: '8px', borderRadius: '4px', background: '#F3F4F6', marginBottom: '1rem', overflow: 'hidden' }}>
+                                        <div style={{ height: '100%', width: `${progress.totalPercentage}%`, background: barColor, borderRadius: '4px', transition: 'width 0.4s ease' }} />
+                                    </div>
+                                    {/* Section breakdown */}
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                                        {progress.sections.map((sec) => (
+                                            <div key={sec.section} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.8rem' }}>
+                                                <div style={{
+                                                    width: '18px', height: '18px', borderRadius: '50%', flexShrink: 0,
+                                                    background: sec.isComplete ? '#10B981' : '#E5E7EB',
+                                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                    color: sec.isComplete ? 'white' : '#9CA3AF', fontSize: '0.65rem', fontWeight: 700
+                                                }}>
+                                                    {sec.isComplete ? '✓' : sec.section}
+                                                </div>
+                                                <span style={{ flex: 1, color: sec.isComplete ? '#111827' : '#9CA3AF', fontSize: '0.75rem' }}>
+                                                    S{sec.section}: {sec.label}
+                                                </span>
+                                                <span style={{ color: sec.isComplete ? '#10B981' : '#9CA3AF', fontWeight: 600, fontSize: '0.75rem' }}>
+                                                    {sec.earned}/{sec.weight}%
+                                                </span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                    {!progress.hasProfilePicture && (
+                                        <p style={{ fontSize: '0.7rem', color: '#F59E0B', marginTop: '0.75rem', margin: '0.75rem 0 0' }}>
+                                            ⚠ Profile photo missing — +5% when added
+                                        </p>
+                                    )}
+                                </div>
+                            );
+                        })()}
 
                         {/* Registration Summary Card */}
                         <div style={{ background: 'white', padding: '1.5rem', borderRadius: '1rem', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>

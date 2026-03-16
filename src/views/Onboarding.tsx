@@ -18,6 +18,7 @@ import { useAssistant } from '../hooks/useAssistant';
 import { isBrowser } from '../lib/isBrowser';
 
 import { validateSection1 } from '../lib/validation';
+import { calculateProfileProgress } from '../lib/profileProgress';
 import Toast from '../components/ui/Toast';
 import { voiceService } from '../services/voiceService';
 import { ONBOARDING_VOICE_CONTEXT } from '../lib/voiceContext';
@@ -1005,7 +1006,7 @@ const Onboarding = () => {
                         <div className={styles.sectionHeaderWrap}>
                             <div>
                                 <h2 className={styles.sectionTitle} style={{ marginBottom: 0 }}>Professional Identity</h2>
-                                <p style={{ fontSize: '0.875rem', color: '#10B981', marginTop: '0.25rem' }}>Profile strength: 20%</p>
+                                <p style={{ fontSize: '0.875rem', color: '#10B981', marginTop: '0.25rem' }}>Profile strength: {calculateProfileProgress(formData).sections[0].earned}%{!calculateProfileProgress(formData).hasProfilePicture ? <span style={{ fontSize: '0.75rem', color: '#6B7280', marginLeft: '0.5rem' }}>(+5% with profile photo)</span> : null}</p>
                             </div>
                             <input
                                 type="file"
@@ -1232,7 +1233,7 @@ const Onboarding = () => {
                             <div>
                                 <h2 className={styles.sectionTitle} style={{ marginBottom: 0 }}>Credentials & Trust Markers</h2>
                                 <p style={{ fontSize: '0.875rem', color: '#10B981', marginTop: '0.25rem' }}>
-                                    Profile strength: 40%
+                                    Profile strength: {calculateProfileProgress(formData).sections.slice(0, 2).reduce((s, x) => s + x.earned, 0)}%
                                     <span style={{ fontSize: '0.75rem', background: '#FEF3C7', color: '#D97706', padding: '2px 6px', borderRadius: '4px', marginLeft: '0.5rem' }}>Authority badge unlocked</span>
                                 </p>
                             </div>
@@ -1341,7 +1342,7 @@ const Onboarding = () => {
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
                             <div>
                                 <h2 className={styles.sectionTitle} style={{ marginBottom: 0 }}>Clinical Focus & Expertise</h2>
-                                <p style={{ fontSize: '0.875rem', color: '#10B981', marginTop: '0.25rem' }}>Profile strength: 60%</p>
+                                <p style={{ fontSize: '0.875rem', color: '#10B981', marginTop: '0.25rem' }}>Profile strength: {calculateProfileProgress(formData).sections.slice(0, 3).reduce((s, x) => s + x.earned, 0)}%</p>
                             </div>
                         </div>
 
@@ -1453,7 +1454,7 @@ const Onboarding = () => {
                             <div>
                                 <h2 className={styles.sectionTitle} style={{ marginBottom: 0 }}>The Human Side</h2>
                                 <p style={{ fontSize: '0.875rem', color: '#10B981', marginTop: '0.25rem' }}>
-                                    Profile strength: 60%
+                                    Profile strength: {calculateProfileProgress(formData).sections.slice(0, 4).reduce((s, x) => s + x.earned, 0)}%
                                     <span style={{ fontSize: '0.75rem', background: '#DBEAFE', color: '#1E40AF', padding: '2px 6px', borderRadius: '4px', marginLeft: '0.5rem' }}>Human Touch added</span>
                                 </p>
                             </div>
@@ -1634,7 +1635,7 @@ const Onboarding = () => {
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
                             <div>
                                 <h2 className={styles.sectionTitle} style={{ marginBottom: 0 }}>Patient Value & Choice Factors</h2>
-                                <p style={{ fontSize: '0.875rem', color: '#10B981', marginTop: '0.25rem' }}>Profile strength: 90%</p>
+                                <p style={{ fontSize: '0.875rem', color: '#10B981', marginTop: '0.25rem' }}>Profile strength: {calculateProfileProgress(formData).sections.slice(0, 5).reduce((s, x) => s + x.earned, 0)}%</p>
                             </div>
                         </div>
 
@@ -1727,7 +1728,7 @@ const Onboarding = () => {
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                             <div>
                                 <h2 className={styles.sectionTitle}>Content Seed (Optional)</h2>
-                                <p style={{ fontSize: '0.875rem', color: '#10B981', marginTop: '0.25rem' }}>First content seed created</p>
+                                <p style={{ fontSize: '0.875rem', color: '#10B981', marginTop: '0.25rem' }}>Profile strength: {calculateProfileProgress(formData).totalPercentage}% {calculateProfileProgress(formData).sections[5].isComplete ? '✓ First content seed created' : ''}</p>
                             </div>
                         </div>
 
