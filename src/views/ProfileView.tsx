@@ -11,6 +11,7 @@ import { useAppRouter } from '../lib/router';
 import styles from './ProfileView.module.css';
 
 import { mockDataService } from '../services/mockDataService';
+import { calculateProfileProgress } from '../lib/profileProgress';
 
 const ProfileView = () => {
     const router = useAppRouter();
@@ -77,10 +78,10 @@ const ProfileView = () => {
                                 <div className={styles.profInfo}>
                                     <div className={styles.progressLabel}>
                                         <span>Profile completion</span>
-                                        <span>{hasPhoto ? '85%' : '75%'}</span>
+                                        <span>{calculateProfileProgress(formData).totalPercentage}%</span>
                                     </div>
                                     <div className={styles.progressBar}>
-                                        <div className={styles.progressFill} style={{ width: hasPhoto ? '85%' : '75%' }}></div>
+                                        <div className={styles.progressFill} style={{ width: `${calculateProfileProgress(formData).totalPercentage}%` }}></div>
                                     </div>
 
                                     <div className={styles.checklist}>
@@ -106,8 +107,34 @@ const ProfileView = () => {
                                 </div>
 
                                 <div className={styles.avatarContainer}>
-                                    {/* Avatar Placeholder */}
-                                    <img src={formData.profileImage || "https://i.pravatar.cc/150?u=a042581f4e29026704d"} alt="Profile" className={styles.avatar} />
+                                    {formData.profileImage ? (
+                                        <img src={formData.profileImage} alt="Profile" className={styles.avatar} />
+                                    ) : (
+                                        <div
+                                            className={styles.avatar}
+                                            style={{
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                background: 'linear-gradient(135deg, #293991 0%, #1ABFD2 100%)',
+                                                color: 'white',
+                                                fontWeight: 700,
+                                                fontSize: '1.25rem',
+                                                letterSpacing: '0.05em',
+                                                userSelect: 'none',
+                                            }}
+                                            aria-label="Profile initials"
+                                        >
+                                            {name
+                                                .replace(/^Dr\.?\s*/i, '')
+                                                .split(' ')
+                                                .filter(Boolean)
+                                                .slice(0, 2)
+                                                .map((w: string) => w[0].toUpperCase())
+                                                .join('')
+                                            }
+                                        </div>
+                                    )}
                                     <div className={styles.editOverlay}><Edit3 size={10} /></div>
                                 </div>
                             </div>
