@@ -122,21 +122,32 @@
 .profHeader {
     display: flex;
     justify-content: space-between;
+    align-items: flex-start;
+    gap: 1rem;
 }
 
 .progressLabel {
     display: flex;
     justify-content: space-between;
-    font-size: 0.75rem;
-    color: #4B5563;
-    margin-bottom: 0.5rem;
+    align-items: center;
+    font-size: 0.8125rem;
+    color: #6B7280;
+    font-weight: 500;
+    margin-bottom: 0.625rem;
+}
+
+.progressLabel span:last-child {
+    font-size: 0.9375rem;
+    font-weight: 700;
+    color: #39C8CE;
+    font-variant-numeric: tabular-nums;
 }
 
 .progressBar {
-    height: 6px;
+    height: 7px;
     background-color: #F3F4F6;
     border-radius: 999px;
-    margin-bottom: 1.5rem;
+    margin-bottom: 1.75rem;
     overflow: hidden;
 }
 
@@ -565,7 +576,9 @@
 /* Responsive Utilities & Layouts */
 .profInfo {
     flex: 1;
-    padding-right: 2rem;
+    /* Reserve space for the absolutely-positioned avatar (64px) + its 1.5rem right inset + a comfortable gap */
+    padding-right: calc(64px + 1.5rem + 1.25rem);
+    min-width: 0; /* prevent flex blowout */
 }
 
 .profActions {
