@@ -39,7 +39,7 @@ jobs:
       env:
         ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
         IMAGE_TAG: ${{ github.sha }}
-        NEXT_PUBLIC_BASE_PATH: /caepy/portal
+        NEXT_PUBLIC_BASE_PATH: /portal/caepy
         NEXT_PUBLIC_API_URL: https://dev1.linqmd.com/caepy/api/v1
         NEXT_PUBLIC_GOOGLE_MAPS_API_KEY: ${{ secrets.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY }}
         NEXT_PUBLIC_FIREBASE_API_KEY: ${{ secrets.NEXT_PUBLIC_FIREBASE_API_KEY }}
