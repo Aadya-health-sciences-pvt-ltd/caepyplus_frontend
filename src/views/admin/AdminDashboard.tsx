@@ -149,7 +149,7 @@ const AdminDashboard = () => {
                                             </p>
                                         </div>
                                     </div>
-                                    <button onClick={() => { sessionStorage.setItem('nav_state', JSON.stringify({ doctor: doc })); router.push(`/admin/dashboard/doctor/${doc.id}`); }} style={{ padding: '0.5rem 1rem', background: '#EFF6FF', color: '#1D4ED8', border: 'none', borderRadius: '6px', fontSize: '0.8rem', fontWeight: 500, cursor: 'pointer' }}>
+                                    <button onClick={() => { sessionStorage.setItem('nav_state', JSON.stringify({ doctor: doc })); router.push(`/admin/dashboard/doctor?id=${doc.id}`); }} style={{ padding: '0.5rem 1rem', background: '#EFF6FF', color: '#1D4ED8', border: 'none', borderRadius: '6px', fontSize: '0.8rem', fontWeight: 500, cursor: 'pointer' }}>
                                         Review
                                     </button>
                                 </div>

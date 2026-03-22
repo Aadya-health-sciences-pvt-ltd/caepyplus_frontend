@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useSearchParams } from 'next/navigation';
 import { useAppRouter } from '../../lib/router';
 import {
     ArrowLeft, X, ShieldCheck, User, MapPin, Briefcase, Mail, Phone,
@@ -16,8 +16,9 @@ import { calculateProfileProgressFromApi } from '../../lib/profileProgress';
 
 const AdminDoctorDetails = () => {
     const router = useAppRouter();
-    const params = useParams<{ id: string }>();
-    const routeId = params.id;
+    const params = useParams<{ id?: string }>();
+    const searchParams = useSearchParams();
+    const routeId = params.id || searchParams.get('id') || undefined;
 
     const [navDoctor, setNavDoctor] = useState<Doctor | undefined>(undefined);
     useEffect(() => {
