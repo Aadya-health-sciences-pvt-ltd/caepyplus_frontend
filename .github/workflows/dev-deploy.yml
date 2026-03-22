@@ -70,7 +70,6 @@ jobs:
           --include "*.json"
 
     - name: Invalidate CloudFront
-      if: ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID != '' }}
       run: |
         DIST_ID="${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }}"
         PREFIX="${{ secrets.CAEPY_PORTAL_S3_PREFIX || 'portal/caepy' }}"
