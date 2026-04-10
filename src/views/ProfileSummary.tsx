@@ -1,6 +1,6 @@
 'use client';
 import React from 'react';
-import { useRouter } from 'next/navigation';
+import { useAppRouter } from '../lib/router';
 import {
     User, Activity, Building, MapPin,
     IndianRupee, Languages, Trophy,
@@ -10,7 +10,7 @@ import { mockDataService } from '../services/mockDataService';
 import styles from './ProfileSummary.module.css';
 
 const ProfileSummary = () => {
-    const router = useRouter();
+    const router = useAppRouter();
     const currentUser = mockDataService.getCurrentUser();
     const formData = currentUser?.data || {};
 

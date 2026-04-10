@@ -3,12 +3,15 @@ import { isBrowser } from './isBrowser';
 export interface AdminUser {
     id: string;
     name: string;
+    full_name?: string | null;
     email: string;
     role: 'admin' | 'operation';
     joinedDate: string;
 }
 
 const STORAGE_KEY = 'caepy_admin_users';
+
+const ADMIN_FULL_NAME_KEY = 'caepy_admin_full_name';
 
 const DEFAULT_ADMINS: AdminUser[] = [
     {
@@ -76,10 +79,13 @@ export const getLoggedInAdmin = (): AdminUser | null => {
     const email = localStorage.getItem('caepy_logged_in_email');
     if (!email) return null;
 
+    const storedFullName = localStorage.getItem(ADMIN_FULL_NAME_KEY);
+
     if (email.startsWith('phone:')) {
         return {
             id: 'phone-admin',
-            name: 'Admin User',
+            name: storedFullName || 'Admin User',
+            full_name: storedFullName || undefined,
             email: email,
             role: (localStorage.getItem('role') as 'admin' | 'operation') || 'admin',
             joinedDate: new Date().toISOString()
@@ -87,14 +93,33 @@ export const getLoggedInAdmin = (): AdminUser | null => {
     }
 
     const users = getAdminUsers();
-    return users.find(u => u.email === email) || null;
+    const found = users.find(u => u.email === email);
+    if (found) {
+        return {
+            ...found,
+            full_name: found.full_name ?? storedFullName ?? undefined,
+            name: (found.full_name || found.name) || (storedFullName || 'Admin User'),
+        };
+    }
+    return {
+        id: 'admin-user',
+        name: storedFullName || 'Admin User',
+        full_name: storedFullName || undefined,
+        email,
+        role: (localStorage.getItem('role') as 'admin' | 'operation') || 'admin',
+        joinedDate: new Date().toISOString()
+    };
 };
 
-export const setLoggedInAdmin = (email: string) => {
+export const setLoggedInAdmin = (email: string, fullName?: string | null) => {
     localStorage.setItem('caepy_logged_in_email', email);
+    if (fullName !== undefined && fullName !== null) {
+        localStorage.setItem(ADMIN_FULL_NAME_KEY, fullName);
+    }
 };
 
 export const logoutAdmin = () => {
     localStorage.removeItem('caepy_logged_in_email');
+    localStorage.removeItem(ADMIN_FULL_NAME_KEY);
     localStorage.removeItem('caepy_current_user_id');
 };

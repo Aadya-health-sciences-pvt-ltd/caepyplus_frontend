@@ -248,7 +248,7 @@
 /* Actions */
 .actionButtons {
     display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 1rem;
     width: 100%;
     margin-bottom: 1rem;
@@ -328,12 +328,6 @@
 }
 
 .helpSection {
-    background: linear-gradient(90deg, #293991 0%, #1ABFD2 100%);
-    padding: 1.5rem 1rem;
-    color: white;
-    text-align: center;
-    margin-top: 1.5rem;
-    width: 100%;
 }
 
 .helpSection p {
@@ -345,6 +339,136 @@
     color: white;
     text-decoration: underline;
     font-weight: 500;
+}
+
+.supportSection {
+    width: 100%;
+    max-width: 520px;
+    margin: 0 auto;
+    background: #ffffff;
+    border-radius: 1rem;
+    border: 1px solid #e5e7eb;
+    box-shadow: 0 10px 15px -3px rgba(15, 23, 42, 0.08);
+    padding: 1.5rem 1.75rem;
+}
+
+.supportHeader {
+    display: flex;
+    gap: 1rem;
+    align-items: flex-start;
+    margin-bottom: 1rem;
+}
+
+.supportIcon {
+    width: 40px;
+    height: 40px;
+    border-radius: 999px;
+    background: linear-gradient(135deg, #293991 0%, #1ABFD2 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #ffffff;
+    flex-shrink: 0;
+}
+
+.supportTitle {
+    margin: 0 0 0.25rem 0;
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: #0f172a;
+}
+
+.supportDescription {
+    margin: 0;
+    font-size: 0.9rem;
+    color: #64748b;
+}
+
+.supportChannels {
+    display: flex;
+    gap: 2rem;
+    flex-wrap: wrap;
+    margin-top: 0.75rem;
+}
+
+.supportChannel {
+    min-width: 160px;
+}
+
+.supportLabel {
+    margin: 0 0 0.25rem 0;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #94a3b8;
+    font-weight: 600;
+}
+
+.supportLink {
+    font-size: 0.95rem;
+    color: #0f766e;
+    font-weight: 500;
+    text-decoration: none;
+}
+
+.supportLink:hover {
+    text-decoration: underline;
+}
+
+@media (max-width: 768px) {
+    .supportSection {
+        margin: 0;
+        padding: 1.25rem 1.25rem;
+    }
+
+    .supportHeader {
+        align-items: center;
+    }
+
+    .supportChannels {
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+}
+
+.supportOverlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.45);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 40;
+    padding: 1rem;
+}
+
+.supportModal {
+    position: relative;
+    width: 100%;
+    max-width: 560px;
+}
+
+.supportCloseButton {
+    position: absolute;
+    top: -0.75rem;
+    right: -0.75rem;
+    width: 28px;
+    height: 28px;
+    border-radius: 999px;
+    border: none;
+    background: #ffffff;
+    box-shadow: 0 4px 10px rgba(15, 23, 42, 0.25);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 1.1rem;
+    line-height: 1;
+    color: #0f172a;
+}
+
+.supportCloseButton:hover {
+    background: #f9fafb;
 }
 
 /* Mobile Responsive Override */

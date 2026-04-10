@@ -1,6 +1,6 @@
 'use client';
 import React, { useRef, useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useAppRouter } from '../lib/router';
 import {
     Upload, Sparkles, Check, Lock, ShieldCheck,
     Linkedin, Link, Loader2
@@ -9,7 +9,7 @@ import styles from './ResumeUpload.module.css';
 import { doctorService } from '../services/doctorService';
 
 const ResumeUpload = () => {
-    const router = useRouter();
+    const router = useAppRouter();
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [isNewUser, setIsNewUser] = useState(true);
 

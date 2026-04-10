@@ -1,10 +1,11 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
-import { Search, Users, AlertCircle, CheckCircle, Eye, Upload, X, Download, FileSpreadsheet, Loader2, ShieldCheck } from 'lucide-react';
+import { useAppRouter } from '../../lib/router';
+import { Search, Users, AlertCircle, CheckCircle, Eye, Upload, X, Download, FileSpreadsheet, Loader2, ShieldCheck, UserPlus } from 'lucide-react';
 import styles from './AdminDashboard.module.css';
 import { adminService, type Doctor, type CsvValidationResponse, type CsvUploadResponse } from '../../services/adminService';
+import { calculateProfileProgressFromApi } from '../../lib/profileProgress';
 
 // ---------------------------------------------------------------------------
 // Bulk Upload Modal — 3-step flow: Upload → Validate → Confirm
@@ -107,7 +108,7 @@ const BulkUploadModal = ({ onClose, onComplete }: BulkUploadModalProps) => {
         <div className={styles.modalOverlay} onClick={isProcessing ? undefined : onClose}>
             <div className={styles.modalContent} onClick={e => e.stopPropagation()} style={{ maxWidth: '640px' }}>
                 {/* Header */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                <div className={styles.flexBetweenCenter} style={{ marginBottom: '1.5rem' }}>
                     <div>
                         <h2 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 700, color: '#111827' }}>
                             Bulk Upload Doctors
@@ -379,7 +380,7 @@ const BulkUploadModal = ({ onClose, onComplete }: BulkUploadModalProps) => {
 // ---------------------------------------------------------------------------
 
 const AdminDoctorsList = () => {
-    const router = useRouter();
+    const router = useAppRouter();
     const [searchTerm, setSearchTerm] = useState("");
     const [doctors, setDoctors] = useState<Doctor[]>([]);
     const [loading, setLoading] = useState(true);
@@ -404,27 +405,15 @@ const AdminDoctorsList = () => {
         }
     };
 
-    const handleVerify = async (id: number) => {
-        if (window.confirm("Are you sure you want to verify this doctor?")) {
+    const handleSyncLinqMD = async (id: number) => {
+        if (window.confirm("Are you sure you want to create a profile in LinQMD for this doctor?")) {
             try {
-                await adminService.verifyDoctor(id);
-                fetchDoctors(); // Refresh list
+                await adminService.syncLinqMDProfile(id);
+                alert("Profile created successfully");
+                fetchDoctors(); // Refresh list to reflect state changes if any
             } catch (error) {
-                console.error("Verification failed", error);
-                alert("Failed to verify doctor");
-            }
-        }
-    };
-
-    const handleReject = async (id: number) => {
-        const reason = window.prompt("Please provide a reason for rejection:");
-        if (reason !== null) { // User didn't cancel
-            try {
-                await adminService.rejectDoctor(id, reason);
-                fetchDoctors(); // Refresh list
-            } catch (error) {
-                console.error("Rejection failed", error);
-                alert("Failed to reject doctor");
+                console.error("LinQMD sync failed", error);
+                alert("Failed to create profile in LinQMD");
             }
         }
     };
@@ -497,6 +486,7 @@ const AdminDoctorsList = () => {
                                 <th>Specialty</th>
                                 <th>Location</th>
                                 <th>Date Joined</th>
+                                <th>Profile %</th>
                                 <th>Status</th>
                                 <th>Actions</th>
                             </tr>
@@ -513,6 +503,37 @@ const AdminDoctorsList = () => {
                                         <td>{doc.primary_practice_location || '-'}</td>
                                         <td>{new Date(doc.created_at).toLocaleDateString()}</td>
                                         <td>
+                                            {(() => {
+                                                const p = calculateProfileProgressFromApi({
+                                                    full_name: doc.full_name || `${doc.first_name} ${doc.last_name}`,
+                                                    specialty: doc.specialty || doc.primary_specialization,
+                                                    primary_practice_location: doc.primary_practice_location,
+                                                    years_of_clinical_experience: doc.years_of_clinical_experience || doc.years_of_experience,
+                                                    medical_registration_number: doc.medical_registration_number,
+                                                    profile_photo: null,
+                                                    year_of_mbbs: doc.year_of_mbbs,
+                                                    conditions_commonly_treated: doc.conditions_commonly_treated,
+                                                    conditions_known_for: doc.conditions_known_for,
+                                                    training_experience: doc.training_experience,
+                                                    motivation_in_practice: doc.motivation_in_practice,
+                                                    unwinding_after_work: doc.unwinding_after_work,
+                                                    what_patients_value_most: doc.what_patients_value_most,
+                                                    approach_to_care: doc.approach_to_care,
+                                                    availability_philosophy: doc.availability_philosophy,
+                                                    content_seeds: doc.content_seeds,
+                                                });
+                                                const color = p.totalPercentage >= 80 ? '#10B981' : p.totalPercentage >= 50 ? '#F59E0B' : '#EF4444';
+                                                return (
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                                                        <div style={{ width: '48px', height: '5px', borderRadius: '3px', background: '#F3F4F6', overflow: 'hidden' }}>
+                                                            <div style={{ height: '100%', width: `${p.totalPercentage}%`, background: color, borderRadius: '3px' }} />
+                                                        </div>
+                                                        <span style={{ fontSize: '0.75rem', fontWeight: 600, color }}>{p.totalPercentage}%</span>
+                                                    </div>
+                                                );
+                                            })()}
+                                        </td>
+                                        <td>
                                             <span className={`${styles.statusBadge} ${(status === 'verified' || status === 'VERIFIED') ? styles.statusVerified :
                                                 (status === 'rejected' || status === 'REJECTED') ? styles.statusRejected :
                                                     styles.statusPending
@@ -525,31 +546,19 @@ const AdminDoctorsList = () => {
                                                 <button
                                                     className={`${styles.actionBtn} ${styles.viewBtn}`}
                                                     title="View Details"
-                                                    onClick={() => { sessionStorage.setItem('nav_state', JSON.stringify({ doctor: doc })); router.push(`/admin/doctor/${doc.id}`); }}
+                                                    onClick={() => { sessionStorage.setItem('nav_state', JSON.stringify({ doctor: doc })); router.push(`/admin/dashboard/doctor/${doc.id}`); }}
                                                 >
                                                     <Eye size={18} />
                                                 </button>
 
-                                                {(status === 'submitted' || status === 'SUBMITTED' || status === 'pending' || status === 'PENDING') && (
-                                                    <>
-                                                        <button
-                                                            className={`${styles.actionBtn}`}
-                                                            style={{ color: '#10B981' }}
-                                                            title="Verify"
-                                                            onClick={() => handleVerify(doc.id)}
-                                                        >
-                                                            <CheckCircle size={18} />
-                                                        </button>
-                                                        <button
-                                                            className={`${styles.actionBtn}`}
-                                                            style={{ color: '#EF4444' }}
-                                                            title="Reject"
-                                                            onClick={() => handleReject(doc.id)}
-                                                        >
-                                                            <AlertCircle size={18} />
-                                                        </button>
-                                                    </>
-                                                )}
+                                                <button
+                                                    className={`${styles.actionBtn}`}
+                                                    style={{ color: '#3B82F6' }}
+                                                    title="Create Profile in LinQMD"
+                                                    onClick={() => handleSyncLinqMD(doc.id)}
+                                                >
+                                                    <UserPlus size={18} />
+                                                </button>
                                             </div>
                                         </td>
                                     </tr>

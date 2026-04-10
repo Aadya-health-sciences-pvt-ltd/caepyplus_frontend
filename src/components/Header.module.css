@@ -6,6 +6,8 @@
   background-color: var(--white);
   border-bottom: 1px solid var(--border-color);
   height: 80px;
+  position: relative;
+  z-index: 100;
 }
 
 .leftSection {
@@ -252,5 +254,33 @@
 
   .rightSection {
     gap: 0.75rem;
+  }
+
+  .dropdownMenu {
+    position: fixed;
+    top: 72px;
+    /* Header height (64px) + margin */
+    left: 1rem;
+    right: 1rem;
+    width: auto !important;
+    max-width: none !important;
+    z-index: 9999 !important;
+    margin-top: 0;
+  }
+}
+
+.centerTitle {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  font-weight: 600;
+  font-size: 1.125rem;
+  color: #111827;
+  white-space: nowrap;
+}
+
+@media (max-width: 1024px) {
+  .centerTitle {
+    display: none;
   }
 }

@@ -86,6 +86,9 @@ export interface DoctorProfile {
 
     onboarding_status: string;
     content_seeds: Array<Record<string, string>>;
+
+    // Media
+    profile_photo?: string | null;
 }
 
 interface DoctorApiResponse {
@@ -258,6 +261,11 @@ export const doctorService = {
 
         if (profile.onboarding_status) formData.onboarding_status = profile.onboarding_status;
 
+        // Profile photo (S3 URL)
+        if (profile.profile_photo) {
+            (formData as any).profileImage = profile.profile_photo;
+        }
+
         // Block 6: Content Seed (take first seed if available)
         if (profile.content_seeds?.length) {
             const seed = profile.content_seeds[0];
@@ -425,6 +433,35 @@ export const doctorService = {
     updateDoctorDetails: async (doctorId: string | number, formData: Record<string, any>): Promise<void> => {
         const payload = doctorService.mapFormDataToApiPayload(formData);
         await api.put(`/doctors/${doctorId}`, payload);
+    },
+
+    /**
+     * Upload profile photo via POST /doctors/{doctor_id}/profile-photo.
+     * Returns the S3 URL from the `profile_photo` field in the response.
+     */
+    uploadProfilePhoto: async (doctorId: string | number, file: File): Promise<string> => {
+        const formData = new FormData();
+        formData.append('file', file);
+
+        const response = await api.post<{ success: boolean; data: { profile_photo: string } }>(
+            `/doctors/${doctorId}/profile-photo`,
+            formData,
+            {
+                headers: {
+                    'Content-Type': 'multipart/form-data',
+                },
+            },
+        );
+
+        // Prefer nested data.profile_photo, but fall back defensively
+        const data = response.data as any;
+        if (data?.data?.profile_photo) {
+            return data.data.profile_photo as string;
+        }
+        if (data?.profile_photo) {
+            return data.profile_photo as string;
+        }
+        throw new Error('Profile photo URL not found in response');
     },
 
     /**

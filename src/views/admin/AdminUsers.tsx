@@ -5,6 +5,7 @@ import {
     Users, Shield, Plus, CheckCircle, Edit, XCircle, Smartphone, Mail, Save
 } from 'lucide-react';
 import { adminService, type AdminUserResponse, type CreateUserPayload, type UpdateUserPayload } from '../../services/adminService';
+import styles from './AdminDashboard.module.css';
 
 const AdminUsers = () => {
     const [users, setUsers] = useState<AdminUserResponse[]>([]);
@@ -19,6 +20,7 @@ const AdminUsers = () => {
     const [formData, setFormData] = useState<CreateUserPayload & { id?: number }>({
         phone: '',
         email: '',
+        full_name: '',
         role: 'operation',
         is_active: true,
         doctor_id: null
@@ -56,6 +58,7 @@ const AdminUsers = () => {
         setFormData({
             phone: '',
             email: '',
+            full_name: '',
             role: 'operation',
             is_active: true,
             doctor_id: null
@@ -69,6 +72,7 @@ const AdminUsers = () => {
             id: user.id,
             phone: user.phone,
             email: user.email || '',
+            full_name: user.full_name ?? '',
             role: user.role as 'admin' | 'operation', // Ensure type match
             is_active: user.is_active,
             doctor_id: user.doctor_id
@@ -79,17 +83,18 @@ const AdminUsers = () => {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
+        const trimmedFullName = (formData.full_name ?? '').trim() || null;
+
         try {
             if (editingUser) {
                 // Update
                 const payload: UpdateUserPayload = {
                     email: formData.email || null,
+                    full_name: trimmedFullName,
                     role: formData.role,
                     is_active: formData.is_active,
                     doctor_id: formData.doctor_id || null
                 };
-                // Note: Phone usually cannot be changed in simple update unless backend allows.
-                // The prompt example for PATCH only showed email, role, is_active, doctor_id.
 
                 await adminService.updateUser(editingUser.id, payload);
             } else {
@@ -97,6 +102,7 @@ const AdminUsers = () => {
                 const payload: CreateUserPayload = {
                     phone: formData.phone,
                     email: formData.email || null,
+                    full_name: trimmedFullName,
                     role: formData.role,
                     is_active: formData.is_active,
                     doctor_id: formData.doctor_id || null
@@ -115,7 +121,7 @@ const AdminUsers = () => {
 
     return (
         <div style={{ padding: '2rem' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+            <div className={styles.flexBetweenCenter} style={{ marginBottom: '2rem' }}>
                 <div>
                     <h1 style={{ fontSize: '1.5rem', fontWeight: 700, color: '#111827' }}>User Management</h1>
                     <p style={{ color: '#6B7280', marginTop: '0.25rem' }}>Manage access roles and users for the Admin Console.</p>
@@ -145,6 +151,7 @@ const AdminUsers = () => {
                         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.875rem' }}>
                             <thead style={{ background: '#F9FAFB', borderBottom: '1px solid #E5E7EB' }}>
                                 <tr>
+                                    <th style={{ padding: '0.75rem 1.5rem', textAlign: 'left', fontWeight: 500, color: '#6B7280' }}>Full Name</th>
                                     <th style={{ padding: '0.75rem 1.5rem', textAlign: 'left', fontWeight: 500, color: '#6B7280' }}>User</th>
                                     <th style={{ padding: '0.75rem 1.5rem', textAlign: 'left', fontWeight: 500, color: '#6B7280' }}>Role</th>
                                     <th style={{ padding: '0.75rem 1.5rem', textAlign: 'left', fontWeight: 500, color: '#6B7280' }}>Status</th>
@@ -155,10 +162,13 @@ const AdminUsers = () => {
                             <tbody>
                                 {users.map((user) => (
                                     <tr key={user.id} style={{ borderBottom: '1px solid #F3F4F6' }}>
+                                        <td style={{ padding: '1rem 1.5rem', fontWeight: 500, color: '#111827' }}>
+                                            {user.full_name || '—'}
+                                        </td>
                                         <td style={{ padding: '1rem 1.5rem' }}>
                                             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                                                 <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: '#E0E7FF', color: '#4F46E5', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.875rem', fontWeight: 600 }}>
-                                                    {user.email ? user.email.charAt(0).toUpperCase() : user.phone.charAt(0)}
+                                                    {(user.full_name || user.email || user.phone).charAt(0).toUpperCase()}
                                                 </div>
                                                 <div>
                                                     <div style={{ fontWeight: 500, color: '#111827', display: 'flex', alignItems: 'center', gap: '4px' }}>
@@ -284,6 +294,16 @@ const AdminUsers = () => {
                             {editingUser ? 'Edit User' : 'Add New User'}
                         </h2>
                         <form onSubmit={handleSubmit}>
+                            <div style={{ marginBottom: '1rem' }}>
+                                <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, color: '#374151', marginBottom: '0.5rem' }}>Full Name</label>
+                                <input
+                                    type="text"
+                                    value={formData.full_name ?? ''}
+                                    onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
+                                    style={{ width: '100%', padding: '0.75rem', borderRadius: '0.5rem', border: '1px solid #D1D5DB' }}
+                                    placeholder="e.g. Jane Smith"
+                                />
+                            </div>
                             {/* Phone - Read only in edit mode usually, but depends on API. Assuming create only for now */}
                             <div style={{ marginBottom: '1rem' }}>
                                 <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, color: '#374151', marginBottom: '0.5rem' }}>Phone Number *</label>

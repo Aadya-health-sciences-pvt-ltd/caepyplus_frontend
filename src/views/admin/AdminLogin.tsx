@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useAppRouter } from '../../lib/router';
 import { Sparkles, Star, Loader2 } from 'lucide-react';
 
 import { signInWithPopup } from 'firebase/auth';
@@ -11,7 +11,7 @@ import { authService } from '../../services/authService';
 import styles from './AdminLogin.module.css';
 
 const AdminLogin = () => {
-    const router = useRouter();
+    const router = useAppRouter();
     const [email, setEmail] = useState('');
     const [mobileNumber, setMobileNumber] = useState('');
     const [loginMethod] = useState<'email' | 'phone'>('phone');

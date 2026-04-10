@@ -80,7 +80,7 @@ const AddValueModal = ({ fields, defaultField, onClose, onAdded }: AddModalProps
     return (
         <div className={styles.modalOverlay} onClick={onClose}>
             <div className={styles.modalContent} onClick={e => e.stopPropagation()} style={{ maxWidth: '480px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+                <div className={styles.flexBetweenCenter} style={{ marginBottom: '1.25rem' }}>
                     <h2 style={{ margin: 0, fontSize: '1.125rem', fontWeight: 700, color: '#111827' }}>Add New Value</h2>
                     <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><X size={18} color="#6B7280" /></button>
                 </div>
@@ -177,7 +177,7 @@ const EditModal = ({ option, onClose, onUpdated }: EditModalProps) => {
     return (
         <div className={styles.modalOverlay} onClick={onClose}>
             <div className={styles.modalContent} onClick={e => e.stopPropagation()} style={{ maxWidth: '420px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+                <div className={styles.flexBetweenCenter} style={{ marginBottom: '1.25rem' }}>
                     <h2 style={{ margin: 0, fontSize: '1.125rem', fontWeight: 700, color: '#111827' }}>Edit Option</h2>
                     <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><X size={18} color="#6B7280" /></button>
                 </div>
@@ -281,7 +281,7 @@ const AdminMasters = () => {
                 result = await adminService.getDropdownOptions(params);
             }
 
-            setOptions(result.options ?? []);
+            setOptions(result.items ?? []);
             setTotal(result.total ?? 0);
             setPendingCount(result.pending_count ?? 0);
         } catch (err) {
@@ -453,7 +453,7 @@ const AdminMasters = () => {
             )}
 
             {/* Header */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.5rem' }}>
+            <div className={styles.flexBetweenStart} style={{ marginBottom: '1.5rem' }}>
                 <div>
                     <h1 style={{ fontSize: '1.5rem', fontWeight: 700, color: '#111827', margin: '0 0 0.375rem' }}>
                         Master Data Management
@@ -563,7 +563,7 @@ const AdminMasters = () => {
             </div>
 
             {/* Table */}
-            <div style={{ background: 'white', borderRadius: '0.75rem', border: '1px solid #E5E7EB', overflow: 'hidden' }}>
+            <div className={styles.tableContainer} style={{ background: 'white', borderRadius: '0.75rem', border: '1px solid #E5E7EB' }}>
                 {loading ? (
                     <div style={{ padding: '3rem', textAlign: 'center', color: '#9CA3AF' }}>
                         <Loader2 size={28} className="spin" style={{ margin: '0 auto 0.75rem' }} />
@@ -590,7 +590,6 @@ const AdminMasters = () => {
                                 <th style={{ textAlign: 'left', padding: '0.75rem', color: '#6B7280', fontSize: '0.75rem', fontWeight: 600, textTransform: 'uppercase' }}>Value</th>
                                 <th style={{ textAlign: 'left', padding: '0.75rem', color: '#6B7280', fontSize: '0.75rem', fontWeight: 600, textTransform: 'uppercase' }}>Field</th>
                                 <th style={{ textAlign: 'left', padding: '0.75rem', color: '#6B7280', fontSize: '0.75rem', fontWeight: 600, textTransform: 'uppercase' }}>Status</th>
-                                <th style={{ textAlign: 'left', padding: '0.75rem', color: '#6B7280', fontSize: '0.75rem', fontWeight: 600, textTransform: 'uppercase' }}>Submitted By</th>
                                 <th style={{ textAlign: 'left', padding: '0.75rem', color: '#6B7280', fontSize: '0.75rem', fontWeight: 600, textTransform: 'uppercase' }}>Date</th>
                                 <th style={{ textAlign: 'right', padding: '0.75rem', color: '#6B7280', fontSize: '0.75rem', fontWeight: 600, textTransform: 'uppercase', width: '140px' }}>Actions</th>
                             </tr>
@@ -630,7 +629,6 @@ const AdminMasters = () => {
                                                 {opt.status}
                                             </span>
                                         </td>
-                                        <td style={{ padding: '0.75rem', fontSize: '0.8125rem', color: '#6B7280' }}>{opt.submitted_by || '—'}</td>
                                         <td style={{ padding: '0.75rem', fontSize: '0.8125rem', color: '#6B7280' }}>{formatDate(opt.created_at)}</td>
                                         <td style={{ padding: '0.75rem', textAlign: 'right' }}>
                                             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.25rem' }}>

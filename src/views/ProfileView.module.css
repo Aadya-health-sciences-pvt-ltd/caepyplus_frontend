@@ -122,21 +122,32 @@
 .profHeader {
     display: flex;
     justify-content: space-between;
+    align-items: flex-start;
+    gap: 1rem;
 }
 
 .progressLabel {
     display: flex;
     justify-content: space-between;
-    font-size: 0.75rem;
-    color: #4B5563;
-    margin-bottom: 0.5rem;
+    align-items: center;
+    font-size: 0.8125rem;
+    color: #6B7280;
+    font-weight: 500;
+    margin-bottom: 0.625rem;
+}
+
+.progressLabel span:last-child {
+    font-size: 0.9375rem;
+    font-weight: 700;
+    color: #39C8CE;
+    font-variant-numeric: tabular-nums;
 }
 
 .progressBar {
-    height: 6px;
+    height: 7px;
     background-color: #F3F4F6;
     border-radius: 999px;
-    margin-bottom: 1.5rem;
+    margin-bottom: 1.75rem;
     overflow: hidden;
 }
 
@@ -395,9 +406,6 @@
 }
 
 /* 5. Clinical Insights (Right Col) */
-.insightCard {
-    /* reuse card */
-}
 
 .insightIllustration {
     display: flex;
@@ -563,4 +571,107 @@
     align-items: center;
     justify-content: center;
     gap: 0.5rem;
+}
+
+/* Responsive Utilities & Layouts */
+.profInfo {
+    flex: 1;
+    /* Reserve space for the absolutely-positioned avatar (64px) + its 1.5rem right inset + a comfortable gap */
+    padding-right: calc(64px + 1.5rem + 1.25rem);
+    min-width: 0; /* prevent flex blowout */
+}
+
+.profActions {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+}
+
+.profActionGroup {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.contentWrapper {
+    display: flex;
+    gap: 2rem;
+}
+
+.illustrationWrapper {
+    width: 150px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+@media (max-width: 768px) {
+    .container {
+        padding: 1rem;
+    }
+
+    .header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+
+    .dashboardGrid {
+        grid-template-columns: 1fr;
+    }
+
+    .profHeader {
+        flex-direction: column-reverse;
+        align-items: center;
+        gap: 1.5rem;
+    }
+
+    .profInfo {
+        padding-right: 0;
+        width: 100%;
+    }
+
+    .profActions {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .profActionGroup {
+        width: 100%;
+        display: flex;
+        gap: 0.5rem;
+    }
+
+    .avatarContainer {
+        position: relative;
+        top: 0;
+        right: 0;
+    }
+
+    .hubGrid {
+        flex-direction: column;
+        align-items: center;
+        gap: 1.5rem;
+    }
+
+    .hubButtons {
+        justify-content: center;
+    }
+
+    .sectionList {
+        grid-template-columns: 1fr;
+    }
+
+    .contentWrapper {
+        flex-direction: column;
+        gap: 1.5rem;
+    }
+
+    .illustrationWrapper {
+        display: none;
+        /* Hide large illustrations on mobile */
+    }
+
+    .illustration {
+        display: none;
+    }
 }

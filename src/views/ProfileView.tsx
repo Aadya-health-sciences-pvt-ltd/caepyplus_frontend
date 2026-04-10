@@ -7,13 +7,14 @@ import {
     ArrowRight, Edit3, Globe, Share2
 } from 'lucide-react';
 
-import { useRouter } from 'next/navigation';
+import { useAppRouter } from '../lib/router';
 import styles from './ProfileView.module.css';
 
 import { mockDataService } from '../services/mockDataService';
+import { calculateProfileProgress } from '../lib/profileProgress';
 
 const ProfileView = () => {
-    const router = useRouter();
+    const router = useAppRouter();
     const currentUser = mockDataService.getCurrentUser();
 
     const [navFormData, setNavFormData] = useState<Record<string, any>>({});
@@ -74,13 +75,13 @@ const ProfileView = () => {
                             </div>
 
                             <div className={styles.profHeader}>
-                                <div style={{ flex: 1, paddingRight: '2rem' }}>
+                                <div className={styles.profInfo}>
                                     <div className={styles.progressLabel}>
                                         <span>Profile completion</span>
-                                        <span>{hasPhoto ? '85%' : '75%'}</span>
+                                        <span>{calculateProfileProgress(formData).totalPercentage}%</span>
                                     </div>
                                     <div className={styles.progressBar}>
-                                        <div className={styles.progressFill} style={{ width: hasPhoto ? '85%' : '75%' }}></div>
+                                        <div className={styles.progressFill} style={{ width: `${calculateProfileProgress(formData).totalPercentage}%` }}></div>
                                     </div>
 
                                     <div className={styles.checklist}>
@@ -90,7 +91,7 @@ const ProfileView = () => {
                                         <CheckItem label="Visibility settings" done={true} />
                                     </div>
 
-                                    <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                                    <div className={styles.profActions}>
                                         <span className={styles.verifiedBadge} style={{
                                             backgroundColor: isVerified ? '#ECFDF5' : '#FEF2F2',
                                             color: isVerified ? '#059669' : '#DC2626',
@@ -98,7 +99,7 @@ const ProfileView = () => {
                                         }}>
                                             {isVerified ? 'Verified Profile' : 'Not-Verified'}
                                         </span>
-                                        <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                        <div className={styles.profActionGroup}>
                                             <button className={styles.editBtn} onClick={() => router.push('/doctor/onboarding')}>Edit Profile</button>
                                             <button className={styles.viewProfileBtn} onClick={() => router.push('/doctor/profile-summary')}>View Profile</button>
                                         </div>
@@ -106,8 +107,34 @@ const ProfileView = () => {
                                 </div>
 
                                 <div className={styles.avatarContainer}>
-                                    {/* Avatar Placeholder */}
-                                    <img src={formData.profileImage || "https://i.pravatar.cc/150?u=a042581f4e29026704d"} alt="Profile" className={styles.avatar} />
+                                    {formData.profileImage ? (
+                                        <img src={formData.profileImage} alt="Profile" className={styles.avatar} />
+                                    ) : (
+                                        <div
+                                            className={styles.avatar}
+                                            style={{
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                background: 'linear-gradient(135deg, #293991 0%, #1ABFD2 100%)',
+                                                color: 'white',
+                                                fontWeight: 700,
+                                                fontSize: '1.25rem',
+                                                letterSpacing: '0.05em',
+                                                userSelect: 'none',
+                                            }}
+                                            aria-label="Profile initials"
+                                        >
+                                            {name
+                                                .replace(/^Dr\.?\s*/i, '')
+                                                .split(' ')
+                                                .filter(Boolean)
+                                                .slice(0, 2)
+                                                .map((w: string) => w[0].toUpperCase())
+                                                .join('')
+                                            }
+                                        </div>
+                                    )}
                                     <div className={styles.editOverlay}><Edit3 size={10} /></div>
                                 </div>
                             </div>
@@ -161,7 +188,7 @@ const ProfileView = () => {
                                 <h3 className={styles.cardTitle}>Content Creation (C-LINQ) <span>Educate your patients</span></h3>
                             </div>
 
-                            <div style={{ display: 'flex', gap: '2rem' }}>
+                            <div className={styles.contentWrapper}>
                                 <div style={{ flex: 1 }}>
                                     <div className={styles.contentBox}>
                                         <p className={styles.suggestionTitle}>Suggested: Explain a condition your patients frequently ask about</p>
@@ -174,7 +201,7 @@ const ProfileView = () => {
                                     </div>
                                 </div>
 
-                                <div style={{ width: '150px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                <div className={styles.illustrationWrapper}>
                                     {/* Illustration Placeholder */}
                                     <Users size={64} strokeWidth={1} color="#E5E7EB" />
                                 </div>

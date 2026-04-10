@@ -5,7 +5,7 @@ import { usePathname } from 'next/navigation';
 import {
     LayoutGrid, Users,
     ChevronLeft, ChevronRight,
-    Shield, Database
+    Shield, Database, ContactRound
 } from 'lucide-react';
 import styles from './Sidebar.module.css'; // Reusing existing sidebar styles
 import { getLoggedInAdmin, type AdminUser } from '../lib/adminAuth';
@@ -69,13 +69,13 @@ const AdminSidebar: React.FC = () => {
                     isCollapsed={isCollapsed}
                 />
                 <NavItem
-                    to="/admin/doctors"
+                    to="/admin/dashboard/doctors"
                     icon={<Users size={20} />}
                     label="Doctors"
                     isCollapsed={isCollapsed}
                 />
                 <NavItem
-                    to="/admin/users"
+                    to="/admin/dashboard/users"
                     icon={<Shield size={20} />}
                     label="User Management"
                     isCollapsed={isCollapsed}
@@ -83,11 +83,17 @@ const AdminSidebar: React.FC = () => {
 
 
                 <NavItem
-                    to="/admin/masters"
+                    to="/admin/dashboard/masters"
                     icon={<Database size={20} />}
                     label="Master Data"
                     isCollapsed={isCollapsed}
                     badge={pendingCount > 0 ? pendingCount : undefined}
+                />
+                <NavItem
+                    to="/admin/dashboard/lead-doctors"
+                    icon={<ContactRound size={20} />}
+                    label="Lead Doctors"
+                    isCollapsed={isCollapsed}
                 />
             </nav>
         </aside>

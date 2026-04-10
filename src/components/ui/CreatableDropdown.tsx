@@ -153,7 +153,8 @@ const CreatableDropdown: React.FC<CreatableDropdownProps> = ({
     };
 
     const handleFocus = () => {
-        setIsOpen(true);
+        // Keep focus tracking for parent but avoid auto-opening,
+        // so programmatic focus (like on step change) doesn't open the menu.
         onFocus?.();
     };
 
@@ -176,6 +177,7 @@ const CreatableDropdown: React.FC<CreatableDropdownProps> = ({
                 placeholder={placeholder}
                 onChange={handleInputChange}
                 onFocus={handleFocus}
+                onClick={() => setIsOpen(prev => !prev)}
                 onKeyDown={handleKeyDown}
                 className={`${styles.input} ${isOpen ? styles.inputOpen : ''} ${className || ''}`}
                 style={value && !isOpen ? { paddingRight: '2.25rem' } : {}}

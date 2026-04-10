@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { useRouter, useParams } from 'next/navigation';
+import { useParams } from 'next/navigation';
+import { useAppRouter } from '../../lib/router';
 import {
     ArrowLeft, X, ShieldCheck, User, MapPin, Briefcase, Mail, Phone,
     Calendar, FileText, IndianRupee, GraduationCap, Clock,
@@ -11,9 +12,10 @@ import {
 import styles from './AdminDashboard.module.css';
 
 import { adminService, type Doctor, type DoctorFullProfile, type DoctorDetails } from '../../services/adminService';
+import { calculateProfileProgressFromApi } from '../../lib/profileProgress';
 
 const AdminDoctorDetails = () => {
-    const router = useRouter();
+    const router = useAppRouter();
     const params = useParams<{ id: string }>();
     const routeId = params.id;
 
@@ -23,7 +25,7 @@ const AdminDoctorDetails = () => {
             const s = JSON.parse(sessionStorage.getItem('nav_state') || '{}');
             if (s.doctor) setNavDoctor(s.doctor);
             sessionStorage.removeItem('nav_state');
-        } catch {}
+        } catch { }
     }, []);
 
     const [profile, setProfile] = useState<DoctorFullProfile | null>(null);
@@ -54,7 +56,7 @@ const AdminDoctorDetails = () => {
 
     // Build display data — prefer profile (API) over navigation-state doctor
     const identity = profile?.identity;
-    const details = profile?.details;
+    const details = (profile as any)?.doctor || profile?.details;
     const media = profile?.media || [];
 
     const doctorName = identity
@@ -63,10 +65,11 @@ const AdminDoctorDetails = () => {
 
     const email = identity?.email || doctor?.email || '';
     const phone = identity?.phone_number || doctor?.phone || '';
-    const specialty = details?.specialty || doctor?.specialty || 'Specialty not set';
+    const specialty = details?.primary_specialization || details?.specialty || doctor?.specialty || 'Specialty not set';
     const locationStr = details?.primary_practice_location || doctor?.primary_practice_location || 'Location not set';
     const joinedDate = identity?.registered_at || doctor?.created_at;
-    const regNumber = details?.registration_number || doctor?.medical_registration_number || null;
+    const regNumber = details?.medical_registration_number || details?.registration_number || doctor?.medical_registration_number || null;
+    const medCouncil = details?.medical_council || 'Not Provided';
 
     // ---- Email Action Dialog state ----
     type DialogAction = 'verify' | 'reject' | null;
@@ -149,11 +152,20 @@ The Caepy Team`,
         setIsLoading(true);
         try {
             if (dialogAction === 'verify') {
-                await adminService.verifyDoctor(id);
+                await adminService.verifyDoctor(id, {
+                    send_email: true,
+                    email_subject: emailSubject,
+                    email_body: emailBody
+                });
                 setStatus('verified');
                 alert('Doctor verified successfully. Notification email will be sent.');
             } else if (dialogAction === 'reject') {
-                await adminService.rejectDoctor(id, emailBody);
+                await adminService.rejectDoctor(id, {
+                    reason: "Rejection email sent",
+                    send_email: true,
+                    email_subject: emailSubject,
+                    email_body: emailBody
+                });
                 setStatus('rejected');
                 alert('Doctor rejected. Notification email will be sent.');
             }
@@ -173,7 +185,7 @@ The Caepy Team`,
         <>
             <div className={styles.container}>
                 <button
-                    onClick={() => router.push('/admin/doctors')}
+                    onClick={() => router.push('/admin/dashboard/doctors')}
                     style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#6B7280', marginBottom: '1.5rem', fontSize: '0.875rem' }}
                 >
                     <ArrowLeft size={18} /> Back to Doctors List
@@ -186,65 +198,79 @@ The Caepy Team`,
                 )}
 
                 {/* Header */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '2rem' }}>
-                    <div>
-                        <h1 className={styles.title}>{doctorName}</h1>
-                        <p className={styles.subtitle}>{specialty} • {locationStr}</p>
-                    </div>
-                    <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-                        <span className={`${styles.statusBadge} ${isVerified ? styles.statusVerified : isRejected ? styles.statusRejected : styles.statusPending}`} style={{ fontSize: '1rem', padding: '0.5rem 1rem' }}>
-                            {status}
-                        </span>
+                <div className={styles.flexBetweenStart} style={{ marginBottom: '2rem' }}>
+                    <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'center' }}>
+                        {details?.profile_photo ? (
+                            <img
+                                src={details.profile_photo}
+                                alt={doctorName}
+                                style={{ width: '80px', height: '80px', borderRadius: '50%', objectFit: 'cover', border: '3px solid white', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }}
+                            />
+                        ) : (
+                            <div style={{ width: '80px', height: '80px', borderRadius: '50%', background: '#EEF2FF', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#4F46E5', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }}>
+                                <User size={40} />
+                            </div>
+                        )}
+                        <div>
+                            <h1 className={styles.title} style={{ margin: '0 0 0.25rem 0' }}>{doctorName}</h1>
+                            <p className={styles.subtitle} style={{ margin: 0 }}>{specialty} • {locationStr}</p>
+                        </div>
                     </div>
                 </div>
 
                 {/* Registration Number - Highlighted Card */}
-                <div style={{
-                    background: regNumber ? 'linear-gradient(135deg, #EEF2FF 0%, #E0E7FF 100%)' : '#FEF3C7',
-                    border: regNumber ? '2px solid #818CF8' : '2px solid #F59E0B',
-                    borderRadius: '1rem', padding: '1.5rem 2rem', marginBottom: '2rem',
-                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                        <div style={{
-                            width: '48px', height: '48px', borderRadius: '12px',
-                            background: regNumber ? '#4F46E5' : '#F59E0B',
-                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        }}>
-                            {regNumber ? <FileText size={24} color="white" /> : <AlertTriangle size={24} color="white" />}
+                {!isVerified && (
+                    <div style={{
+                        background: regNumber ? 'linear-gradient(135deg, #EEF2FF 0%, #E0E7FF 100%)' : '#FEF3C7',
+                        border: regNumber ? '2px solid #818CF8' : '2px solid #F59E0B',
+                        borderRadius: '1rem', padding: '1.5rem 2rem', marginBottom: '2rem',
+                    }} className={styles.regCard}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                            <div style={{
+                                width: '48px', height: '48px', borderRadius: '12px',
+                                background: regNumber ? '#4F46E5' : '#F59E0B',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            }}>
+                                {regNumber ? <FileText size={24} color="white" /> : <AlertTriangle size={24} color="white" />}
+                            </div>
+                            <div>
+                                <p style={{ fontSize: '0.8125rem', color: regNumber ? '#4338CA' : '#92400E', fontWeight: 500, margin: '0 0 0.25rem 0', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                                    Medical Registration Number
+                                </p>
+                                <p style={{ fontSize: '1.5rem', fontWeight: 700, color: regNumber ? '#1E1B4B' : '#78350F', margin: 0, letterSpacing: '0.02em', fontFamily: 'monospace' }}>
+                                    {regNumber || 'Not Provided'}
+                                </p>
+                                {regNumber && medCouncil !== 'Not Provided' && (
+                                    <p style={{ fontSize: '0.875rem', color: '#4338CA', marginTop: '0.25rem', fontWeight: 500 }}>
+                                        {medCouncil}
+                                    </p>
+                                )}
+                            </div>
                         </div>
-                        <div>
-                            <p style={{ fontSize: '0.8125rem', color: regNumber ? '#4338CA' : '#92400E', fontWeight: 500, margin: '0 0 0.25rem 0', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                                Medical Registration Number
-                            </p>
-                            <p style={{ fontSize: '1.5rem', fontWeight: 700, color: regNumber ? '#1E1B4B' : '#78350F', margin: 0, letterSpacing: '0.02em', fontFamily: 'monospace' }}>
-                                {regNumber || 'Not Provided'}
-                            </p>
-                        </div>
+                        {regNumber && (
+                            <a
+                                href="https://www.nmc.org.in/information-desk/indian-medical-register/"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                style={{
+                                    padding: '0.625rem 1.25rem', background: '#4F46E5', color: 'white',
+                                    border: 'none', borderRadius: '0.5rem', fontWeight: 500,
+                                    fontSize: '0.875rem', cursor: 'pointer', textDecoration: 'none', whiteSpace: 'nowrap',
+                                }}
+                            >
+                                Verify on NMC ↗
+                            </a>
+                        )}
                     </div>
-                    {regNumber && (
-                        <a
-                            href="https://www.nmc.org.in/information-desk/indian-medical-register/"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            style={{
-                                padding: '0.625rem 1.25rem', background: '#4F46E5', color: 'white',
-                                border: 'none', borderRadius: '0.5rem', fontWeight: 500,
-                                fontSize: '0.875rem', cursor: 'pointer', textDecoration: 'none', whiteSpace: 'nowrap',
-                            }}
-                        >
-                            Verify on NMC ↗
-                        </a>
-                    )}
-                </div>
+                )}
 
-                <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '2rem' }}>
+                <div className={styles.grid2Cols1Fr}>
                     {/* Main Profile Info */}
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
 
                         {/* Basic Information */}
                         <SectionCard title="Basic Information">
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+                            <div className={styles.grid2ColsEqual}>
                                 <DetailRow icon={<User size={18} />} label="Full Name" value={doctorName} />
                                 <DetailRow icon={<Briefcase size={18} />} label="Specialty" value={specialty} />
                                 <DetailRow icon={<Mail size={18} />} label="Email" value={email || 'N/A'} />
@@ -260,10 +286,10 @@ The Caepy Team`,
                         {/* Credentials & Trust Markers (Block 2) */}
                         {details && (
                             <SectionCard title="Credentials & Trust Markers" icon={<GraduationCap size={18} />}>
-                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+                                <div className={styles.grid2ColsEqual}>
                                     <DetailRow icon={<Calendar size={18} />} label="Year of MBBS" value={details.year_of_mbbs?.toString() || 'N/A'} />
                                     <DetailRow icon={<Calendar size={18} />} label="Year of Specialisation" value={details.year_of_specialisation?.toString() || 'N/A'} />
-                                    <DetailRow icon={<Clock size={18} />} label="Years of Clinical Experience" value={details.years_of_clinical_experience?.toString() || doctor?.years_of_experience?.toString() || 'N/A'} />
+                                    <DetailRow icon={<Clock size={18} />} label="Years of Clinical Experience" value={details.years_of_clinical_experience?.toString() || details.years_of_experience?.toString() || doctor?.years_of_experience?.toString() || 'N/A'} />
                                     <DetailRow icon={<Clock size={18} />} label="Years Post Specialisation" value={details.years_post_specialisation?.toString() || 'N/A'} />
                                 </div>
                                 <TagList label="Qualifications" items={details.qualifications} fallback={doctor?.qualifications} />
@@ -324,7 +350,7 @@ The Caepy Team`,
                         {/* Media / Documents */}
                         {media.length > 0 && (
                             <SectionCard title="Media & Documents" icon={<Image size={18} />}>
-                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '1rem' }}>
+                                <div className={styles.gridAutoFill}>
                                     {media.map(m => (
                                         <div key={m.media_id} style={{ background: '#F9FAFB', borderRadius: '0.5rem', padding: '1rem', border: '1px solid #E5E7EB' }}>
                                             <p style={{ fontSize: '0.8125rem', fontWeight: 600, color: '#111827', margin: '0 0 0.25rem 0', wordBreak: 'break-all' }}>{m.file_name}</p>
@@ -384,6 +410,75 @@ The Caepy Team`,
                             </div>
                         </div>
 
+                        {/* Profile Completeness Card */}
+                        {(() => {
+                            const profileData: Record<string, any> = {
+                                full_name: doctorName,
+                                specialty: specialty,
+                                primary_practice_location: locationStr !== 'Location not set' ? locationStr : null,
+                                years_of_clinical_experience: details?.years_of_clinical_experience || details?.years_of_experience || doctor?.years_of_experience,
+                                medical_registration_number: regNumber,
+                                medical_council: medCouncil !== 'Not Provided' ? medCouncil : null,
+                                profile_photo: details?.profile_photo || null,
+                                year_of_mbbs: details?.year_of_mbbs,
+                                conditions_commonly_treated: details?.conditions_commonly_treated,
+                                conditions_known_for: details?.conditions_known_for,
+                                training_experience: details?.training_experience,
+                                motivation_in_practice: details?.motivation_in_practice,
+                                unwinding_after_work: details?.unwinding_after_work,
+                                recognition_identity: details?.recognition_identity,
+                                quality_time_interests: details?.quality_time_interests,
+                                professional_achievement: details?.professional_achievement,
+                                personal_achievement: details?.personal_achievement,
+                                professional_aspiration: details?.professional_aspiration,
+                                personal_aspiration: details?.personal_aspiration,
+                                what_patients_value_most: details?.what_patients_value_most,
+                                approach_to_care: details?.approach_to_care,
+                                availability_philosophy: details?.availability_philosophy,
+                                content_seeds: details?.content_seeds,
+                            };
+                            const progress = calculateProfileProgressFromApi(profileData);
+                            const barColor = progress.totalPercentage >= 80 ? '#10B981' : progress.totalPercentage >= 50 ? '#F59E0B' : '#EF4444';
+                            return (
+                                <div style={{ background: 'white', padding: '1.5rem', borderRadius: '1rem', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+                                    <h3 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: '0.75rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                        Profile Completeness
+                                        <span style={{ fontSize: '1.25rem', fontWeight: 700, color: barColor }}>{progress.totalPercentage}%</span>
+                                    </h3>
+                                    {/* Overall bar */}
+                                    <div style={{ height: '8px', borderRadius: '4px', background: '#F3F4F6', marginBottom: '1rem', overflow: 'hidden' }}>
+                                        <div style={{ height: '100%', width: `${progress.totalPercentage}%`, background: barColor, borderRadius: '4px', transition: 'width 0.4s ease' }} />
+                                    </div>
+                                    {/* Section breakdown */}
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                                        {progress.sections.map((sec) => (
+                                            <div key={sec.section} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.8rem' }}>
+                                                <div style={{
+                                                    width: '18px', height: '18px', borderRadius: '50%', flexShrink: 0,
+                                                    background: sec.isComplete ? '#10B981' : '#E5E7EB',
+                                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                    color: sec.isComplete ? 'white' : '#9CA3AF', fontSize: '0.65rem', fontWeight: 700
+                                                }}>
+                                                    {sec.isComplete ? '✓' : sec.section}
+                                                </div>
+                                                <span style={{ flex: 1, color: sec.isComplete ? '#111827' : '#9CA3AF', fontSize: '0.75rem' }}>
+                                                    S{sec.section}: {sec.label}
+                                                </span>
+                                                <span style={{ color: sec.isComplete ? '#10B981' : '#9CA3AF', fontWeight: 600, fontSize: '0.75rem' }}>
+                                                    {sec.earned}/{sec.weight}%
+                                                </span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                    {!progress.hasProfilePicture && (
+                                        <p style={{ fontSize: '0.7rem', color: '#F59E0B', marginTop: '0.75rem', margin: '0.75rem 0 0' }}>
+                                            ⚠ Profile photo missing — +5% when added
+                                        </p>
+                                    )}
+                                </div>
+                            );
+                        })()}
+
                         {/* Registration Summary Card */}
                         <div style={{ background: 'white', padding: '1.5rem', borderRadius: '1rem', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
                             <h3 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: '1rem' }}>Registration Summary</h3>
@@ -392,9 +487,9 @@ The Caepy Team`,
                                 <SummaryItem label="Specialty" value={specialty} />
                                 <SummaryItem label="Experience" value={
                                     details?.years_of_clinical_experience ? `${details.years_of_clinical_experience} yrs` :
-                                        doctor?.years_of_experience ? `${doctor.years_of_experience} yrs` : 'N/A'
+                                        details?.years_of_experience ? `${details.years_of_experience} yrs` :
+                                            doctor?.years_of_experience ? `${doctor.years_of_experience} yrs` : 'N/A'
                                 } />
-                                <SummaryItem label="Status" value={status} badge isVerified={isVerified} isRejected={isRejected} />
                             </div>
                         </div>
 
@@ -403,7 +498,7 @@ The Caepy Team`,
                             <div style={{ background: 'white', padding: '1.5rem', borderRadius: '1rem', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
                                 <h3 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: '1rem' }}>Languages</h3>
                                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
-                                    {(details?.languages_spoken || doctor?.languages || []).map((lang, i) => (
+                                    {(details?.languages_spoken || doctor?.languages || []).map((lang: string, i: number) => (
                                         <span key={i} style={{
                                             background: '#EFF6FF', color: '#1D4ED8', padding: '0.25rem 0.75rem',
                                             borderRadius: '999px', fontSize: '0.8125rem', fontWeight: 500,
@@ -615,7 +710,7 @@ const TextBlock = ({ label, value }: { label: string; value: string }) => (
 const SummaryItem = ({ label, value, highlight, badge, isVerified, isRejected }: {
     label: string; value: string; highlight?: boolean; badge?: boolean; isVerified?: boolean; isRejected?: boolean;
 }) => (
-    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.5rem 0', borderBottom: '1px solid #F9FAFB' }}>
+    <div className={styles.flexBetweenCenter} style={{ padding: '0.5rem 0', borderBottom: '1px solid #F9FAFB' }}>
         <span style={{ fontSize: '0.8125rem', color: '#6B7280' }}>{label}</span>
         {badge ? (
             <span style={{

@@ -253,3 +253,101 @@
     background: #93C5FD;
     cursor: not-allowed;
 }
+
+/* Responsive Utilities */
+.flexBetween {
+    display: flex;
+    justify-content: space-between;
+}
+
+.flexBetweenCenter {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.flexBetweenStart {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+}
+
+.grid2Cols1Fr {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 2rem;
+}
+
+.grid2ColsEqual {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+}
+
+.gridAutoFill {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 1rem;
+}
+
+.regCard {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+/* Mobile Responsive Override */
+@media (max-width: 768px) {
+    .container {
+        padding: 1rem;
+    }
+
+    .statsGrid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+
+    .controls {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 1rem;
+    }
+
+    .searchBar {
+        width: 100%;
+        box-sizing: border-box;
+    }
+
+    .tableContainer {
+        overflow-x: auto;
+    }
+
+    .modalContent {
+        padding: 1.5rem;
+        width: 95vw;
+    }
+
+    .dropZone {
+        padding: 1.5rem;
+    }
+
+    /* Responsive utilities overrides */
+    .flexBetween,
+    .flexBetweenCenter,
+    .flexBetweenStart,
+    .regCard {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+
+    .grid2Cols1Fr,
+    .grid2ColsEqual {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+
+    .gridAutoFill {
+        grid-template-columns: 1fr;
+    }
+}

@@ -4,6 +4,7 @@ export interface AdminUserResponse {
     id: number;
     phone: string;
     email: string | null;
+    full_name?: string | null;
     role: 'admin' | 'operation';
     is_active: boolean;
     doctor_id: number | null;
@@ -23,6 +24,7 @@ export interface UserListResponse {
 export interface CreateUserPayload {
     phone: string;
     email: string | null;
+    full_name?: string | null;
     role: 'admin' | 'operation';
     is_active: boolean;
     doctor_id: number | null;
@@ -30,6 +32,7 @@ export interface CreateUserPayload {
 
 export interface UpdateUserPayload {
     email?: string | null;
+    full_name?: string | null;
     role?: 'admin' | 'operation' | null;
     is_active?: boolean | null;
     doctor_id?: number | null;
@@ -269,41 +272,7 @@ export interface DoctorFullProfile {
 // Static Dummy Data for Admin Console
 // ---------------------------------------------------------------------------
 
-const STATIC_USERS: AdminUserResponse[] = [
-    {
-        id: 9991,
-        phone: '+919800000001',
-        email: 'admin.demo@caepy.com',
-        role: 'admin',
-        is_active: true,
-        doctor_id: null,
-        created_at: '2026-01-01T10:00:00Z',
-        updated_at: null,
-        last_login_at: '2026-02-18T15:30:00Z'
-    },
-    {
-        id: 9992,
-        phone: '+919800000002',
-        email: 'staff.demo@caepy.com',
-        role: 'operation',
-        is_active: true,
-        doctor_id: null,
-        created_at: '2026-01-05T12:00:00Z',
-        updated_at: null,
-        last_login_at: '2026-02-18T14:45:00Z'
-    },
-    {
-        id: 9993,
-        phone: '+919800000003',
-        email: 'dr.john.smith@demo.com',
-        role: 'operation',
-        is_active: false,
-        doctor_id: 101,
-        created_at: '2026-01-10T09:00:00Z',
-        updated_at: null,
-        last_login_at: null
-    }
-];
+const STATIC_USERS: AdminUserResponse[] = [];
 
 // ---------------------------------------------------------------------------
 // Bulk Upload API Response Types
@@ -350,8 +319,10 @@ export interface DropdownOption {
 }
 
 export interface DropdownListResponse {
-    options: DropdownOption[];
+    items: DropdownOption[];
     total: number;
+    skip?: number;
+    limit?: number;
     pending_count: number;
 }
 
@@ -388,68 +359,54 @@ export interface DropdownBulkReviewResponse {
 }
 
 
-let STATIC_DOCTORS: Doctor[] = [
-    {
-        id: 8881,
-        first_name: 'Prem',
-        last_name: 'Ranjan',
-        full_name: 'Dr. Prem Ranjan',
-        email: 'prem.ranjan@demo.com',
-        phone: '+918888811111',
-        specialty: 'Cardiology',
-        primary_practice_location: 'Mumbai, MH',
-        onboarding_status: 'verified',
-        role: 'doctor',
-        created_at: '2026-01-15T08:30:00Z',
-        updated_at: null,
-        medical_registration_number: 'MH-2019-34521',
-        qualifications: ['MBBS', 'MD (Cardiology)', 'DM'],
-        years_of_experience: 12,
-        consultation_fee: '₹1,500',
-        languages: ['English', 'Hindi', 'Marathi'],
-        about_me: 'Experienced cardiologist specializing in interventional procedures and preventive cardiology. Previously at Kokilaben Hospital.',
-    },
-    {
-        id: 8882,
-        first_name: 'Hemanth',
-        last_name: 'Kumar',
-        full_name: 'Dr. Hemanth Kumar',
-        email: 'hemanth.kumar@demo.com',
-        phone: '+918888822222',
-        specialty: 'Dermatology',
-        primary_practice_location: 'Bangalore, KA',
-        onboarding_status: 'submitted',
-        role: 'doctor',
-        created_at: '2026-01-20T11:45:00Z',
-        updated_at: null,
-        medical_registration_number: 'KA-2021-18743',
-        qualifications: ['MBBS', 'MD (Dermatology)'],
-        years_of_experience: 6,
-        consultation_fee: '₹800',
-        languages: ['English', 'Kannada', 'Telugu'],
-        about_me: 'Dermatologist with focus on cosmetic procedures and skin cancer screening.',
-    },
-    {
-        id: 8883,
-        first_name: 'Saranya',
-        last_name: 'Prabhu',
-        full_name: 'Dr. Saranya Prabhu',
-        email: 'saranya.prabhu@demo.com',
-        phone: '+918888833333',
-        specialty: 'Pediatrics',
-        primary_practice_location: 'Delhi NCR',
-        onboarding_status: 'pending',
-        role: 'doctor',
-        created_at: '2026-01-25T14:20:00Z',
-        updated_at: null,
-        medical_registration_number: 'DL-2020-55612',
-        qualifications: ['MBBS', 'DCH', 'DNB (Pediatrics)'],
-        years_of_experience: 8,
-        consultation_fee: '₹1,000',
-        languages: ['English', 'Hindi', 'Tamil'],
-        about_me: 'Pediatrician specializing in neonatal care and childhood development disorders.',
-    }
-];
+let STATIC_DOCTORS: Doctor[] = [];
+
+// ---------------------------------------------------------------------------
+// Lead Doctor interfaces (matching backend LeadDoctorResponse)
+// ---------------------------------------------------------------------------
+
+export interface LeadDoctor {
+    id: number;
+    city: string | null;
+    speciality: string | null;
+    doctor_name: string | null;
+    qualification: string | null;
+    specialization: string | null;
+    experience: string | null;
+    fee: string | null;
+    location: string | null;
+    hospital_name: string | null;
+    hospital_address: string | null;
+    awards: string | null;
+    memberships: string | null;
+    registrations: string | null;
+    services: string | null;
+    profile_url: string | null;
+    created_at: string | null;
+}
+
+export interface LeadDoctorFilters {
+    city?: string;
+    speciality?: string;
+    specialization?: string;
+    doctor_name?: string;
+    location?: string;
+    hospital_name?: string;
+}
+
+export interface LeadDoctorPagination {
+    total: number;
+    page: number;
+    page_size: number;
+    total_pages: number;
+    has_next: boolean;
+    has_previous: boolean;
+}
+
+export interface LeadDoctorListResponse {
+    data: LeadDoctor[];
+    pagination: LeadDoctorPagination;
+}
 
 // ---------------------------------------------------------------------------
 // Admin Service
@@ -478,14 +435,14 @@ export const adminService = {
                 }
             });
 
-            // Merge with static data for demonstration
-            const apiUsers = response.data.users || [];
+            const apiData = parseResponse<UserListResponse>(response);
+            const apiUsers = apiData.users || [];
             const mergedUsers = [...apiUsers, ...STATIC_USERS];
 
             return {
-                ...response.data,
+                ...apiData,
                 users: mergedUsers,
-                total: (response.data.total || 0) + STATIC_USERS.length
+                total: (apiData.total || 0) + STATIC_USERS.length
             };
         } catch (error) {
             console.warn('API error fetching users, using static data only', error);
@@ -501,12 +458,12 @@ export const adminService = {
 
     createUser: async (payload: CreateUserPayload) => {
         const response = await api.post('/admin/users', payload);
-        return response.data;
+        return parseResponse(response);
     },
 
     updateUser: async (userId: number, payload: UpdateUserPayload) => {
         const response = await api.patch(`/admin/users/${userId}`, payload);
-        return response.data;
+        return parseResponse(response);
     },
 
     // Doctor Management
@@ -536,18 +493,23 @@ export const adminService = {
 
     /** Fetch a single doctor's full profile (identity + details + media + history). */
     getDoctorFullProfile: async (doctorId: number): Promise<DoctorFullProfile> => {
-        const response = await api.get<DoctorFullProfile>(`/doctors/lookup?doctor_id=${doctorId}`);
-        return response.data;
+        const response = await api.get(`/doctors/lookup?doctor_id=${doctorId}`);
+        return parseResponse<DoctorFullProfile>(response);
     },
 
-    verifyDoctor: async (doctorId: number) => {
-        const response = await api.post(`/onboarding/verify/${doctorId}`);
-        return response.data;
+    verifyDoctor: async (doctorId: number, payload?: { send_email?: boolean, email_subject?: string, email_body?: string }) => {
+        const response = await api.post(`/onboarding/verify/${doctorId}`, payload || {});
+        return parseResponse(response);
     },
 
-    rejectDoctor: async (doctorId: number, reason?: string) => {
-        const response = await api.post(`/onboarding/reject/${doctorId}`, { reason });
-        return response.data;
+    rejectDoctor: async (doctorId: number, payload?: { reason?: string, send_email?: boolean, email_subject?: string, email_body?: string }) => {
+        const response = await api.post(`/onboarding/reject/${doctorId}`, payload || {});
+        return parseResponse(response);
+    },
+
+    syncLinqMDProfile: async (doctorId: number) => {
+        const response = await api.get(`/onboarding-admin/linqmd-sync/${doctorId}`);
+        return parseResponse(response);
     },
 
     /** Download the official bulk upload CSV template from the backend. */
@@ -568,24 +530,24 @@ export const adminService = {
     validateBulkCsv: async (file: File): Promise<CsvValidationResponse> => {
         const formData = new FormData();
         formData.append('file', file);
-        const response = await api.post<CsvValidationResponse>(
+        const response = await api.post(
             '/doctors/bulk-upload/csv/validate',
             formData,
             { headers: { 'Content-Type': 'multipart/form-data' } }
         );
-        return response.data;
+        return parseResponse<CsvValidationResponse>(response);
     },
 
     /** Confirm a previously validated CSV upload — writes records to the database. */
     confirmBulkUpload: async (file: File): Promise<CsvUploadResponse> => {
         const formData = new FormData();
         formData.append('file', file);
-        const response = await api.post<CsvUploadResponse>(
+        const response = await api.post(
             '/doctors/bulk-upload/csv',
             formData,
             { headers: { 'Content-Type': 'multipart/form-data' } }
         );
-        return response.data;
+        return parseResponse<CsvUploadResponse>(response);
     },
 
     // -----------------------------------------------------------------------
@@ -659,5 +621,35 @@ export const adminService = {
     bulkReject: async (payload: DropdownBulkReviewRequest): Promise<DropdownBulkReviewResponse> => {
         const response = await api.post('/admin/dropdowns/bulk-reject', payload);
         return parseResponse<DropdownBulkReviewResponse>(response);
-    }
+    },
+
+    // -----------------------------------------------------------------------
+    // Lead Doctors
+    // -----------------------------------------------------------------------
+
+    /** List lead doctors with pagination and optional filters. */
+    getLeadDoctors: async (
+        page = 1,
+        pageSize = 50,
+        filters?: LeadDoctorFilters
+    ): Promise<LeadDoctorListResponse> => {
+        const params: Record<string, any> = { page, page_size: pageSize };
+        if (filters) {
+            if (filters.city) params.city = filters.city;
+            if (filters.speciality) params.speciality = filters.speciality;
+            if (filters.specialization) params.specialization = filters.specialization;
+            if (filters.doctor_name) params.doctor_name = filters.doctor_name;
+            if (filters.location) params.location = filters.location;
+            if (filters.hospital_name) params.hospital_name = filters.hospital_name;
+        }
+        const response = await api.get('/lead-doctors', { params });
+        // PaginatedResponse has { success, data: [...], pagination: {...}, meta }
+        // parseResponse would extract only .data (the array), losing pagination.
+        // Access the raw body directly instead.
+        const body = response.data;
+        return {
+            data: body.data ?? [],
+            pagination: body.pagination,
+        };
+    },
 };

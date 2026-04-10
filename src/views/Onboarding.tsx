@@ -1,6 +1,6 @@
 'use client';
 import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useAppRouter } from '../lib/router';
 import { Mic, Keyboard, Sparkles, Upload, ArrowLeft, MicOff, MapPin, ChevronDown, ChevronUp, Plus, Trash2 } from 'lucide-react';
 import Stepper from '../components/ui/Stepper';
 import LivePreview from '../components/ui/LivePreview';
@@ -15,8 +15,10 @@ import { mockDataService } from '../services/mockDataService';
 import { doctorService } from '../services/doctorService';
 import { dropdownService } from '../services/dropdownService';
 import { useAssistant } from '../hooks/useAssistant';
+import { isBrowser } from '../lib/isBrowser';
 
 import { validateSection1 } from '../lib/validation';
+import { calculateProfileProgress } from '../lib/profileProgress';
 import Toast from '../components/ui/Toast';
 import { voiceService } from '../services/voiceService';
 import { ONBOARDING_VOICE_CONTEXT } from '../lib/voiceContext';
@@ -403,11 +405,17 @@ const PracticeLocationAccordion: React.FC<PracticeLocationAccordionProps> = ({ l
 };
 
 const Onboarding = () => {
-    const router = useRouter();
-    const [navState, setNavState] = useState<Record<string, any>>({});
-    useEffect(() => {
-        try { const s = JSON.parse(sessionStorage.getItem('nav_state') || '{}'); setNavState(s); sessionStorage.removeItem('nav_state'); } catch { }
-    }, []);
+    const router = useAppRouter();
+    // Read nav_state synchronously so it's available for useState initializers
+    const [navState] = useState<Record<string, any>>(() => {
+        try {
+            const s = JSON.parse(sessionStorage.getItem('nav_state') || '{}');
+            sessionStorage.removeItem('nav_state');
+            return s;
+        } catch {
+            return {};
+        }
+    });
 
     // Toast State
     const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info'; isVisible: boolean }>({
@@ -444,10 +452,10 @@ const Onboarding = () => {
 
 
     // Welcome Dialog & Guided Tour State
-    const isNewUser = localStorage.getItem('is_new_user') === 'true';
-    const doctorId = localStorage.getItem('doctor_id') || savedUser?.id || 'unknown';
+    const isNewUser = isBrowser() ? localStorage.getItem('is_new_user') === 'true' : false;
+    const doctorId = (isBrowser() ? localStorage.getItem('doctor_id') : null) || savedUser?.id || 'unknown';
     const tourKey = `caepy_tour_completed_${doctorId}`;
-    const hasTourCompleted = localStorage.getItem(tourKey) === 'true';
+    const hasTourCompleted = isBrowser() ? localStorage.getItem(tourKey) === 'true' : false;
 
     // Determine if dialog should be suppressed:
     // If section >= 6 AND profile already submitted/verified, skip dialog entirely
@@ -788,8 +796,8 @@ const Onboarding = () => {
     });
 
     // Determine login method to disable fields
-    const isPhoneLogin = !!savedUser?.phone || !!localStorage.getItem('mobile_number');
-    const isEmailLogin = !!savedUser?.email || !!localStorage.getItem('user_email');
+    const isPhoneLogin = !!savedUser?.phone || !!(isBrowser() ? localStorage.getItem('mobile_number') : null);
+    const isEmailLogin = !!savedUser?.email || !!(isBrowser() ? localStorage.getItem('user_email') : null);
 
     // Auto-save effect
     useEffect(() => {
@@ -846,23 +854,30 @@ const Onboarding = () => {
     const fellowshipFileRef = React.useRef<HTMLInputElement>(null);
     const [fellowshipFiles, setFellowshipFiles] = useState<File[]>([]);
 
-    const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
 
-        // Size check (e.g., 1MB limit for localStorage safety)
-        if (file.size > 1024 * 1024) {
-            showToast("Image too large. Please select an image under 1MB.", "error");
+        // Size check (e.g., 5MB limit for upload safety)
+        if (file.size > 5 * 1024 * 1024) {
+            showToast("Image too large. Please select an image under 5MB.", "error");
             return;
         }
 
-        const reader = new FileReader();
-        reader.onloadend = () => {
-            const base64String = reader.result as string;
-            setFormData(prev => ({ ...prev, profileImage: base64String }));
+        const doctorId = localStorage.getItem('doctor_id');
+        if (!doctorId) {
+            showToast("Unable to upload profile photo. Doctor ID not found.", "error");
+            return;
+        }
+
+        try {
+            const url = await doctorService.uploadProfilePhoto(doctorId, file);
+            setFormData(prev => ({ ...prev, profileImage: url }));
             showToast("Profile photo uploaded", "success");
-        };
-        reader.readAsDataURL(file);
+        } catch (err) {
+            console.error('Failed to upload profile photo:', err);
+            showToast("Failed to upload profile photo. Please try again.", "error");
+        }
     };
 
     // Helper for array fields (simple strings)
@@ -988,10 +1003,10 @@ const Onboarding = () => {
                             </p>
                         </div>
 
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                        <div className={styles.sectionHeaderWrap}>
                             <div>
                                 <h2 className={styles.sectionTitle} style={{ marginBottom: 0 }}>Professional Identity</h2>
-                                <p style={{ fontSize: '0.875rem', color: '#10B981', marginTop: '0.25rem' }}>Profile strength: 20%</p>
+                                <p style={{ fontSize: '0.875rem', color: '#10B981', marginTop: '0.25rem' }}>Profile strength: {calculateProfileProgress(formData).sections[0].earned}%{!calculateProfileProgress(formData).hasProfilePicture ? <span style={{ fontSize: '0.75rem', color: '#6B7280', marginLeft: '0.5rem' }}>(+5% with profile photo)</span> : null}</p>
                             </div>
                             <input
                                 type="file"
@@ -1218,7 +1233,7 @@ const Onboarding = () => {
                             <div>
                                 <h2 className={styles.sectionTitle} style={{ marginBottom: 0 }}>Credentials & Trust Markers</h2>
                                 <p style={{ fontSize: '0.875rem', color: '#10B981', marginTop: '0.25rem' }}>
-                                    Profile strength: 40%
+                                    Profile strength: {calculateProfileProgress(formData).sections.slice(0, 2).reduce((s, x) => s + x.earned, 0)}%
                                     <span style={{ fontSize: '0.75rem', background: '#FEF3C7', color: '#D97706', padding: '2px 6px', borderRadius: '4px', marginLeft: '0.5rem' }}>Authority badge unlocked</span>
                                 </p>
                             </div>
@@ -1265,74 +1280,7 @@ const Onboarding = () => {
                                             placeholder="Add fellowship..."
                                             style={{ flex: 3 }}
                                         />
-                                        <input
-                                            type="file"
-                                            ref={fellowshipFileRef}
-                                            onChange={(e) => {
-                                                const files = e.target.files;
-                                                if (files && files.length > 0) {
-                                                    setFellowshipFiles(prev => [...prev, ...Array.from(files)]);
-                                                }
-                                                e.target.value = '';
-                                            }}
-                                            accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
-                                            multiple
-                                            style={{ display: 'none' }}
-                                        />
-                                        <button
-                                            className={styles.uploadBtn}
-                                            style={{
-                                                padding: '0.5rem 0.75rem', whiteSpace: 'nowrap', fontSize: '0.8rem',
-                                                ...(fellowshipFiles.length > 0 ? {
-                                                    background: '#D1FAE5', color: '#065F46', borderColor: '#86EFAC',
-                                                } : {})
-                                            }}
-                                            onClick={() => fellowshipFileRef.current?.click()}
-                                            type="button"
-                                        >
-                                            {fellowshipFiles.length > 0
-                                                ? <>✓ {fellowshipFiles.length} file{fellowshipFiles.length > 1 ? 's' : ''}</>
-                                                : <><Upload size={14} /> Attach</>
-                                            }
-                                        </button>
                                     </div>
-                                    {fellowshipFiles.length > 0 && (
-                                        <div style={{
-                                            marginTop: '0.75rem',
-                                            border: '1px solid #86EFAC',
-                                            borderRadius: '0.5rem',
-                                            background: '#F0FDF4',
-                                            padding: '0.75rem',
-                                        }}>
-                                            <p style={{ fontSize: '0.75rem', fontWeight: 600, color: '#166534', margin: '0 0 0.5rem 0' }}>
-                                                📎 {fellowshipFiles.length} file{fellowshipFiles.length > 1 ? 's' : ''} attached
-                                            </p>
-                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.375rem' }}>
-                                                {fellowshipFiles.map((file, i) => (
-                                                    <div key={i} style={{
-                                                        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                                                        background: 'white', padding: '0.5rem 0.75rem',
-                                                        borderRadius: '6px', border: '1px solid #E5E7EB',
-                                                    }}>
-                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                                            <span style={{ fontSize: '1rem' }}>📄</span>
-                                                            <span style={{ fontSize: '0.8125rem', fontWeight: 500, color: '#111827' }}>{file.name}</span>
-                                                            <span style={{ fontSize: '0.75rem', color: '#9CA3AF' }}>
-                                                                ({(file.size / 1024).toFixed(0)} KB)
-                                                            </span>
-                                                        </div>
-                                                        <button
-                                                            onClick={() => setFellowshipFiles(prev => prev.filter((_, idx) => idx !== i))}
-                                                            style={{ background: 'none', border: 'none', color: '#EF4444', cursor: 'pointer', padding: '0.25rem', fontSize: '0.875rem', fontWeight: 600 }}
-                                                            title="Remove file"
-                                                        >
-                                                            ✕
-                                                        </button>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        </div>
-                                    )}
                                 </div>
                             </div>
 
@@ -1394,7 +1342,7 @@ const Onboarding = () => {
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
                             <div>
                                 <h2 className={styles.sectionTitle} style={{ marginBottom: 0 }}>Clinical Focus & Expertise</h2>
-                                <p style={{ fontSize: '0.875rem', color: '#10B981', marginTop: '0.25rem' }}>Profile strength: 60%</p>
+                                <p style={{ fontSize: '0.875rem', color: '#10B981', marginTop: '0.25rem' }}>Profile strength: {calculateProfileProgress(formData).sections.slice(0, 3).reduce((s, x) => s + x.earned, 0)}%</p>
                             </div>
                         </div>
 
@@ -1506,7 +1454,7 @@ const Onboarding = () => {
                             <div>
                                 <h2 className={styles.sectionTitle} style={{ marginBottom: 0 }}>The Human Side</h2>
                                 <p style={{ fontSize: '0.875rem', color: '#10B981', marginTop: '0.25rem' }}>
-                                    Profile strength: 60%
+                                    Profile strength: {calculateProfileProgress(formData).sections.slice(0, 4).reduce((s, x) => s + x.earned, 0)}%
                                     <span style={{ fontSize: '0.75rem', background: '#DBEAFE', color: '#1E40AF', padding: '2px 6px', borderRadius: '4px', marginLeft: '0.5rem' }}>Human Touch added</span>
                                 </p>
                             </div>
@@ -1687,7 +1635,7 @@ const Onboarding = () => {
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
                             <div>
                                 <h2 className={styles.sectionTitle} style={{ marginBottom: 0 }}>Patient Value & Choice Factors</h2>
-                                <p style={{ fontSize: '0.875rem', color: '#10B981', marginTop: '0.25rem' }}>Profile strength: 90%</p>
+                                <p style={{ fontSize: '0.875rem', color: '#10B981', marginTop: '0.25rem' }}>Profile strength: {calculateProfileProgress(formData).sections.slice(0, 5).reduce((s, x) => s + x.earned, 0)}%</p>
                             </div>
                         </div>
 
@@ -1780,7 +1728,7 @@ const Onboarding = () => {
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                             <div>
                                 <h2 className={styles.sectionTitle}>Content Seed (Optional)</h2>
-                                <p style={{ fontSize: '0.875rem', color: '#10B981', marginTop: '0.25rem' }}>First content seed created</p>
+                                <p style={{ fontSize: '0.875rem', color: '#10B981', marginTop: '0.25rem' }}>Profile strength: {calculateProfileProgress(formData).totalPercentage}% {calculateProfileProgress(formData).sections[5].isComplete ? '✓ First content seed created' : ''}</p>
                             </div>
                         </div>
 
@@ -1950,7 +1898,7 @@ const Onboarding = () => {
                     <h1 className={styles.title}>Complete Your Profile</h1>
                     <p className={styles.subtitle}>This will take just 2-3 minutes.</p>
                 </div>
-                <div style={{ flex: 1, maxWidth: '600px', marginLeft: 'auto' }} data-tour="stepper">
+                <div className={styles.stepperContainer} data-tour="stepper">
                     <Stepper currentStep={currentStep} totalSteps={6} onStepClick={handleStepJump} />
                 </div>
             </div>

@@ -1,11 +1,11 @@
 'use client';
 import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { Check, Clock, UserCheck, Sparkles, MapPin, Edit2, LayoutGrid, Eye, Send, CheckCircle } from 'lucide-react';
+import { useAppRouter } from '../lib/router';
+import { Check, Clock, UserCheck, Sparkles, MapPin, Edit2, LayoutGrid, Eye, Send, CheckCircle, LifeBuoy } from 'lucide-react';
 import styles from './ProfileSubmitted.module.css';
 
 const ProfileSubmitted = () => {
-    const router = useRouter();
+    const router = useAppRouter();
     const [formData, setFormData] = useState<Record<string, any>>({});
 
     useEffect(() => {
@@ -115,14 +115,35 @@ const ProfileSubmitted = () => {
 
                 {/* Action Buttons */}
                 <div className={styles.actionButtons}>
-                    <button className={`${styles.btn} ${styles.btnPrimary}`} onClick={() => { sessionStorage.setItem('nav_state', JSON.stringify({ formData })); router.push('/doctor/profile-summary'); }}>
+                    <button
+                        className={`${styles.btn} ${styles.btnPrimary}`}
+                        onClick={() => {
+                            sessionStorage.setItem('nav_state', JSON.stringify({ formData }));
+                            router.push('/doctor/profile-summary');
+                        }}
+                    >
                         <Eye size={18} /> Preview Public Profile
                     </button>
-                    <button className={styles.btn} onClick={() => { sessionStorage.setItem('nav_state', JSON.stringify({ formData, step: 1 })); router.push('/doctor/onboarding'); }}>
+                    <button
+                        className={styles.btn}
+                        onClick={() => {
+                            sessionStorage.setItem('nav_state', JSON.stringify({ formData, step: 1 }));
+                            router.push('/doctor/onboarding');
+                        }}
+                    >
                         <Edit2 size={18} /> Edit Details
                     </button>
-                    <button className={styles.btn} onClick={() => router.push('/doctor/profile')}>
+                    <button
+                        className={styles.btn}
+                        onClick={() => router.push('/doctor/profile')}
+                    >
                         <LayoutGrid size={18} /> Go to Dashboard
+                    </button>
+                    <button
+                        className={styles.btn}
+                        onClick={() => window.dispatchEvent(new CustomEvent('openSupportModal'))}
+                    >
+                        <LifeBuoy size={18} /> Need Help
                     </button>
                 </div>
 
@@ -141,11 +162,6 @@ const ProfileSubmitted = () => {
                     Start a new onboarding (Demo)
                 </a> */}
             </main>
-
-            <div className={styles.helpSection}>
-                <p>Need help or have questions?</p>
-                <p>Contact us at <a href="mailto:support@caepy.com">support@caepy.com</a> or call <a href="tel:+911234567890">+91 123 456 7890</a></p>
-            </div>
         </div>
     );
 };

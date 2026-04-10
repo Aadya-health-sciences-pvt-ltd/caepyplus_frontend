@@ -1,6 +1,6 @@
 'use client';
 import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useAppRouter } from '../lib/router';
 import { Star, Loader2, Sparkles } from 'lucide-react';
 import { signInWithPopup } from 'firebase/auth';
 import { auth, googleProvider } from '../lib/firebase';
@@ -10,7 +10,7 @@ import { doctorService } from '../services/doctorService';
 import { mockDataService } from '../services/mockDataService';
 
 const Login = () => {
-    const router = useRouter();
+    const router = useAppRouter();
     const [mobileNumber, setMobileNumber] = useState('');
     const [email, setEmail] = useState('');
     const [loginMethod] = useState<'phone' | 'email'>('phone');
@@ -79,15 +79,6 @@ const Login = () => {
         setIsLoading(true);
 
         const identifier = loginMethod === 'phone' ? mobileNumber : email;
-
-        // CHECK MOCK SERVICE FIRST for direct login
-        const mockProfile = mockDataService.login(identifier);
-        if (mockProfile) {
-            console.log("Mock profile found, bypassing OTP:", mockProfile);
-            setIsLoading(false);
-            handleLoginSuccess(identifier, loginMethod);
-            return;
-        }
 
         try {
             if (loginMethod === 'phone') {

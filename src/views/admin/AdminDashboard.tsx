@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useAppRouter } from '../../lib/router';
 import {
     Users, AlertCircle, TrendingUp, Clock,
     CheckCircle, Activity, FileText
@@ -10,7 +10,7 @@ import { adminService, type Doctor } from '../../services/adminService';
 import styles from './AdminDashboard.module.css';
 
 const AdminDashboard = () => {
-    const router = useRouter();
+    const router = useAppRouter();
     const [stats, setStats] = useState({
         total: 0,
         pending: 0,
@@ -68,7 +68,7 @@ const AdminDashboard = () => {
                         <p>Total Onboarded</p>
                     </div>
                 </div>
-                <div className={styles.statCard} style={{ cursor: 'pointer' }} onClick={() => router.push('/admin/doctors')}>
+                <div className={styles.statCard} style={{ cursor: 'pointer' }} onClick={() => router.push('/admin/dashboard/doctors')}>
                     <div className={styles.statIcon} style={{ background: '#F59E0B' }}>
                         <AlertCircle size={24} />
                     </div>
@@ -97,7 +97,7 @@ const AdminDashboard = () => {
                 </div>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '2rem' }}>
+            <div className={styles.grid2Cols1Fr}>
 
                 {/* Main Column */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
@@ -124,9 +124,9 @@ const AdminDashboard = () => {
 
                     {/* Needs Attention Queue */}
                     <div style={{ background: 'white', padding: '1.5rem', borderRadius: '1rem', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                        <div className={styles.flexBetweenCenter} style={{ marginBottom: '1rem' }}>
                             <h3 className={styles.sectionTitle}>Needs Attention</h3>
-                            <button onClick={() => router.push('/admin/doctors')} style={{ color: '#3B82F6', background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.875rem' }}>View All</button>
+                            <button onClick={() => router.push('/admin/dashboard/doctors')} style={{ color: '#3B82F6', background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.875rem' }}>View All</button>
                         </div>
 
                         {loading ? (
@@ -135,7 +135,7 @@ const AdminDashboard = () => {
                             <p style={{ color: '#6B7280', textAlign: 'center', padding: '1rem' }}>No pending verifications.</p>
                         ) : (
                             pendingDoctors.map((doc) => (
-                                <div key={doc.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.75rem 0', borderBottom: '1px solid #F3F4F6' }}>
+                                <div key={doc.id} className={styles.flexBetweenCenter} style={{ padding: '0.75rem 0', borderBottom: '1px solid #F3F4F6' }}>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                                         <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: '#FEF3C7', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#B45309' }}>
                                             <AlertCircle size={20} />
@@ -149,7 +149,7 @@ const AdminDashboard = () => {
                                             </p>
                                         </div>
                                     </div>
-                                    <button onClick={() => { sessionStorage.setItem('nav_state', JSON.stringify({ doctor: doc })); router.push(`/admin/doctor/${doc.id}`); }} style={{ padding: '0.5rem 1rem', background: '#EFF6FF', color: '#1D4ED8', border: 'none', borderRadius: '6px', fontSize: '0.8rem', fontWeight: 500, cursor: 'pointer' }}>
+                                    <button onClick={() => { sessionStorage.setItem('nav_state', JSON.stringify({ doctor: doc })); router.push(`/admin/dashboard/doctor/${doc.id}`); }} style={{ padding: '0.5rem 1rem', background: '#EFF6FF', color: '#1D4ED8', border: 'none', borderRadius: '6px', fontSize: '0.8rem', fontWeight: 500, cursor: 'pointer' }}>
                                         Review
                                     </button>
                                 </div>

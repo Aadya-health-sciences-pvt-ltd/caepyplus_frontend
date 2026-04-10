@@ -1,6 +1,7 @@
 'use client';
 import React, { useState } from 'react';
-import { useRouter, usePathname } from 'next/navigation';
+import { usePathname } from 'next/navigation';
+import { useAppRouter } from '../lib/router';
 import { Stethoscope, Bell, Settings, User, CheckCircle, FileText, CreditCard, HelpCircle, Phone, LogOut } from 'lucide-react';
 import styles from './Header.module.css';
 import { authService } from '../services/authService';
@@ -9,21 +10,32 @@ interface HeaderProps {
     centerTitle?: string;
 }
 
+import { getLoggedInAdmin, logoutAdmin } from '../lib/adminAuth';
 import { mockDataService } from '../services/mockDataService';
+import { isBrowser } from '../lib/isBrowser';
 
 const Header: React.FC<HeaderProps> = ({ centerTitle }) => {
     const [openDropdown, setOpenDropdown] = useState<string | null>(null); // 'notifications', 'settings', 'profile', or null
-    const router = useRouter();
+    const router = useAppRouter();
     const pathname = usePathname();
 
-    const user = mockDataService.getCurrentUser();
-    // Access name from root or nested data. Fallback to Anonymous.
-    const displayName = user?.name || user?.data?.fullName || user?.data?.personalInfo?.fullName || 'Anonymous';
+    const isAdminRoute = pathname.startsWith('/admin');
+    const adminUser = isAdminRoute ? getLoggedInAdmin() : null;
+    const doctorUser = mockDataService.getCurrentUser();
+
+    // On admin pages: show logged-in admin's full name; else show doctor user name
+    const displayName = isAdminRoute && adminUser
+        ? (adminUser.full_name || adminUser.name || 'Anonymous')
+        : (doctorUser?.name || doctorUser?.data?.fullName || doctorUser?.data?.personalInfo?.fullName || 'Anonymous');
     // Display identifier: email > phone > nothing
-    const displayIdentifier = user?.email || user?.phone || localStorage.getItem('mobile_number') || '';
+    const displayIdentifier = (isAdminRoute && adminUser)
+        ? (adminUser.email?.replace(/^phone:/, '') || '')
+        : (doctorUser?.email || doctorUser?.phone || (isBrowser() ? localStorage.getItem('mobile_number') : '') || '');
 
     const handleLogout = () => {
-        // Clear all auth and user data from localStorage
+        if (pathname.startsWith('/admin')) {
+            logoutAdmin();
+        }
         authService.clearSession();
 
         if (pathname.startsWith('/admin')) {
@@ -44,7 +56,7 @@ const Header: React.FC<HeaderProps> = ({ centerTitle }) => {
             </div>
 
             {centerTitle && (
-                <div style={{ position: 'absolute', left: '50%', transform: 'translateX(-50%)', fontWeight: 600, fontSize: '1.125rem', color: '#111827' }}>
+                <div className={styles.centerTitle}>
                     {centerTitle}
                 </div>
             )}
@@ -115,7 +127,13 @@ const Header: React.FC<HeaderProps> = ({ centerTitle }) => {
                             <button className={styles.dropdownItem}>
                                 <HelpCircle size={16} /> Help Center
                             </button>
-                            <button className={styles.dropdownItem}>
+                            <button
+                                className={styles.dropdownItem}
+                                onClick={() => {
+                                    window.dispatchEvent(new CustomEvent('openSupportModal'));
+                                    setOpenDropdown(null);
+                                }}
+                            >
                                 <Phone size={16} /> Contact Support
                             </button>
                         </div>

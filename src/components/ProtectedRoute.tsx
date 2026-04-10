@@ -1,14 +1,14 @@
 'use client';
-import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
+import { useAppRouter } from '../lib/router';
 
 interface ProtectedRouteProps {
     children: ReactNode;
 }
 
 const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
-    const router = useRouter();
+    const router = useAppRouter();
     const [isAuthed, setIsAuthed] = useState<boolean | null>(null);
 
     useEffect(() => {
