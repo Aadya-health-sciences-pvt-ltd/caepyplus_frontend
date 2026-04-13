@@ -50,9 +50,9 @@ const ReviewProfile = () => {
 
     const handleSubmit = async () => {
         // Validate Section 1 before submission
-        const { isValid, missingFields } = validateSection1(formData);
+        const { isValid, errors } = validateSection1(formData);
         if (!isValid) {
-            showToast(`Cannot submit. Missing: ${missingFields.join(', ')}`, 'error');
+            showToast(`Cannot submit: ${errors.join('; ')}`, 'error');
             return;
         }
 
