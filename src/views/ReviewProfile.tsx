@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAppRouter } from '../lib/router';
 import {
-    Edit2, Check, User, Activity, Briefcase, Building, MapPin,
+    Edit2, Check, User as UserIcon, Activity, Briefcase, Building, MapPin,
     Award, FileText, GraduationCap, Target, Coffee, Heart, Lightbulb
 } from 'lucide-react';
 import Stepper from '../components/ui/Stepper';
@@ -13,6 +13,7 @@ import { doctorService } from '../services/doctorService';
 import { validateSection1 } from '../lib/validation';
 import { calculateProfileProgress } from '../lib/profileProgress';
 import { useResolvedProfilePhotoDisplayUrl } from '../hooks/useResolvedProfilePhotoDisplayUrl';
+import { parseErrorMessage } from '../lib/api';
 
 const ReviewProfile = () => {
     const router = useAppRouter();
@@ -44,11 +45,12 @@ const ReviewProfile = () => {
     };
 
     const rawProfileImage = typeof formData.profileImage === 'string' ? formData.profileImage : '';
-    const skipSignedForLocalPreview = /^(data:|blob:)/i.test(rawProfileImage);
+    const skipServerSignedFetch =
+        !rawProfileImage.trim() || /^(data:|blob:)/i.test(rawProfileImage);
     const { url: resolvedProfilePhotoUrl } = useResolvedProfilePhotoDisplayUrl(
         rawProfileImage || undefined,
         undefined,
-        skipSignedForLocalPreview,
+        skipServerSignedFetch,
     );
 
     // Helper to safely access data
@@ -95,10 +97,9 @@ const ReviewProfile = () => {
                 router.push('/doctor/submitted');
             }, 1000);
 
-        } catch (err: any) {
+        } catch (err: unknown) {
             console.error('Submission failed:', err);
-            const msg = err.response?.data?.message || 'Failed to submit profile. Please try again.';
-            showToast(msg, 'error');
+            showToast(parseErrorMessage(err), 'error');
         }
     };
 
@@ -171,8 +172,22 @@ const ReviewProfile = () => {
                                 }}
                             />
                         ) : (
-                            <div style={{ width: '120px', height: '120px', borderRadius: '50%', background: '#F3F4F6', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '3rem', color: '#9CA3AF', border: '4px solid white', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}>
-                                {formData.fullName ? formData.fullName.charAt(0).toUpperCase() : '?'}
+                            <div
+                                style={{
+                                    width: '120px',
+                                    height: '120px',
+                                    borderRadius: '50%',
+                                    background: '#F3F4F6',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    color: '#d1d5db',
+                                    border: '4px solid white',
+                                    boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
+                                }}
+                                aria-hidden
+                            >
+                                <UserIcon size={48} strokeWidth={1.25} />
                             </div>
                         )}
                     </div>
@@ -190,7 +205,7 @@ const ReviewProfile = () => {
                         </button>
                     </div>
                     <div className={styles.sectionContent}>
-                        <ReviewRow icon={<User size={20} />} label="FULL NAME" value={getVal('fullName')} />
+                        <ReviewRow icon={<UserIcon size={20} />} label="FULL NAME" value={getVal('fullName')} />
                         <ReviewRow icon={<Activity size={20} />} label="SPECIALTY" value={getVal('specialty')} />
                         <ReviewRow icon={<Briefcase size={20} />} label="EXPERIENCE" value={getVal('experience') ? `${getVal('experience')} years` : 'Not provided'} />
                         <ReviewRow icon={<Building size={20} />} label="PRIMARY LOCATION" value={getVal('primaryLocation')} />

@@ -9,13 +9,13 @@ import { authService } from '../services/authService';
 import { doctorService } from '../services/doctorService';
 import { mockDataService } from '../services/mockDataService';
 import { publicAssetUrl } from '../config/basePath';
+import { parseErrorMessage } from '../lib/api';
 
 const Login = () => {
     const router = useAppRouter();
     const [mobileNumber, setMobileNumber] = useState('');
     const [email, setEmail] = useState('');
     const [loginMethod] = useState<'phone' | 'email'>('phone');
-    const [otpDeliveryMethod, setOtpDeliveryMethod] = useState<'whatsapp' | 'sms'>('whatsapp');
     const [otp, setOtp] = useState('');
     const [isOtpSent, setIsOtpSent] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
@@ -43,12 +43,13 @@ const Login = () => {
             profile = mockDataService.createProfile(identifier, type);
         }
 
-        // Explicitly cache email for downstream mapping if logged in via email
+        // Email-first (Google): email is the stable id; phone is collected in onboarding step 1.
         if (type === 'email') {
             localStorage.setItem('user_email', identifier);
+            localStorage.removeItem('mobile_number');
         } else {
-            // Explicitly cache phone
             localStorage.setItem('mobile_number', identifier);
+            localStorage.removeItem('user_email');
         }
 
         console.log("Routing user:", profile);
@@ -64,10 +65,12 @@ const Login = () => {
                 // High completion – go straight to dashboard
                 sessionStorage.setItem('nav_state', JSON.stringify({ isNewUser }));
                 router.push('/doctor/dashboard');
-            } else if (isNewUser && profile.currentStep === 0) {
+            } else if (isNewUser && profile.currentStep === 0 && type === 'phone') {
+                // Phone sign-up: optional resume upload first
                 sessionStorage.setItem('nav_state', JSON.stringify({ isNewUser }));
                 router.push('/doctor/resume-upload');
             } else {
+                // Google / email identifier: go to onboarding (step 1 collects phone)
                 sessionStorage.setItem('nav_state', JSON.stringify({ isNewUser }));
                 router.push('/doctor/onboarding');
             }
@@ -84,7 +87,7 @@ const Login = () => {
 
         try {
             if (loginMethod === 'phone') {
-                const response = await authService.requestOTP(mobileNumber, otpDeliveryMethod);
+                const response = await authService.requestOTP(mobileNumber, 'whatsapp');
                 if (response.success) {
                     setIsOtpSent(true);
                     setTimer(30); // 30 seconds cooldown
@@ -141,17 +144,16 @@ const Login = () => {
         }
     };
 
-    const handleResendOTP = async (method: 'whatsapp' | 'sms') => {
+    const handleResendOTP = async () => {
         if (timer > 0) return;
         setError(null);
         setIsLoading(true);
 
         try {
-            const response = await authService.resendOTP(mobileNumber, method);
+            const response = await authService.resendOTP(mobileNumber, 'whatsapp');
             if (response.success) {
                 setTimer(30);
-                setOtpDeliveryMethod(method);
-                alert(`OTP sent successfully via ${method === 'whatsapp' ? 'WhatsApp' : 'SMS'}!`);
+                alert('OTP sent successfully via WhatsApp!');
             }
         } catch (err: unknown) {
             console.error("OTP Resend Error:", err);
@@ -178,8 +180,8 @@ const Login = () => {
             const result = await signInWithPopup(auth, googleProvider);
             const user = result.user;
 
-            // Get the Firebase ID token for backend verification
-            const idToken = await user.getIdToken();
+            // Fresh Firebase ID token for backend verifyIdToken (avoids stale cached JWT)
+            const idToken = await user.getIdToken(true);
             const userEmail = user.email;
             const userName = user.displayName;
 
@@ -221,7 +223,7 @@ const Login = () => {
             } else if (errorCode === 'auth/configuration-not-found' || (errorMessage && errorMessage.includes('api key'))) {
                 setError("Firebase configuration error. Please check your setup.");
             } else {
-                setError("Google login failed: " + (errorMessage || "Unknown error"));
+                setError(`Google login failed: ${parseErrorMessage(error)}`);
             }
         } finally {
             setIsLoading(false);
@@ -440,19 +442,9 @@ const Login = () => {
                                             type="submit"
                                             className={styles.submitButton}
                                             disabled={isLoading}
-                                            onClick={() => setOtpDeliveryMethod('whatsapp')}
                                             style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', background: '#25D366' }}
                                         >
-                                            {isLoading && otpDeliveryMethod === 'whatsapp' ? <Loader2 className="animate-spin" size={20} /> : 'Get OTP on WhatsApp'}
-                                        </button>
-                                        <button
-                                            type="submit"
-                                            className={styles.submitButton}
-                                            disabled={isLoading}
-                                            onClick={() => setOtpDeliveryMethod('sms')}
-                                            style={{ background: 'transparent', color: '#4B5563', border: '1px solid #E2E8F0', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}
-                                        >
-                                            {isLoading && otpDeliveryMethod === 'sms' ? <Loader2 className="animate-spin" size={20} /> : 'Get OTP via SMS'}
+                                            {isLoading ? <Loader2 className="animate-spin" size={20} /> : 'Get OTP on WhatsApp'}
                                         </button>
                                     </div>
                                 </form>
@@ -477,7 +469,7 @@ const Login = () => {
                             <div className={styles.inputGroup}>
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
                                     <label htmlFor="otp" className={styles.label}>
-                                        Enter OTP sent to {otpDeliveryMethod === 'whatsapp' ? 'WhatsApp' : 'SMS'}
+                                        Enter OTP sent to WhatsApp
                                     </label>
                                     <button
                                         type="button"
@@ -508,39 +500,21 @@ const Login = () => {
 
                             <div style={{ marginTop: '1.5rem', display: 'flex', flexDirection: 'column', gap: '0.75rem', alignItems: 'center' }}>
                                 <p style={{ fontSize: '0.875rem', color: '#64748B', marginBottom: '0.25rem' }}>Didn't receive the OTP?</p>
-                                <div style={{ display: 'flex', gap: '1rem' }}>
-                                    <button
-                                        type="button"
-                                        onClick={() => handleResendOTP('whatsapp')}
-                                        disabled={timer > 0 || isLoading}
-                                        style={{
-                                            background: 'none',
-                                            border: 'none',
-                                            color: timer > 0 ? '#94a3b8' : '#25D366',
-                                            cursor: timer > 0 ? 'default' : 'pointer',
-                                            fontSize: '0.9rem',
-                                            fontWeight: 500,
-                                        }}
-                                    >
-                                        {timer > 0 ? `WhatsApp in ${timer}s` : 'Resend on WhatsApp'}
-                                    </button>
-                                    <span style={{ color: '#E2E8F0' }}>|</span>
-                                    <button
-                                        type="button"
-                                        onClick={() => handleResendOTP('sms')}
-                                        disabled={timer > 0 || isLoading}
-                                        style={{
-                                            background: 'none',
-                                            border: 'none',
-                                            color: timer > 0 ? '#94a3b8' : '#3B82F6',
-                                            cursor: timer > 0 ? 'default' : 'pointer',
-                                            fontSize: '0.9rem',
-                                            fontWeight: 500,
-                                        }}
-                                    >
-                                        {timer > 0 ? `SMS in ${timer}s` : 'Resend via SMS'}
-                                    </button>
-                                </div>
+                                <button
+                                    type="button"
+                                    onClick={() => void handleResendOTP()}
+                                    disabled={timer > 0 || isLoading}
+                                    style={{
+                                        background: 'none',
+                                        border: 'none',
+                                        color: timer > 0 ? '#94a3b8' : '#25D366',
+                                        cursor: timer > 0 ? 'default' : 'pointer',
+                                        fontSize: '0.9rem',
+                                        fontWeight: 500,
+                                    }}
+                                >
+                                    {timer > 0 ? `Resend available in ${timer}s` : 'Resend on WhatsApp'}
+                                </button>
                             </div>
                         </form>
                     )}

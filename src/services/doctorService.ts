@@ -414,6 +414,7 @@ export const doctorService = {
             // Block 1: Professional Identity
             full_name: toStringOrNull(formData.fullName),
             email: toStringOrNull(formData.email),
+            phone_number: toStringOrNull(formData.phone),
             specialty: toStringOrNull(formData.specialty),
             primary_practice_location: toStringOrNull(formData.primaryLocation),
             centres_of_practice: centresOfPractice,

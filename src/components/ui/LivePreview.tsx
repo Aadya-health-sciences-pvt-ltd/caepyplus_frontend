@@ -1,6 +1,6 @@
 'use client';
 import React, { useEffect, useRef } from 'react';
-import { MapPin, Clock, Edit2 } from 'lucide-react';
+import { MapPin, Clock, Edit2, User } from 'lucide-react';
 import styles from './LivePreview.module.css';
 import { useResolvedProfilePhotoDisplayUrl } from '../../hooks/useResolvedProfilePhotoDisplayUrl';
 
@@ -66,11 +66,13 @@ const LivePreview: React.FC<LivePreviewProps> = ({ data, focusedField, onEditFie
     const fieldRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
 
     const rawProfileImage = typeof data.profileImage === 'string' ? data.profileImage : '';
-    const skipSignedForLocalPreview = /^(data:|blob:)/i.test(rawProfileImage);
+    // Do not fetch the doctor's stored DB photo when the form has no image yet — show an empty avatar instead.
+    const skipServerSignedFetch =
+        !rawProfileImage.trim() || /^(data:|blob:)/i.test(rawProfileImage);
     const { url: previewProfilePhotoUrl } = useResolvedProfilePhotoDisplayUrl(
         rawProfileImage || undefined,
         undefined,
-        skipSignedForLocalPreview,
+        skipServerSignedFetch,
     );
 
     const formatArray = (val: string | string[]) => Array.isArray(val) ? val.join(', ') : val;
@@ -181,7 +183,7 @@ const LivePreview: React.FC<LivePreviewProps> = ({ data, focusedField, onEditFie
                                     style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }}
                                 />
                             ) : (
-                                data.fullName ? data.fullName.charAt(0).toUpperCase() : '?'
+                                <User className={styles.avatarEmptyIcon} size={28} strokeWidth={1.25} aria-hidden />
                             )}
                         </div>
                         <div className={styles.profileInfo}>

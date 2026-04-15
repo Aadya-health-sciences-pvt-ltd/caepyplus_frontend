@@ -29,6 +29,20 @@ const generateRequestId = (): string => {
     );
 };
 
+/** Paths that must not send the app JWT — backend validates Firebase / OTP only. */
+const PUBLIC_AUTH_PATH_FRAGMENTS = [
+    '/auth/google/verify',
+    '/auth/otp/request',
+    '/auth/otp/verify',
+    '/auth/otp/resend',
+    '/auth/admin/otp/verify',
+] as const;
+
+function isPublicAuthRequest(config: InternalAxiosRequestConfig): boolean {
+    const url = `${config.baseURL ?? ''}${config.url ?? ''}`;
+    return PUBLIC_AUTH_PATH_FRAGMENTS.some((fragment) => url.includes(fragment));
+}
+
 // ---------------------------------------------------------------------------
 // REQUEST interceptor — centralised header management
 // ---------------------------------------------------------------------------
@@ -39,10 +53,12 @@ const generateRequestId = (): string => {
 
 api.interceptors.request.use(
     (config: InternalAxiosRequestConfig) => {
-        // 1. JWT authentication
+        // 1. JWT authentication (never attach app token to login / Google verify — causes 401 on many APIs)
         const token = localStorage.getItem('access_token');
         const tokenType = localStorage.getItem('token_type') || 'Bearer';
-        if (token) {
+        if (isPublicAuthRequest(config)) {
+            delete config.headers.Authorization;
+        } else if (token) {
             config.headers.Authorization = `${tokenType} ${token}`;
         }
 
@@ -77,18 +93,22 @@ api.interceptors.response.use(
     (response: AxiosResponse) => response,
     (error: AxiosError) => {
         if (error.response?.status === 401) {
-            // Clear all auth data
-            const keysToRemove = [
-                'access_token', 'token_type', 'expires_in',
-                'doctor_id', 'mobile_number', 'is_new_user',
-                'role', 'doctor_profile', 'caepy_current_user_id',
-            ];
-            keysToRemove.forEach((key) => localStorage.removeItem(key));
+            const reqUrl = `${error.config?.baseURL ?? ''}${error.config?.url ?? ''}`;
+            const isPublicAuthFailure = PUBLIC_AUTH_PATH_FRAGMENTS.some((f) => reqUrl.includes(f));
 
-            // Redirect to login (window.location since this is outside React Router)
-            const basePath = process.env.NEXT_PUBLIC_BASE_PATH || '';
-            if (window.location.pathname !== `${basePath}/login`) {
-                window.location.href = `${basePath}/login`;
+            // Wrong OTP / invalid Google token: do not wipe session or redirect — let the page handle it
+            if (!isPublicAuthFailure) {
+                const keysToRemove = [
+                    'access_token', 'token_type', 'expires_in',
+                    'doctor_id', 'mobile_number', 'user_email', 'is_new_user',
+                    'role', 'doctor_profile', 'caepy_current_user_id',
+                ];
+                keysToRemove.forEach((key) => localStorage.removeItem(key));
+
+                const basePath = process.env.NEXT_PUBLIC_BASE_PATH || '';
+                if (window.location.pathname !== `${basePath}/login`) {
+                    window.location.href = `${basePath}/login`;
+                }
             }
         }
 
@@ -165,13 +185,36 @@ export const parseResponseField = <T = unknown>(
  * Consistently pulls the human-readable message from various backend
  * error shapes (`detail`, `message`, `error`, status text).
  */
+function messageFromUnknownBody(body: unknown): string | null {
+    if (body == null) return null;
+    if (typeof body === 'string') {
+        const t = body.trim();
+        if (t.startsWith('{') || t.startsWith('[')) {
+            try {
+                const parsed = JSON.parse(t) as Record<string, unknown>;
+                if (typeof parsed.message === 'string') return parsed.message;
+                if (typeof parsed.detail === 'string') return parsed.detail;
+                if (typeof parsed.error === 'string') return parsed.error;
+            } catch {
+                return body;
+            }
+        }
+        return body;
+    }
+    if (typeof body === 'object') {
+        const o = body as Record<string, unknown>;
+        if (typeof o.message === 'string') return o.message;
+        if (o.detail != null)
+            return typeof o.detail === 'string' ? o.detail : JSON.stringify(o.detail);
+        if (typeof o.error === 'string') return o.error;
+    }
+    return null;
+}
+
 export const parseErrorMessage = (error: unknown): string => {
     if (axios.isAxiosError(error)) {
-        const data = error.response?.data;
-        if (typeof data === 'string') return data;
-        if (data?.detail) return typeof data.detail === 'string' ? data.detail : JSON.stringify(data.detail);
-        if (data?.message) return data.message;
-        if (data?.error) return data.error;
+        const fromBody = messageFromUnknownBody(error.response?.data);
+        if (fromBody) return fromBody;
         return error.response?.statusText || error.message;
     }
     if (error instanceof Error) return error.message;

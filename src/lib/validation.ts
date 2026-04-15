@@ -1,8 +1,12 @@
 export const validateSection1 = (formData: any) => {
+    const emailStr = (formData.email ?? '').toString().trim();
+    const hasWorkEmail = emailStr.includes('@');
+
     const requiredFields = [
         { key: 'fullName', label: 'Full Name' },
         { key: 'email', label: 'Email' },
-        { key: 'phone', label: 'Phone Number' },
+        // Google / email-first sign-in: phone is collected in onboarding but may be added after email is set.
+        ...(hasWorkEmail ? [] : [{ key: 'phone', label: 'Phone Number' }]),
         { key: 'specialty', label: 'Specialty' },
         { key: 'primaryLocation', label: 'Primary Location' },
         { key: 'experience', label: 'Experience' },
