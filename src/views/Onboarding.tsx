@@ -675,6 +675,7 @@ const Onboarding = () => {
                 userName={formData.fullName || savedUser?.name}
                 currentStep={currentStep}
                 totalSteps={6}
+                profileCompletionPercent={profileProgress.totalPercentage}
                 showSkipButton={showSkipButton}
                 onStartTour={handleStartTour}
                 onSkip={handleSkipWelcome}

@@ -9,6 +9,8 @@ interface WelcomeDialogProps {
     userName?: string;
     currentStep?: number;
     totalSteps?: number;
+    /** Real 0–100 completion from filled fields (e.g. `calculateProfileProgress`). When set for returning users, overrides step-based estimate. */
+    profileCompletionPercent?: number;
     showSkipButton?: boolean;
     onStartTour: () => void;
     onSkip: () => void;
@@ -30,12 +32,17 @@ const WelcomeDialog = ({
     userName,
     currentStep = 1,
     totalSteps = 6,
+    profileCompletionPercent,
     showSkipButton = false,
     onStartTour,
     onSkip,
     onSkipToReview,
 }: WelcomeDialogProps) => {
-    const completionPercent = Math.round(((currentStep - 1) / totalSteps) * 100);
+    const stepBasedPercent = Math.round(((currentStep - 1) / totalSteps) * 100);
+    const completionPercent =
+        typeof profileCompletionPercent === 'number' && !Number.isNaN(profileCompletionPercent)
+            ? Math.min(100, Math.max(0, Math.round(profileCompletionPercent)))
+            : stepBasedPercent;
     const displayName = userName || 'Doctor';
     const nextSection = SECTION_NAMES[currentStep] || `Section ${currentStep}`;
 

@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { usePathname } from 'next/navigation';
 import { useAppRouter } from '../lib/router';
-import { Bell, Settings, User, CheckCircle, FileText, CreditCard, HelpCircle, Phone, LogOut } from 'lucide-react';
+import { Settings, User, Phone, LogOut } from 'lucide-react';
 import styles from './Header.module.css';
 import { authService } from '../services/authService';
 
@@ -16,7 +16,7 @@ import { isBrowser } from '../lib/isBrowser';
 import { publicAssetUrl } from '../config/basePath';
 
 const Header: React.FC<HeaderProps> = ({ centerTitle }) => {
-    const [openDropdown, setOpenDropdown] = useState<string | null>(null); // 'notifications', 'settings', 'profile', or null
+    const [openDropdown, setOpenDropdown] = useState<string | null>(null); // 'settings', 'profile', or null
     const router = useAppRouter();
     const pathname = usePathname();
 
@@ -67,53 +67,6 @@ const Header: React.FC<HeaderProps> = ({ centerTitle }) => {
             )}
 
             <div className={styles.rightSection}>
-                {/* NOTIFICATIONS */}
-                <div
-                    style={{ position: 'relative', height: '100%', display: 'flex', alignItems: 'center' }}
-                    onMouseEnter={() => setOpenDropdown('notifications')}
-                    onMouseLeave={() => setOpenDropdown(null)}
-                >
-                    <button
-                        className={styles.iconButton}
-                        aria-label="Notifications"
-                    >
-                        <Bell size={20} />
-                        <span className={styles.notificationBadge}>1</span>
-                    </button>
-
-                    {openDropdown === 'notifications' && (
-                        <div className={styles.dropdownMenu} style={{ width: '320px' }}>
-                            <div className={styles.notificationItem}>
-                                <div className={styles.notificationIcon} style={{ background: '#ECFDF5', color: '#059669' }}>
-                                    <CheckCircle size={16} />
-                                </div>
-                                <div className={styles.notificationContent}>
-                                    <h4>Verification completed</h4>
-                                    <p>2 hours ago</p>
-                                </div>
-                            </div>
-                            <div className={styles.notificationItem}>
-                                <div className={styles.notificationIcon} style={{ background: '#EFF6FF', color: '#3B82F6' }}>
-                                    <FileText size={16} />
-                                </div>
-                                <div className={styles.notificationContent}>
-                                    <h4>Content ready for review</h4>
-                                    <p>5 hours ago</p>
-                                </div>
-                            </div>
-                            <div className={styles.notificationItem}>
-                                <div className={styles.notificationIcon} style={{ background: '#F0F9FF', color: '#0EA5E9' }}>
-                                    <CreditCard size={16} />
-                                </div>
-                                <div className={styles.notificationContent}>
-                                    <h4>Subscription renewal in 7 days</h4>
-                                    <p>1 day ago</p>
-                                </div>
-                            </div>
-                        </div>
-                    )}
-                </div>
-
                 {/* SETTINGS */}
                 <div
                     style={{ position: 'relative', height: '100%', display: 'flex', alignItems: 'center' }}
@@ -129,9 +82,6 @@ const Header: React.FC<HeaderProps> = ({ centerTitle }) => {
 
                     {openDropdown === 'settings' && (
                         <div className={styles.dropdownMenu} style={{ width: '200px' }}>
-                            <button className={styles.dropdownItem}>
-                                <HelpCircle size={16} /> Help Center
-                            </button>
                             <button
                                 className={styles.dropdownItem}
                                 onClick={() => {
