@@ -14,6 +14,7 @@ const Login = () => {
     const [mobileNumber, setMobileNumber] = useState('');
     const [email, setEmail] = useState('');
     const [loginMethod] = useState<'phone' | 'email'>('phone');
+    const [otpDeliveryMethod, setOtpDeliveryMethod] = useState<'whatsapp' | 'sms'>('whatsapp');
     const [otp, setOtp] = useState('');
     const [isOtpSent, setIsOtpSent] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
@@ -82,7 +83,7 @@ const Login = () => {
 
         try {
             if (loginMethod === 'phone') {
-                const response = await authService.requestOTP(mobileNumber);
+                const response = await authService.requestOTP(mobileNumber, otpDeliveryMethod);
                 if (response.success) {
                     setIsOtpSent(true);
                     setTimer(30); // 30 seconds cooldown
@@ -139,16 +140,17 @@ const Login = () => {
         }
     };
 
-    const handleResendOTP = async () => {
+    const handleResendOTP = async (method: 'whatsapp' | 'sms') => {
         if (timer > 0) return;
         setError(null);
         setIsLoading(true);
 
         try {
-            const response = await authService.resendOTP(mobileNumber);
+            const response = await authService.resendOTP(mobileNumber, method);
             if (response.success) {
                 setTimer(30);
-                alert("OTP sent successfully!");
+                setOtpDeliveryMethod(method);
+                alert(`OTP sent successfully via ${method === 'whatsapp' ? 'WhatsApp' : 'SMS'}!`);
             }
         } catch (err: unknown) {
             console.error("OTP Resend Error:", err);
@@ -235,7 +237,7 @@ const Login = () => {
             image: "https://randomuser.me/api/portraits/women/44.jpg"
         },
         {
-            quote: "Caepy has completely transformed how I manage my online presence. The voice-assisted setup was a game-changer.",
+            quote: "CAEPY has completely transformed how I manage my online presence. The voice-assisted setup was a game-changer.",
             author: "Dr. Rajesh Kumar",
             role: "Cardiologist · Mumbai",
             image: "https://randomuser.me/api/portraits/men/32.jpg"
@@ -328,14 +330,14 @@ const Login = () => {
                     <div className={styles.logoHeader}>
                         <Sparkles size={48} color="#293991" fill="#293991" fillOpacity={0.1} strokeWidth={1.5} />
                         <div className={styles.logoTextColumn}>
-                            <span className={styles.brandNameLarge}>Caepy</span>
+                            <span className={styles.brandNameLarge}>CAEPY</span>
                             <span className={styles.taglineLarge}>Practice Smarter</span>
                         </div>
                     </div>
                 </div>
 
                 <div className={styles.formContainer}>
-                    <h2 className={styles.formTitle}>Join Caepy</h2>
+                    <h2 className={styles.formTitle}>Join CAEPY</h2>
                     <p className={styles.formSubtitle}>
                         Create and manage a professional doctor profile using a guided, voice-assisted setup.
                     </p>
@@ -428,9 +430,26 @@ const Login = () => {
 
                                     {error && <p className={styles.errorMessage} style={{ color: 'red', fontSize: '0.875rem', marginBottom: '1rem' }}>{error}</p>}
 
-                                    <button type="submit" className={styles.submitButton} disabled={isLoading}>
-                                        {isLoading ? <Loader2 className="animate-spin" size={20} /> : 'Login'}
-                                    </button>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                                        <button 
+                                            type="submit" 
+                                            className={styles.submitButton} 
+                                            disabled={isLoading}
+                                            onClick={() => setOtpDeliveryMethod('whatsapp')}
+                                            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', background: '#25D366' }}
+                                        >
+                                            {isLoading && otpDeliveryMethod === 'whatsapp' ? <Loader2 className="animate-spin" size={20} /> : 'Get OTP on WhatsApp'}
+                                        </button>
+                                        <button 
+                                            type="submit" 
+                                            className={styles.submitButton} 
+                                            disabled={isLoading}
+                                            onClick={() => setOtpDeliveryMethod('sms')}
+                                            style={{ background: 'transparent', color: '#4B5563', border: '1px solid #E2E8F0', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}
+                                        >
+                                            {isLoading && otpDeliveryMethod === 'sms' ? <Loader2 className="animate-spin" size={20} /> : 'Get OTP via SMS'}
+                                        </button>
+                                    </div>
                                 </form>
                             </div>
 
@@ -451,9 +470,9 @@ const Login = () => {
                     ) : (
                         <form onSubmit={handleVerifyOTP}>
                             <div className={styles.inputGroup}>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
                                     <label htmlFor="otp" className={styles.label}>
-                                        Enter OTP
+                                        Enter OTP sent to {otpDeliveryMethod === 'whatsapp' ? 'WhatsApp' : 'SMS'}
                                     </label>
                                     <button
                                         type="button"
@@ -478,25 +497,45 @@ const Login = () => {
 
                             {error && <p className={styles.errorMessage} style={{ color: 'red', fontSize: '0.875rem', marginTop: '0.5rem' }}>{error}</p>}
 
-                            <button type="submit" className={styles.submitButton} disabled={isLoading}>
+                            <button type="submit" className={styles.submitButton} disabled={isLoading} style={{ marginTop: '1rem' }}>
                                 {isLoading ? <Loader2 className="animate-spin" size={20} /> : 'Verify & Login'}
                             </button>
 
-                            <div style={{ marginTop: '1rem', textAlign: 'center' }}>
-                                <button
-                                    type="button"
-                                    onClick={handleResendOTP}
-                                    disabled={timer > 0 || isLoading}
-                                    style={{
-                                        background: 'none',
-                                        border: 'none',
-                                        color: timer > 0 ? '#94a3b8' : '#0891b2',
-                                        cursor: timer > 0 ? 'default' : 'pointer',
-                                        fontSize: '0.9rem'
-                                    }}
-                                >
-                                    {timer > 0 ? `Resend OTP in ${timer}s` : 'Resend OTP'}
-                                </button>
+                            <div style={{ marginTop: '1.5rem', display: 'flex', flexDirection: 'column', gap: '0.75rem', alignItems: 'center' }}>
+                                <p style={{ fontSize: '0.875rem', color: '#64748B', marginBottom: '0.25rem' }}>Didn't receive the OTP?</p>
+                                <div style={{ display: 'flex', gap: '1rem' }}>
+                                    <button
+                                        type="button"
+                                        onClick={() => handleResendOTP('whatsapp')}
+                                        disabled={timer > 0 || isLoading}
+                                        style={{
+                                            background: 'none',
+                                            border: 'none',
+                                            color: timer > 0 ? '#94a3b8' : '#25D366',
+                                            cursor: timer > 0 ? 'default' : 'pointer',
+                                            fontSize: '0.9rem',
+                                            fontWeight: 500,
+                                        }}
+                                    >
+                                        {timer > 0 ? `WhatsApp in ${timer}s` : 'Resend on WhatsApp'}
+                                    </button>
+                                    <span style={{ color: '#E2E8F0' }}>|</span>
+                                    <button
+                                        type="button"
+                                        onClick={() => handleResendOTP('sms')}
+                                        disabled={timer > 0 || isLoading}
+                                        style={{
+                                            background: 'none',
+                                            border: 'none',
+                                            color: timer > 0 ? '#94a3b8' : '#3B82F6',
+                                            cursor: timer > 0 ? 'default' : 'pointer',
+                                            fontSize: '0.9rem',
+                                            fontWeight: 500,
+                                        }}
+                                    >
+                                        {timer > 0 ? `SMS in ${timer}s` : 'Resend via SMS'}
+                                    </button>
+                                </div>
                             </div>
                         </form>
                     )}

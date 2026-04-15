@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAppRouter } from '../lib/router';
 import { Mic, Keyboard, Sparkles, Upload, ArrowLeft, MicOff, MapPin, ChevronDown, ChevronUp, Plus, Trash2 } from 'lucide-react';
+import ImageCropperModal from '../components/ui/ImageCropperModal';
 import Stepper from '../components/ui/Stepper';
 import LivePreview from '../components/ui/LivePreview';
 import WelcomeDialog from '../components/ui/WelcomeDialog';
@@ -359,9 +360,15 @@ const PracticeLocationAccordion: React.FC<PracticeLocationAccordionProps> = ({ l
                                 />
                                 <input
                                     className={styles.input}
+                                    maxLength={6}
                                     placeholder="Pincode"
                                     value={newLoc.pincode || ''}
-                                    onChange={(e) => setNewLoc({ ...newLoc, pincode: e.target.value })}
+                                    onChange={(e) => {
+                                        const val = e.target.value.replace(/\D/g, ''); // Only digits
+                                        if (val.length <= 6) {
+                                            setNewLoc({ ...newLoc, pincode: val });
+                                        }
+                                    }}
                                 />
                             </div>
                             <div className={styles.plAddFormRow}>
@@ -853,8 +860,12 @@ const Onboarding = () => {
     const fileInputRef = React.useRef<HTMLInputElement>(null);
     const fellowshipFileRef = React.useRef<HTMLInputElement>(null);
     const [fellowshipFiles, setFellowshipFiles] = useState<File[]>([]);
+    
+    // Cropper states
+    const [cropModalOpen, setCropModalOpen] = useState(false);
+    const [selectedImageSrc, setSelectedImageSrc] = useState<string | null>(null);
 
-    const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
 
@@ -864,11 +875,24 @@ const Onboarding = () => {
             return;
         }
 
+        const imageUrl = URL.createObjectURL(file);
+        setSelectedImageSrc(imageUrl);
+        setCropModalOpen(true);
+        
+        if (fileInputRef.current) {
+            fileInputRef.current.value = ''; // Reset input to allow re-selecting the same file
+        }
+    };
+
+    const handlePhotoUpload = async (croppedBlob: Blob) => {
         const doctorId = localStorage.getItem('doctor_id');
         if (!doctorId) {
             showToast("Unable to upload profile photo. Doctor ID not found.", "error");
             return;
         }
+
+        // Convert Blob back to File
+        const file = new File([croppedBlob], "profile-photo.jpg", { type: "image/jpeg" });
 
         try {
             const url = await doctorService.uploadProfilePhoto(doctorId, file);
@@ -877,6 +901,9 @@ const Onboarding = () => {
         } catch (err) {
             console.error('Failed to upload profile photo:', err);
             showToast("Failed to upload profile photo. Please try again.", "error");
+        } finally {
+            setCropModalOpen(false);
+            setSelectedImageSrc(null);
         }
     };
 
@@ -962,7 +989,7 @@ const Onboarding = () => {
                 // Focus the input field without scrolling (we handle scroll separately)
                 targetElement.focus({ preventScroll: true });
 
-                // Scroll to the prompt block (Caepy AI block) instead
+                // Scroll to the prompt block (CAEPY AI block) instead
                 const promptBlock = document.getElementById('section-prompt-block');
                 if (promptBlock) {
                     promptBlock.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -1011,7 +1038,7 @@ const Onboarding = () => {
                             <input
                                 type="file"
                                 ref={fileInputRef}
-                                onChange={handlePhotoUpload}
+                                onChange={handleFileSelect}
                                 accept="image/*"
                                 style={{ display: 'none' }}
                             />
@@ -1067,11 +1094,17 @@ const Onboarding = () => {
                                     <input
                                         name="phone"
                                         type="tel"
+                                        maxLength={13}
                                         value={formData.phone}
-                                        onChange={handleInputChange}
+                                        onChange={(e) => {
+                                            const val = e.target.value;
+                                            if (/^\+?[0-9]*$/.test(val) && val.length <= 13) {
+                                                setFormData((prev: any) => ({ ...prev, phone: val }));
+                                            }
+                                        }}
                                         onFocus={() => setFocusedField('phone')}
                                         className={styles.input}
-                                        placeholder="Mobile Number"
+                                        placeholder="Mobile Number (e.g. +91XXXXXXXXXX)"
                                         disabled={isPhoneLogin} // Disabled if logged in via phone
                                         style={isPhoneLogin ? { background: '#F3F4F6', cursor: 'not-allowed' } : {}}
                                     />
@@ -1839,9 +1872,9 @@ const Onboarding = () => {
     const handleNext = () => {
         // Validation for Step 1
         if (currentStep === 1) {
-            const { isValid, missingFields } = validateSection1(formData);
+            const { isValid, errors } = validateSection1(formData);
             if (!isValid) {
-                showToast(`Please fill: ${missingFields.join(', ')}`, 'error');
+                showToast(errors[0], 'error');
                 return;
             }
         }
@@ -2014,6 +2047,21 @@ const Onboarding = () => {
                 onComplete={handleTourComplete}
                 onSkip={handleTourSkip}
             />
+
+            {/* Profile Image Cropper Modal */}
+            {selectedImageSrc && (
+                <ImageCropperModal
+                    isOpen={cropModalOpen}
+                    imageSrc={selectedImageSrc}
+                    onClose={() => {
+                        setCropModalOpen(false);
+                        setSelectedImageSrc(null);
+                    }}
+                    onCropCompleteAction={async (blob) => {
+                        await handlePhotoUpload(blob);
+                    }}
+                />
+            )}
         </div>
     );
 };

@@ -30,7 +30,7 @@ jobs:
         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         aws-region: ${{ env.AWS_REGION }}
 
-    - name: Login to Amazon ECR
+    - name: Login to Amazon ECR  
       id: login-ecr
       uses: aws-actions/amazon-ecr-login@v2
 
@@ -39,8 +39,8 @@ jobs:
       env:
         ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
         IMAGE_TAG: ${{ github.sha }}
-        NEXT_PUBLIC_BASE_PATH: ${{ secrets.NEXT_PUBLIC_BASE_PATH || '/portal/caepy' }}
-        NEXT_PUBLIC_API_URL: ${{ secrets.NEXT_PUBLIC_API_URL || 'https://dev1.linqmd.com/caepy/api/v1' }}
+        NEXT_PUBLIC_BASE_PATH: ${{ secrets.NEXT_PUBLIC_BASE_PATH != '' && secrets.NEXT_PUBLIC_BASE_PATH || '/portal' }}
+        NEXT_PUBLIC_API_URL: ${{ secrets.NEXT_PUBLIC_API_URL != '' && secrets.NEXT_PUBLIC_API_URL || 'https://dev1.caepy.linqmd.com/caepy/api/v1' }}
       run: |
         echo "🔨 Building Docker image with build arguments:"
         echo "  NEXT_PUBLIC_BASE_PATH=$NEXT_PUBLIC_BASE_PATH"
@@ -75,6 +75,8 @@ jobs:
         container-name: caepyplus-frontend
         image: ${{ steps.build-image.outputs.image }}
 
+    # If this fails with "Resource is not in the state servicesStable", tasks are not passing
+    # ALB health checks — fix build paths above or check ECS service Events / target group health in AWS console.
     - name: Deploy Amazon ECS task definition
       uses: aws-actions/amazon-ecs-deploy-task-definition@v1
       with:
@@ -82,3 +84,4 @@ jobs:
         service: ${{ env.ECS_SERVICE }}
         cluster: ${{ env.ECS_CLUSTER }}
         wait-for-service-stability: true
+        wait-for-minutes: 45

@@ -21,9 +21,10 @@ export interface OTPVerifyResponse {
 }
 
 export const authService = {
-    requestOTP: async (mobileNumber: string): Promise<OTPRequestResponse> => {
+    requestOTP: async (mobileNumber: string, deliveryMethod: 'whatsapp' | 'sms' = 'whatsapp'): Promise<OTPRequestResponse> => {
         const response = await api.post('/auth/otp/request', {
             mobile_number: mobileNumber,
+            delivery_method: deliveryMethod,
         });
         return parseResponse<OTPRequestResponse>(response);
     },
@@ -75,9 +76,10 @@ export const authService = {
         return result;
     },
 
-    resendOTP: async (mobileNumber: string): Promise<OTPRequestResponse> => {
+    resendOTP: async (mobileNumber: string, deliveryMethod: 'whatsapp' | 'sms' = 'whatsapp'): Promise<OTPRequestResponse> => {
         const response = await api.post('/auth/otp/resend', {
             mobile_number: mobileNumber,
+            delivery_method: deliveryMethod,
         });
         return parseResponse<OTPRequestResponse>(response);
     },

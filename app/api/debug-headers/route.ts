@@ -4,8 +4,8 @@ import { NextRequest } from 'next/server';
  * Debug endpoint to verify X-Origin-Verify and other request headers.
  * CloudFront adds X-Origin-Verify when forwarding to ALB. If present, WAF check passes.
  *
- * Access: https://dev1.linqmd.com/portal/caepy/api/debug-headers
- * Run: curl -i https://dev1.linqmd.com/portal/caepy/api/debug-headers
+ * Access: https://<host>/portal/api/debug-headers (basePath /portal)
+ * Run: curl -i https://<host>/portal/api/debug-headers
  * - Body: xOriginVerifyPresent (from app)
  * - Response headers: X-Amz-Cf-Id, Via = request came through CloudFront
  * Remove this route before production.

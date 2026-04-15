@@ -1,4 +1,4 @@
-import api from '../lib/api';
+import api, { parseResponse } from '../lib/api';
 
 export interface DoctorProfile {
     id: number;
@@ -472,6 +472,89 @@ export const doctorService = {
     },
 
     /**
+     * Fetch AI generated blog topics
+     */
+    getBlogTopics: async (): Promise<{ topics: BlogTopic[] }> => {
+        const response = await api.get<{ topics: BlogTopic[] }>('/blogs/insights/topics');
+        return response.data;
+    },
+
+    /**
+     * Fetch AI generated keywords for a topic
+     */
+    getBlogKeywords: async (topic: string): Promise<{ keywords: string[] }> => {
+        const response = await api.get<{ keywords: string[] }>(`/blogs/insights/keywords?topic=${encodeURIComponent(topic)}`);
+        return response.data;
+    },
+
+    /**
+     * Generate AI blog content based on topic and keywords
+     */
+    generateBlogContent: async (topic: string, keywords: string[]): Promise<{ subtitle: string, opening_quote: string, content: string }> => {
+        const response = await api.post('/blogs/insights/generate-content', { topic, keywords });
+        return response.data;
+    },
+
+    /**
+     * Save blog draft 
+     */
+    /**
+     * Save/Create a draft blog.
+     * If blogId is present in blogData, updates existing. Otherwise creates new.
+     */
+    saveBlogDraft: async (blogData: any): Promise<number | any> => {
+        try {
+            let blogId = blogData.id;
+            
+            // 1. Create if new
+            if (!blogId) {
+                const createRes = await api.post('/blogs', { title: blogData.title || 'Untitled Blog' });
+                const createdBlog = parseResponse<any>(createRes);
+                blogId = createdBlog.id;
+            }
+
+            // 2. Update all draft fields
+            const updateRes = await api.put(`/blogs/${blogId}`, {
+                title: blogData.title,
+                subtitle: blogData.subtitle,
+                opening_quote: blogData.quote || blogData.opening_quote,
+                content: blogData.content,
+                keywords: blogData.keywords
+            });
+
+            return parseResponse(updateRes);
+        } catch (e) {
+            console.error("Failed to save draft", e);
+            throw e;
+        }
+    },
+
+    /**
+     * Fetch all blogs for the doctor.
+     */
+    getBlogs: async (status?: string): Promise<any[]> => {
+        const url = status ? `/blogs?status=${status}` : '/blogs';
+        const response = await api.get(url);
+        return parseResponse<any[]>(response);
+    },
+
+    /**
+     * Fetch all comments for the doctor.
+     */
+    getComments: async (status?: string): Promise<any[]> => {
+        const url = status ? `/blogs/comments?status=${status}` : '/blogs/comments';
+        const response = await api.get(url);
+        return parseResponse<any[]>(response);
+    },
+
+    /**
+     * Update comment status (approve/reject).
+     */
+    updateCommentStatus: async (commentId: number, status: 'approved' | 'rejected'): Promise<void> => {
+        await api.put(`/blogs/comments/${commentId}/status`, { status });
+    },
+
+    /**
      * Extract data from resume file.
      */
     extractResume: async (file: File): Promise<Record<string, unknown>> => {
@@ -615,4 +698,10 @@ export interface ResumeExtractedData {
     memberships: string[];
     languages: string[];
     content_seeds: Array<any>;
+}
+
+export interface BlogTopic {
+    tag: string;
+    title: string;
+    reasoning: string;
 }

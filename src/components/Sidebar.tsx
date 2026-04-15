@@ -4,7 +4,8 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
     LayoutGrid, FileText, User,
-    ChevronLeft, ChevronRight
+    ChevronLeft, ChevronRight,
+    PenTool
 } from 'lucide-react';
 import styles from './Sidebar.module.css';
 
@@ -44,7 +45,12 @@ const Sidebar: React.FC = () => {
                     label="Profile"
                     isCollapsed={isCollapsed}
                 />
-
+                <NavItem
+                    to="/doctor/blog-studio"
+                    icon={<PenTool size={20} />}
+                    label="Blog Studio"
+                    isCollapsed={isCollapsed}
+                />
             </nav>
         </aside>
     );
