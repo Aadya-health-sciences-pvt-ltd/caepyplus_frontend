@@ -172,8 +172,8 @@ const ProfileSubmitted = () => {
                         <Send size={18} />
                     </div>
                     <div>
-                        <h4 className={styles.noticeTitle}>Confirmation Email Sent</h4>
-                        <p className={styles.noticeText}>We've sent a confirmation to <span style={{ fontWeight: 600 }}>{formData.email || 'email@example.com'}</span>. You'll receive updates about your verification status.</p>
+                        <h4 className={styles.noticeTitle}>Next Steps - Verification</h4>
+                        <p className={styles.noticeText}>Our team is reviewing your submission, You'll receive updates about your verification status in the registered email address.</p>
                     </div>
                 </div>
 
