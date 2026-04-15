@@ -21,9 +21,10 @@ interface BlogStudioFormData {
 interface BlogStudioProps {
   initialStep?: number;
   initialData?: Partial<BlogStudioFormData>;
+  onBackToHub?: () => void;
 }
 
-export default function BlogStudio({ initialStep = 1, initialData = {} }: BlogStudioProps) {
+export default function BlogStudio({ initialStep = 1, initialData = {}, onBackToHub }: BlogStudioProps) {
   const [currentStep, setCurrentStep] = useState(initialStep);
   
   const [formData, setFormData] = useState<BlogStudioFormData>({
@@ -68,6 +69,7 @@ export default function BlogStudio({ initialStep = 1, initialData = {} }: BlogSt
           <TopicSelection 
             onNext={handleNextStep1} 
             initialTopic={formData.topic} 
+            onBack={onBackToHub}
           />
         );
       case 2:
@@ -77,6 +79,7 @@ export default function BlogStudio({ initialStep = 1, initialData = {} }: BlogSt
             initialKeywords={formData.keywords}
             onNext={handleNextStep2}
             onBack={() => setCurrentStep(1)}
+            onBackToHub={onBackToHub}
           />
         );
       case 3:
@@ -88,9 +91,20 @@ export default function BlogStudio({ initialStep = 1, initialData = {} }: BlogSt
             subtitle={formData.subtitle}
             quote={formData.quote}
             content={formData.content}
+            blogId={formData.id}
+            onSaveDraft={async () => {
+                const { doctorService } = await import('../../services/doctorService');
+                const result = await doctorService.saveBlogDraft(formData);
+                if (result?.id) {
+                   setFormData(prev => ({ ...prev, id: result.id }));
+                   return result.id;
+                }
+                return undefined;
+            }}
             onChange={handleChangeStep3}
             onNext={() => setCurrentStep(4)}
             onBack={() => setCurrentStep(2)}
+            onBackToHub={onBackToHub}
           />
         );
       case 4:
@@ -100,6 +114,7 @@ export default function BlogStudio({ initialStep = 1, initialData = {} }: BlogSt
             setFormData={setFormData}
             onPublish={handlePublish}
             onBack={() => setCurrentStep(3)}
+            onBackToHub={onBackToHub}
           />
         );
       default:
@@ -120,9 +135,38 @@ export default function BlogStudio({ initialStep = 1, initialData = {} }: BlogSt
   return (
     <div className={styles.pageWrapper}>
       <div className={styles.header}>
-        <div className={styles.headerContent}>
-            <h1 className={styles.title}>Blog Studio</h1>
-            <p className={styles.subtitle}>{getStepTitle()}</p>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
+          {onBackToHub && (
+            <button 
+              onClick={onBackToHub}
+              style={{
+                background: 'white',
+                border: '1px solid var(--border-color)',
+                width: '40px',
+                height: '40px',
+                borderRadius: '50%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                color: 'var(--text-secondary)',
+                fontWeight: 700,
+                fontSize: '1.2rem',
+                flexShrink: 0,
+                transition: 'all 0.2s',
+                boxShadow: '0 2px 4px rgba(0,0,0,0.02)'
+              }}
+              title="Return to Studio Dashboard"
+              onMouseOver={(e) => { e.currentTarget.style.borderColor = 'var(--primary-color)'; e.currentTarget.style.color = 'var(--primary-color)'; }}
+              onMouseOut={(e) => { e.currentTarget.style.borderColor = 'var(--border-color)'; e.currentTarget.style.color = 'var(--text-secondary)'; }}
+            >
+              ←
+            </button>
+          )}
+          <div className={styles.headerContent}>
+              <h1 className={styles.title}>Blog Studio</h1>
+              <p className={styles.subtitle}>{getStepTitle()}</p>
+          </div>
         </div>
         <div className={styles.stepperWrapper}>
             <Stepper currentStep={currentStep} totalSteps={4} onStepClick={setCurrentStep} />

@@ -7,9 +7,10 @@ interface KeywordSelectionProps {
   initialKeywords: string[];
   onNext: (keywords: string[]) => void;
   onBack: () => void;
+  onBackToHub?: () => void;
 }
 
-export default function KeywordSelection({ topic, initialKeywords, onNext, onBack }: KeywordSelectionProps) {
+export default function KeywordSelection({ topic, initialKeywords, onNext, onBack, onBackToHub }: KeywordSelectionProps) {
   const [suggestedKeywords, setSuggestedKeywords] = useState<string[]>([]);
   const [selectedKeywords, setSelectedKeywords] = useState<string[]>(initialKeywords);
   const [customKeyword, setCustomKeyword] = useState('');
@@ -143,7 +144,18 @@ export default function KeywordSelection({ topic, initialKeywords, onNext, onBac
 
       <div className={styles.footer}>
         <div style={{ display: 'flex', gap: '1rem', width: '100%', justifyContent: 'space-between' }}>
-          <button className={styles.btnBack} onClick={onBack}>← Back</button>
+          <div style={{ display: 'flex', gap: '1rem' }}>
+            <button className={styles.btnBack} onClick={onBack}>← Back</button>
+            {onBackToHub && (
+              <button 
+                className={styles.btnBack} 
+                onClick={onBackToHub} 
+                style={{ background: 'transparent', border: '1px solid var(--border-color)', color: 'var(--text-secondary)' }}
+              >
+                Exit to Hub
+              </button>
+            )}
+          </div>
           <button 
             className={styles.btnNext} 
             onClick={() => onNext(selectedKeywords)}

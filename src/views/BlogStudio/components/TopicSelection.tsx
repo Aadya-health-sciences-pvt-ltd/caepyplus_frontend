@@ -6,9 +6,10 @@ import { doctorService, BlogTopic } from '../../../services/doctorService';
 interface TopicSelectionProps {
   onNext: (topicTitle: string) => void;
   initialTopic: string;
+  onBack?: () => void;
 }
 
-export default function TopicSelection({ onNext, initialTopic }: TopicSelectionProps) {
+export default function TopicSelection({ onNext, initialTopic, onBack }: TopicSelectionProps) {
   const [topics, setTopics] = useState<BlogTopic[]>([]);
   const [selectedTopic, setSelectedTopic] = useState<string>(initialTopic);
   const [customTopic, setCustomTopic] = useState('');
@@ -105,7 +106,11 @@ export default function TopicSelection({ onNext, initialTopic }: TopicSelectionP
       </div>
 
       <div className={styles.footer}>
-        <div style={{ flex: 1 }}></div>
+        {onBack ? (
+          <button className={styles.btnBack} onClick={onBack}>← Back to Studio Hub</button>
+        ) : (
+          <div style={{ flex: 1 }}></div>
+        )}
         <button
           className={styles.btnNext}
           onClick={handleNext}

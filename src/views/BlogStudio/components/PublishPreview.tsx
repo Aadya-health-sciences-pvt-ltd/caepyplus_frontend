@@ -7,9 +7,10 @@ interface PublishPreviewProps {
   setFormData: React.Dispatch<React.SetStateAction<any>>;
   onPublish: () => void;
   onBack: () => void;
+  onBackToHub?: () => void;
 }
 
-export default function PublishPreview({ formData, setFormData, onPublish, onBack }: PublishPreviewProps) {
+export default function PublishPreview({ formData, setFormData, onPublish, onBack, onBackToHub }: PublishPreviewProps) {
   const [profile, setProfile] = useState<DoctorProfile | null>(null);
   const [showPreview, setShowPreview] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -139,7 +140,19 @@ export default function PublishPreview({ formData, setFormData, onPublish, onBac
 
       <div className={styles.footer}>
         <div style={{ display: 'flex', gap: '1rem', width: '100%', justifyContent: 'space-between' }}>
-          <button className={styles.btnBack} onClick={onBack} disabled={saving}>← Back</button>
+          <button className={styles.btnBack} onClick={onBack} disabled={saving}>← Back to Editor</button>
+          
+          {onBackToHub && (
+            <button 
+              className={styles.btnBack} 
+              onClick={onBackToHub} 
+              disabled={saving}
+              style={{ background: 'transparent', border: '1px solid var(--border-color)', color: 'var(--text-secondary)' }}
+            >
+              Exit to Hub
+            </button>
+          )}
+
           <button 
             className={styles.btnNext} 
             onClick={handleSaveAndExit}
@@ -149,6 +162,94 @@ export default function PublishPreview({ formData, setFormData, onPublish, onBac
           </button>
         </div>
       </div>
+
+      {showPreview && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0,0,0,0.7)',
+          backdropFilter: 'blur(8px)',
+          zIndex: 1000,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '2rem'
+        }}>
+          <div style={{
+            backgroundColor: 'white',
+            width: '100%',
+            maxWidth: '800px',
+            maxHeight: '90vh',
+            borderRadius: '1.5rem',
+            overflow: 'hidden',
+            display: 'flex',
+            flexDirection: 'column',
+            boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)'
+          }}>
+            <div style={{ padding: '1.5rem 2rem', borderBottom: '1px solid #eee', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#f8fafc' }}>
+              <div>
+                <h4 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 800, color: 'var(--primary-color)' }}>Full Web Preview</h4>
+                <p style={{ margin: 0, fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 600 }}>HOW IT APPEARS ON PRACTICE HUB</p>
+              </div>
+              <button 
+                onClick={() => setShowPreview(false)}
+                style={{ background: '#eee', border: 'none', width: '32px', height: '32px', borderRadius: '50%', cursor: 'pointer', fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+              >✕</button>
+            </div>
+            
+            <div style={{ flex: 1, overflowY: 'auto', padding: '3rem 4rem' }}>
+              <div style={{ maxWidth: '650px', margin: '0 auto' }}>
+                <h1 style={{ fontSize: '2.5rem', fontWeight: 800, lineHeight: 1.2, marginBottom: '2rem', color: '#1a202c' }}>
+                  {formData.title}
+                </h1>
+                
+                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '2.5rem' }}>
+                  <div style={{ width: '48px', height: '48px', borderRadius: '50%', backgroundColor: 'var(--primary-color)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.2rem', fontWeight: 700 }}>
+                    {doctorName.charAt(0)}
+                  </div>
+                  <div>
+                    <div style={{ fontWeight: 700, color: '#2d3748' }}>{doctorName}</div>
+                    <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{specialty} · {readTime} min read</div>
+                  </div>
+                </div>
+
+                {formData.quote && (
+                  <div style={{ 
+                    padding: '2rem', 
+                    borderLeft: '4px solid var(--primary-color)', 
+                    backgroundColor: '#f8fafc', 
+                    marginBottom: '2.5rem',
+                    borderRadius: '0 1rem 1rem 0'
+                  }}>
+                    <div style={{ fontSize: '2rem', color: 'var(--primary-color)', opacity: 0.2, marginBottom: '-1rem', marginTop: '-0.5rem', fontFamily: 'serif' }}>"</div>
+                    <p style={{ fontSize: '1.25rem', fontWeight: 600, color: '#4a5568', fontStyle: 'italic', position: 'relative', zIndex: 1 }}>
+                      {formData.quote}
+                    </p>
+                  </div>
+                )}
+
+                <div 
+                  className="ProseMirror"
+                  style={{ fontSize: '1.15rem', lineHeight: 1.8, color: '#4a5568' }}
+                  dangerouslySetInnerHTML={{ __html: formData.content || '<p>No content available.</p>' }} 
+                />
+              </div>
+            </div>
+
+            <div style={{ padding: '1.5rem 2rem', borderTop: '1px solid #eee', textAlign: 'center', background: '#f8fafc' }}>
+               <button 
+                 onClick={() => setShowPreview(false)}
+                 style={{ padding: '0.75rem 2rem', backgroundColor: 'var(--primary-color)', color: 'white', border: 'none', borderRadius: '0.75rem', fontWeight: 700, cursor: 'pointer' }}
+               >
+                 Close Preview
+               </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -351,3 +351,104 @@
     justify-content: center;
   }
 }
+
+/* ── ProseMirror / Tiptap Rich Text Editor Overrides ── */
+.stepContent :global(.ProseMirror) {
+  outline: none;
+  line-height: 1.7;
+  color: var(--text-color);
+  padding-bottom: 2rem; /* Add some visual breathing room at the bottom */
+}
+
+/* Basic spacing between elements */
+.stepContent :global(.ProseMirror > *:first-child) {
+  margin-top: 0;
+}
+
+.stepContent :global(.ProseMirror p) {
+  margin-bottom: 1em;
+}
+
+/* Lists styling fix to avoid overflowing */
+.stepContent :global(.ProseMirror ul),
+.stepContent :global(.ProseMirror ol) {
+  padding-left: 2.5rem !important; /* Force indentation */
+  margin-bottom: 1.5rem;
+  margin-top: 0.5rem;
+}
+
+.stepContent :global(.ProseMirror ul) {
+  list-style-type: disc !important;
+}
+
+.stepContent :global(.ProseMirror ol) {
+  list-style-type: decimal !important;
+}
+
+.stepContent :global(.ProseMirror li) {
+  margin-bottom: 0.25rem;
+  padding-left: 0.25rem;
+}
+
+/* Nested lists */
+.stepContent :global(.ProseMirror li > ul),
+.stepContent :global(.ProseMirror li > ol) {
+  margin-top: 0.25rem;
+  margin-bottom: 0.25rem;
+}
+
+.stepContent :global(.ProseMirror li p) {
+  margin: 0;
+}
+
+/* Headings */
+.stepContent :global(.ProseMirror h1),
+.stepContent :global(.ProseMirror h2),
+.stepContent :global(.ProseMirror h3),
+.stepContent :global(.ProseMirror h4) {
+  line-height: 1.3;
+  margin-top: 1.5em;
+  margin-bottom: 0.5em;
+  color: var(--text-color);
+  font-weight: 700;
+}
+
+.stepContent :global(.ProseMirror h2) {
+  font-size: 1.5rem;
+}
+
+.stepContent :global(.ProseMirror h3) {
+  font-size: 1.25rem;
+}
+
+/* Blockquotes */
+.stepContent :global(.ProseMirror blockquote) {
+  border-left: 4px solid var(--primary-color);
+  margin: 1.5rem 0;
+  padding-left: 1rem;
+  font-style: italic;
+  color: var(--text-secondary);
+  background-color: rgba(41, 57, 145, 0.03);
+  padding: 1rem;
+  border-radius: 0 0.5rem 0.5rem 0;
+}
+
+.stepContent :global(.ProseMirror blockquote p) {
+  margin-bottom: 0;
+}
+
+/* Horizontal Rule */
+.stepContent :global(.ProseMirror hr) {
+  border: none;
+  border-top: 1px solid var(--border-color);
+  margin: 2rem 0;
+}
+
+/* Images */
+.stepContent :global(.ProseMirror img) {
+  max-width: 100%;
+  height: auto;
+  border-radius: 0.5rem;
+  margin: 1.5rem 0;
+  border: 1px solid var(--border-color);
+}

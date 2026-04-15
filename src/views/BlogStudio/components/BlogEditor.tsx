@@ -12,9 +12,12 @@ interface BlogEditorProps {
   subtitle: string;
   quote: string;
   content: string;
+  blogId?: number | string;
+  onSaveDraft?: () => Promise<number | string | undefined>;
   onChange: (field: string, value: string) => void;
   onNext: () => void;
   onBack: () => void;
+  onBackToHub?: () => void;
 }
 
 const MenuBar = ({ editor }: { editor: any }) => {
@@ -52,12 +55,51 @@ const MenuBar = ({ editor }: { editor: any }) => {
       >
         H3
       </button>
+      
+      <div style={{ width: '1px', background: 'var(--border-color)', margin: '0 0.5rem' }} />
+
       <button
         onClick={() => editor.chain().focus().toggleBulletList().run()}
         className={editor.isActive('bulletList') ? styles.selected : ''}
         style={{ padding: '0.25rem 0.75rem', border: '1px solid var(--border-color)', borderRadius: '4px' }}
+        title="Bullet List"
       >
-        List
+        • List
+      </button>
+      <button
+        onClick={() => editor.chain().focus().toggleOrderedList().run()}
+        className={editor.isActive('orderedList') ? styles.selected : ''}
+        style={{ padding: '0.25rem 0.75rem', border: '1px solid var(--border-color)', borderRadius: '4px' }}
+        title="Numbered List"
+      >
+        1. List
+      </button>
+      <button
+        onClick={() => editor.chain().focus().toggleBlockquote().run()}
+        className={editor.isActive('blockquote') ? styles.selected : ''}
+        style={{ padding: '0.25rem 0.75rem', border: '1px solid var(--border-color)', borderRadius: '4px' }}
+        title="Quote Block"
+      >
+        ❝ Quote
+      </button>
+      
+      <div style={{ width: '1px', background: 'var(--border-color)', margin: '0 0.5rem' }} />
+      
+      <button
+        onClick={() => editor.chain().focus().undo().run()}
+        disabled={!editor.can().chain().focus().undo().run()}
+        style={{ padding: '0.25rem 0.75rem', border: '1px solid var(--border-color)', borderRadius: '4px', opacity: editor.can().undo() ? 1 : 0.5 }}
+        title="Undo"
+      >
+        ↺
+      </button>
+      <button
+        onClick={() => editor.chain().focus().redo().run()}
+        disabled={!editor.can().chain().focus().redo().run()}
+        style={{ padding: '0.25rem 0.75rem', border: '1px solid var(--border-color)', borderRadius: '4px', opacity: editor.can().redo() ? 1 : 0.5 }}
+        title="Redo"
+      >
+        ↻
       </button>
       
       <div style={{ marginLeft: 'auto', display: 'flex', gap: '0.5rem' }}>
@@ -72,9 +114,10 @@ const MenuBar = ({ editor }: { editor: any }) => {
   );
 };
 
-export default function BlogEditor({ topic, keywords, title, subtitle, quote, content, onChange, onNext, onBack }: BlogEditorProps) {
+export default function BlogEditor({ topic, keywords, title, subtitle, quote, content, blogId, onSaveDraft, onChange, onNext, onBack, onBackToHub }: BlogEditorProps) {
   const [isGenerating, setIsGenerating] = useState(false);
   const [generateError, setGenerateError] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
 
   const editor = useEditor({
     extensions: [StarterKit, Image],
@@ -114,12 +157,38 @@ export default function BlogEditor({ topic, keywords, title, subtitle, quote, co
     }
   }, [editor, topic, keywords, content, subtitle, quote, onChange]);
 
-  const addImage = useCallback(() => {
-    const url = window.prompt('URL');
-    if (url && editor) {
-      editor.chain().focus().setImage({ src: url }).run();
+  // Image upload handler
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !editor) return;
+
+    setIsUploading(true);
+    try {
+      let currentBlogId = blogId;
+      // If we don't have a blog ID (draft not saved yet), trigger a save first
+      if (!currentBlogId && onSaveDraft) {
+        currentBlogId = await onSaveDraft();
+      }
+      
+      if (!currentBlogId) {
+        throw new Error("Could not save draft before uploading image.");
+      }
+
+      // Upload the image via doctorService
+      const result = await doctorService.uploadBlogImage(currentBlogId, file);
+      
+      // Inject image into Tiptap
+      editor.chain().focus().setImage({ src: result.url }).run();
+      
+    } catch (err) {
+      console.error("Image upload failed:", err);
+      alert("Failed to upload image. Please try again.");
+    } finally {
+      setIsUploading(false);
+      // Reset input so the same file could be selected again if needed
+      if (e.target) e.target.value = '';
     }
-  }, [editor]);
+  };
 
   if (isGenerating) {
     return (
@@ -137,8 +206,8 @@ export default function BlogEditor({ topic, keywords, title, subtitle, quote, co
 
   return (
     <div className={styles.stepContent}>
-      
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', marginBottom: '2rem' }}>
+      <div className={styles.scrollArea}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', marginBottom: '2rem' }}>
         <div>
           <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', marginBottom: '0.5rem', letterSpacing: '0.05em' }}>
             Blog title <span style={{ color: 'var(--primary-color)', marginLeft: '0.5rem', fontWeight: 800 }}>✦ AI Suggested</span>
@@ -200,30 +269,52 @@ export default function BlogEditor({ topic, keywords, title, subtitle, quote, co
         )}
       </div>
 
-      <div style={{ marginBottom: '2.5rem' }}>
-        <div 
-          style={{ 
-            border: '2px dashed var(--border-color)', 
-            borderRadius: '1rem', 
-            padding: '2.5rem 1.5rem', 
-            textAlign: 'center',
-            cursor: 'pointer',
-            backgroundColor: '#F8FAFC',
-            transition: 'all 0.2s'
-          }}
-          onClick={addImage}
-        >
-          <div style={{ fontSize: '2.25rem', marginBottom: '1rem' }}>🖼️</div>
-          <div style={{ fontWeight: 700, marginBottom: '0.5rem', color: 'var(--text-color)' }}>Add Visual Context</div>
-          <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', maxWidth: '300px', margin: '0 auto' }}>
-             Clinic photos, Awareness posters, or infographics boost engagement by 80%
+        <div style={{ marginBottom: '2.5rem' }}>
+          <div 
+            style={{ 
+              border: '2px dashed var(--border-color)', 
+              borderRadius: '1rem', 
+              padding: '2.5rem 1.5rem', 
+              textAlign: 'center',
+              cursor: isUploading ? 'wait' : 'pointer',
+              backgroundColor: '#F8FAFC',
+              transition: 'all 0.2s',
+              opacity: isUploading ? 0.7 : 1
+            }}
+            onClick={() => !isUploading && document.getElementById('blogImageUpload')?.click()}
+          >
+            <div style={{ fontSize: '2.25rem', marginBottom: '1rem' }}>🖼️</div>
+            <div style={{ fontWeight: 700, marginBottom: '0.5rem', color: 'var(--text-color)' }}>
+               {isUploading ? 'Uploading...' : 'Add Visual Context'}
+            </div>
+            <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', maxWidth: '300px', margin: '0 auto' }}>
+               Clinic photos, Awareness posters, or infographics boost engagement by 80%
+            </div>
+            <input 
+               type="file" 
+               id="blogImageUpload" 
+               accept="image/*" 
+               style={{ display: 'none' }} 
+               onChange={handleImageUpload} 
+            />
           </div>
         </div>
       </div>
 
       <div className={styles.footer}>
         <div style={{ display: 'flex', gap: '1rem', width: '100%', justifyContent: 'space-between' }}>
-          <button className={styles.btnBack} onClick={onBack}>← Back</button>
+          <div style={{ display: 'flex', gap: '1rem' }}>
+            <button className={styles.btnBack} onClick={onBack}>← Back</button>
+            {onBackToHub && (
+              <button 
+                className={styles.btnBack} 
+                onClick={onBackToHub} 
+                style={{ background: 'transparent', border: '1px solid var(--border-color)', color: 'var(--text-secondary)' }}
+              >
+                Exit to Hub
+              </button>
+            )}
+          </div>
           <button 
             className={styles.btnNext} 
             onClick={onNext}

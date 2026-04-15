@@ -4,10 +4,10 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "NODE_OPTIONS='--no-deprecation' next dev",
+    "dev": "NODE_OPTIONS='--no-deprecation --max-old-space-size=4096' next dev",
     "generate-healthz": "node scripts/generate-healthz.cjs",
-    "build": "npm run generate-healthz && NODE_OPTIONS='--no-deprecation' next build",
-    "start": "NODE_OPTIONS='--no-deprecation' next start",
+    "build": "npm run generate-healthz && NODE_OPTIONS='--no-deprecation --max-old-space-size=4096' next build",
+    "start": "NODE_OPTIONS='--no-deprecation --max-old-space-size=4096' next start",
     "lint": "next lint"
   },
   "dependencies": {

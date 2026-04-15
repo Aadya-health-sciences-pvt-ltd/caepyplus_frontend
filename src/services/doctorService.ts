@@ -530,12 +530,52 @@ export const doctorService = {
     },
 
     /**
+     * Upload an image inside the Blog Editor for a specific blog draft.
+     */
+    uploadBlogImage: async (blogId: string | number, file: File): Promise<{ url: string, message: string }> => {
+        const formData = new FormData();
+        formData.append('file', file);
+
+        const response = await api.post<{ url: string; message: string }>(
+            `/blogs/${blogId}/images`,
+            formData,
+            {
+                headers: {
+                    'Content-Type': 'multipart/form-data',
+                },
+            },
+        );
+
+        // Convert relative URL to absolute URL targeting the backend domain to fix frontend rendering
+        let finalUrl = response.data.url;
+        if (finalUrl && finalUrl.startsWith('/')) {
+            const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
+            try {
+                const parsedBase = new URL(baseUrl);
+                finalUrl = `${parsedBase.origin}${finalUrl}`;
+            } catch (e) {
+                finalUrl = `http://localhost:8000${finalUrl}`;
+            }
+            response.data.url = finalUrl;
+        }
+
+        return response.data;
+    },
+
+    /**
      * Fetch all blogs for the doctor.
      */
     getBlogs: async (status?: string): Promise<any[]> => {
         const url = status ? `/blogs?status=${status}` : '/blogs';
         const response = await api.get(url);
         return parseResponse<any[]>(response);
+    },
+
+    /**
+     * Delete a blog by ID.
+     */
+    deleteBlog: async (blogId: number): Promise<void> => {
+        await api.delete(`/blogs/${blogId}`);
     },
 
     /**
