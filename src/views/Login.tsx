@@ -233,7 +233,7 @@ const Login = () => {
     const testimonials = [
         {
             quote: "The onboarding felt surprisingly natural. I spoke for most of it, reviewed what was filled in, and was done in under 15 minutes. It reflected my practice accurately — without feeling like a form.",
-            author: "Dr. Abida Sultan",
+            author: "Dr. Srividhya",
             role: "Consultant Physician · Bangalore",
             image: "https://randomuser.me/api/portraits/women/44.jpg"
         },

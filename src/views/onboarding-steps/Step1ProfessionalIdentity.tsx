@@ -14,7 +14,7 @@ const PracticeLocationAccordion = dynamic(
 );
 
 interface Step1Props extends SharedStepProps {
-    fileInputRef: React.RefObject<HTMLInputElement>;
+    fileInputRef: React.RefObject<HTMLInputElement | null>;
     handleFileSelect: (e: React.ChangeEvent<HTMLInputElement>) => void;
     dropdownOptions: Record<string, DropdownOption[]>;
     masterData: MasterData;
