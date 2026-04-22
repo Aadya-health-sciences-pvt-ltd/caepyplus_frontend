@@ -27,7 +27,14 @@ const ProfileSummary = () => {
 
     // Helper to safely access data
     const getVal = (key: string) => formData[key] || 'Not provided';
-    const getArr = (key: string) => Array.isArray(formData[key]) ? formData[key] : [];
+    const getArr = (key: string) => {
+        const raw = (formData as Record<string, unknown>)[key];
+        if (Array.isArray(raw)) return raw as string[];
+        if (typeof raw === 'string' && raw.trim()) {
+            return raw.split(',').map(s => s.trim()).filter(Boolean);
+        }
+        return [];
+    };
 
     const handleEditProfile = () => {
         sessionStorage.setItem('nav_state', JSON.stringify({ formData, step: 1 }));
@@ -154,7 +161,7 @@ const ProfileSummary = () => {
                             <div className={styles.subTitle}>Known For</div>
                             <PillContainer items={getArr('knownForConditions')} orange />
                             <div className={styles.subTitle}>Wants to Treat More</div>
-                            <div className={styles.contactValue}>{getVal('wantToTreatConditions')}</div>
+                            <PillContainer items={getArr('wantToTreatConditions')} orange />
                         </Card>
 
                         <Card title="Patient Value & Philosophy" icon={<Heart size={18} />}>

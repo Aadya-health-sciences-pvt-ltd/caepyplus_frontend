@@ -62,7 +62,7 @@ export interface DoctorProfile {
 
     // Block 3: Clinical Focus & Expertise
     areas_of_clinical_interest: string[];
-    practice_segments: string | null;
+    practice_segments: string[];
     conditions_commonly_treated: string[];
     conditions_known_for: string[];
     conditions_want_to_treat_more: string[];
@@ -194,7 +194,7 @@ export const doctorService = {
             practiceSegments: [],
             commonConditions: [],
             knownForConditions: [],
-            wantToTreatConditions: '',
+            wantToTreatConditions: [],
             trainingExperience: [],
             motivation: [],
             unwinding: [],
@@ -278,12 +278,17 @@ export const doctorService = {
 
         // Block 3: Clinical Focus & Expertise
         if (profile.areas_of_clinical_interest?.length) formData.areasOfInterest = profile.areas_of_clinical_interest;
-        if (profile.practice_segments) {
-            formData.practiceSegments = profile.practice_segments.split(',').map(s => s.trim()).filter(Boolean);
+        const ps = profile.practice_segments as unknown;
+        if (Array.isArray(ps) && ps.length) {
+            formData.practiceSegments = ps.filter((x): x is string => typeof x === 'string' && x.trim().length > 0);
+        } else if (typeof ps === 'string' && ps.trim()) {
+            formData.practiceSegments = ps.split(',').map(s => s.trim()).filter(Boolean);
         }
         if (profile.conditions_commonly_treated?.length) formData.commonConditions = profile.conditions_commonly_treated;
         if (profile.conditions_known_for?.length) formData.knownForConditions = profile.conditions_known_for;
-        if (profile.conditions_want_to_treat_more?.length) formData.wantToTreatConditions = profile.conditions_want_to_treat_more.join(', ');
+        if (profile.conditions_want_to_treat_more?.length) {
+            formData.wantToTreatConditions = profile.conditions_want_to_treat_more;
+        }
 
         // Block 4: The Human Side
         if (profile.training_experience?.length) formData.trainingExperience = profile.training_experience;
@@ -431,9 +436,7 @@ export const doctorService = {
 
             // Block 3: Clinical Focus & Expertise
             areas_of_clinical_interest: toArrayOrNull(formData.areasOfInterest),
-            practice_segments: Array.isArray(formData.practiceSegments)
-                ? formData.practiceSegments.join(', ') || null
-                : toStringOrNull(formData.practiceSegments),
+            practice_segments: toArrayOrNull(formData.practiceSegments),
             conditions_commonly_treated: toArrayOrNull(formData.commonConditions),
             conditions_known_for: toArrayOrNull(formData.knownForConditions),
             conditions_want_to_treat_more: toArrayOrNull(formData.wantToTreatConditions),

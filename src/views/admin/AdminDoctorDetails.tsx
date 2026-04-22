@@ -334,9 +334,7 @@ The Caepy Team`,
                         {/* Clinical Focus & Expertise (Block 3) */}
                         {details && (
                             <SectionCard title="Clinical Focus & Expertise" icon={<Stethoscope size={18} />}>
-                                {details.practice_segments && (
-                                    <DetailRow icon={<Briefcase size={18} />} label="Practice Segments" value={details.practice_segments} />
-                                )}
+                                <TagList label="Practice Segments" items={details.practice_segments ?? undefined} />
                                 <TagList label="Areas of Clinical Interest" items={details.areas_of_clinical_interest} fallback={doctor?.areas_of_clinical_interest} />
                                 <TagList label="Conditions Commonly Treated" items={details.conditions_commonly_treated} />
                                 <TagList label="Known For Treating" items={details.conditions_known_for} />

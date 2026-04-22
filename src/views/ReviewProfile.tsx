@@ -55,9 +55,12 @@ const ReviewProfile = () => {
 
     // Helper to safely access data
     const getVal = (key: string) => formData[key] || 'Not provided';
-    const getArr = (key: string) => Array.isArray(formData[key]) && formData[key].length > 0
-        ? formData[key].join(', ')
-        : (formData[key] || 'None');
+    const getArr = (key: string) => {
+        const v = formData[key];
+        if (Array.isArray(v) && v.length > 0) return v.join(', ');
+        if (typeof v === 'string' && v.trim()) return v;
+        return 'None';
+    };
 
     const handleSubmit = async () => {
         // Validate Section 1 before submission
@@ -238,8 +241,10 @@ const ReviewProfile = () => {
                     </div>
                     <div className={styles.sectionContent}>
                         <ReviewRow icon={<Activity size={20} />} label="AREAS OF INTEREST" value={getArr('areasOfInterest')} />
+                        <ReviewRow icon={<Activity size={20} />} label="PRACTICE SEGMENTS" value={getArr('practiceSegments')} />
                         <ReviewRow icon={<Activity size={20} />} label="COMMON CONDITIONS" value={getArr('commonConditions')} />
                         <ReviewRow icon={<Activity size={20} />} label="KNOWN FOR" value={getArr('knownForConditions')} />
+                        <ReviewRow icon={<Activity size={20} />} label="WANTS TO TREAT MORE" value={getArr('wantToTreatConditions')} />
                     </div>
                 </div>
 

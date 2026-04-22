@@ -83,7 +83,7 @@ export interface Doctor {
 
     // Block 3: Clinical Focus & Expertise
     areas_of_clinical_interest?: string[];
-    practice_segments?: string | null;
+    practice_segments?: string[] | null;
     conditions_commonly_treated?: string[];
     conditions_known_for?: string[];
     conditions_want_to_treat_more?: string[];
@@ -180,7 +180,7 @@ export interface DoctorDetails {
 
     // Block 3
     areas_of_clinical_interest?: string[] | null;
-    practice_segments?: string | null;
+    practice_segments?: string[] | null;
     conditions_commonly_treated?: string[] | null;
     conditions_known_for?: string[] | null;
     conditions_want_to_treat_more?: string[] | null;

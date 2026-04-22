@@ -24,6 +24,16 @@ import Toast from '../components/ui/Toast';
 import type { OnboardingFormData } from './onboarding-steps/types';
 import { FIELD_NAME_MAP } from './onboarding-steps/types';
 
+/** Normalize legacy comma-separated strings for Section 3 multi-select fields. */
+function normalizeClinicalMultiFields(d: Record<string, unknown>) {
+    for (const key of ['areasOfInterest', 'practiceSegments', 'commonConditions', 'knownForConditions', 'wantToTreatConditions'] as const) {
+        const v = d[key];
+        if (typeof v === 'string') {
+            d[key] = v.trim() ? v.split(',').map(s => s.trim()).filter(Boolean) : [];
+        }
+    }
+}
+
 // --- Lazy-loaded Step Components ---
 // Each step is code-split so the SWC compiler processes smaller modules,
 // and only the active step's JS is loaded in the browser.
@@ -226,7 +236,7 @@ const Onboarding = () => {
         practiceSegments: [],
         commonConditions: [],
         knownForConditions: [],
-        wantToTreatConditions: '',
+        wantToTreatConditions: [],
         trainingExperience: [],
         motivation: [],
         unwinding: [],
@@ -295,6 +305,8 @@ const Onboarding = () => {
             const storedEmail = localStorage.getItem('user_email');
             if (storedEmail) baseData.email = storedEmail;
         }
+
+        normalizeClinicalMultiFields(baseData as Record<string, unknown>);
 
         return baseData;
     });
@@ -543,7 +555,6 @@ const Onboarding = () => {
                         dropdownOptions={dropdownOptions}
                         masterData={masterData}
                         handleOptionAdded={handleOptionAdded}
-                        handleArrayChange={handleArrayChange}
                     />
                 );
             case 4:

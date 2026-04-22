@@ -26,7 +26,7 @@ interface LivePreviewProps {
         practiceSegments: string[];
         commonConditions: string | string[];
         knownForConditions: string | string[];
-        wantToTreatConditions: string;
+        wantToTreatConditions: string | string[];
         trainingExperience: string[];
         motivation: string[];
         unwinding: string[];
@@ -116,7 +116,7 @@ const LivePreview: React.FC<LivePreviewProps> = ({ data, focusedField, onEditFie
                     { name: 'practiceSegments', label: 'Practice Segments', getValue: (d) => formatArray(d.practiceSegments) },
                     { name: 'commonConditions', label: 'Most Common Conditions Treated', getValue: (d) => formatArray(d.commonConditions) },
                     { name: 'knownForConditions', label: 'Known For (Specific Expertise)', getValue: (d) => formatArray(d.knownForConditions) },
-                    { name: 'wantToTreatConditions', label: 'Conditions You Want to Treat More', getValue: (d) => d.wantToTreatConditions },
+                    { name: 'wantToTreatConditions', label: 'Conditions You Want to Treat More', getValue: (d) => formatArray(d.wantToTreatConditions) },
                 ];
             case 4: // The Human Side
                 return [

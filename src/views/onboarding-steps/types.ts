@@ -35,7 +35,7 @@ export interface OnboardingFormData {
     practiceSegments: string[];
     commonConditions: string[];
     knownForConditions: string[];
-    wantToTreatConditions: string;
+    wantToTreatConditions: string[];
     trainingExperience: string[];
     motivation: string[];
     unwinding: string[];

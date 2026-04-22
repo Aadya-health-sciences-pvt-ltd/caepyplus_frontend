@@ -1,7 +1,7 @@
 'use client';
 import React from 'react';
 import { Sparkles } from 'lucide-react';
-import CreatableDropdown from '../../components/ui/CreatableDropdown';
+import CreatableMultiSelect from '../../components/ui/CreatableMultiSelect';
 import styles from '../Onboarding.module.css';
 import { FIELD_NAME_MAP } from './types';
 import type { SharedStepProps, DropdownOption, MasterData } from './types';
@@ -10,7 +10,6 @@ interface Step3Props extends SharedStepProps {
     dropdownOptions: Record<string, DropdownOption[]>;
     masterData: MasterData;
     handleOptionAdded: (fieldKey: string, newOption: DropdownOption) => void;
-    handleArrayChange: (field: string, value: string) => void;
 }
 
 const Step3ClinicalFocus: React.FC<Step3Props> = ({
@@ -21,8 +20,13 @@ const Step3ClinicalFocus: React.FC<Step3Props> = ({
     dropdownOptions,
     masterData,
     handleOptionAdded,
-    handleArrayChange,
 }) => {
+    const asList = (v: string[] | string | undefined): string[] => {
+        if (Array.isArray(v)) return v;
+        if (typeof v === 'string' && v.trim()) return v.split(',').map(s => s.trim()).filter(Boolean);
+        return [];
+    };
+
     return (
         <>
             <div id="section-prompt-block" className={styles.promptItem}>
@@ -45,13 +49,13 @@ const Step3ClinicalFocus: React.FC<Step3Props> = ({
                 <div className={styles.fullWidth}>
                     <div className={styles.inputWrapper}>
                         <label className={styles.label}>Areas of Interest</label>
-                        <CreatableDropdown
+                        <CreatableMultiSelect
                             name="areasOfInterest"
-                            value={Array.isArray(formData.areasOfInterest) ? formData.areasOfInterest[0] || '' : formData.areasOfInterest}
+                            values={asList(formData.areasOfInterest)}
                             options={dropdownOptions.areasOfInterest || (masterData.areasOfInterest || []).map(item => ({ value: item.value, label: item.value }))}
                             fieldName={FIELD_NAME_MAP.areasOfInterest}
-                            placeholder="Select or type an area of interest"
-                            onChange={(val) => handleArrayChange('areasOfInterest', val)}
+                            placeholder="Add areas of interest"
+                            onChange={(vals) => setFormData(prev => ({ ...prev, areasOfInterest: vals }))}
                             onFocus={() => setFocusedField('areasOfInterest')}
                             onOptionAdded={(opt) => handleOptionAdded('areasOfInterest', opt)}
                         />
@@ -61,13 +65,13 @@ const Step3ClinicalFocus: React.FC<Step3Props> = ({
                 <div className={styles.fullWidth}>
                     <div className={styles.inputWrapper}>
                         <label className={styles.label}>Practice Segments</label>
-                        <CreatableDropdown
+                        <CreatableMultiSelect
                             name="practiceSegments"
-                            value={Array.isArray(formData.practiceSegments) ? formData.practiceSegments[0] || '' : formData.practiceSegments}
+                            values={asList(formData.practiceSegments)}
                             options={dropdownOptions.practiceSegments || masterData.practiceSegments.map((item: { value: string }) => ({ value: item.value, label: item.value }))}
                             fieldName={FIELD_NAME_MAP.practiceSegments}
-                            placeholder="Select or type a practice segment"
-                            onChange={(val) => handleArrayChange('practiceSegments', val)}
+                            placeholder="Add practice segments"
+                            onChange={(vals) => setFormData(prev => ({ ...prev, practiceSegments: vals }))}
                             onFocus={() => setFocusedField('practiceSegments')}
                             onOptionAdded={(opt) => handleOptionAdded('practiceSegments', opt)}
                         />
@@ -77,13 +81,13 @@ const Step3ClinicalFocus: React.FC<Step3Props> = ({
                 <div className={styles.fullWidth}>
                     <div className={styles.inputWrapper}>
                         <label className={styles.label}>Most Common Conditions Treated <span>*</span></label>
-                        <CreatableDropdown
+                        <CreatableMultiSelect
                             name="commonConditions"
-                            value={Array.isArray(formData.commonConditions) ? formData.commonConditions[0] || '' : formData.commonConditions}
+                            values={asList(formData.commonConditions)}
                             options={dropdownOptions.commonConditions || masterData.commonConditions.map((item: { value: string }) => ({ value: item.value, label: item.value }))}
                             fieldName={FIELD_NAME_MAP.commonConditions}
-                            placeholder="Select or type a condition"
-                            onChange={(val) => handleArrayChange('commonConditions', val)}
+                            placeholder="Add conditions you commonly treat"
+                            onChange={(vals) => setFormData(prev => ({ ...prev, commonConditions: vals }))}
                             onFocus={() => setFocusedField('commonConditions')}
                             onOptionAdded={(opt) => handleOptionAdded('commonConditions', opt)}
                         />
@@ -93,13 +97,13 @@ const Step3ClinicalFocus: React.FC<Step3Props> = ({
                 <div className={styles.fullWidth}>
                     <div className={styles.inputWrapper}>
                         <label className={styles.label}>Known For (Specific Expertise) <span>*</span></label>
-                        <CreatableDropdown
+                        <CreatableMultiSelect
                             name="knownForConditions"
-                            value={Array.isArray(formData.knownForConditions) ? formData.knownForConditions[0] || '' : formData.knownForConditions}
+                            values={asList(formData.knownForConditions)}
                             options={dropdownOptions.knownForConditions || masterData.commonConditions.map((item: { value: string }) => ({ value: item.value, label: item.value }))}
                             fieldName={FIELD_NAME_MAP.knownForConditions}
-                            placeholder="Select or type a specific expertise"
-                            onChange={(val) => handleArrayChange('knownForConditions', val)}
+                            placeholder="Add areas of specific expertise"
+                            onChange={(vals) => setFormData(prev => ({ ...prev, knownForConditions: vals }))}
                             onFocus={() => setFocusedField('knownForConditions')}
                             onOptionAdded={(opt) => handleOptionAdded('knownForConditions', opt)}
                         />
@@ -109,13 +113,13 @@ const Step3ClinicalFocus: React.FC<Step3Props> = ({
                 <div className={styles.fullWidth}>
                     <div className={styles.inputWrapper}>
                         <label className={styles.label}>Conditions You Want to Treat More</label>
-                        <CreatableDropdown
+                        <CreatableMultiSelect
                             name="wantToTreatConditions"
-                            value={formData.wantToTreatConditions}
+                            values={asList(formData.wantToTreatConditions)}
                             options={dropdownOptions.wantToTreatConditions || masterData.commonConditions.map((item: { value: string }) => ({ value: item.value, label: item.value }))}
                             fieldName={FIELD_NAME_MAP.wantToTreatConditions}
-                            placeholder="Select or type a condition"
-                            onChange={(val) => setFormData(prev => ({ ...prev, wantToTreatConditions: val }))}
+                            placeholder="Add conditions you want to focus on"
+                            onChange={(vals) => setFormData(prev => ({ ...prev, wantToTreatConditions: vals }))}
                             onFocus={() => setFocusedField('wantToTreatConditions')}
                             onOptionAdded={(opt) => handleOptionAdded('wantToTreatConditions', opt)}
                         />
