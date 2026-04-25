@@ -140,28 +140,25 @@ export const authService = {
         return result;
     },
 
+    /**
+     * Clears auth/session keys only (tokens, doctor id, profile cache).
+     * Does not wipe unrelated localStorage (tour flags, master data, etc.),
+     * so starting a new OTP flow does not erase the rest of the client state.
+     */
     clearSession: () => {
-        // Explicitly remove sensitive or state-bearing keys
-        localStorage.removeItem('access_token');
-        localStorage.removeItem('token_type');
-        localStorage.removeItem('expires_in');
-        localStorage.removeItem('doctor_id');
-        localStorage.removeItem('mobile_number');
-        localStorage.removeItem('user_email');
-        localStorage.removeItem('is_new_user');
-        localStorage.removeItem('role');
-        localStorage.removeItem('caepy_current_user_id');
-        localStorage.removeItem('caepy_admin_full_name');
-
-        // Optional: clear anything else except keys we want to persist
-        const keysToKeep = ['caepy_doctor_profiles'];
-        const keysToRemove: string[] = [];
-        for (let i = 0; i < localStorage.length; i++) {
-            const key = localStorage.key(i);
-            if (key && !keysToKeep.includes(key)) {
-                keysToRemove.push(key);
-            }
-        }
-        keysToRemove.forEach(k => localStorage.removeItem(k));
+        const keysToRemove = [
+            'access_token',
+            'token_type',
+            'expires_in',
+            'doctor_id',
+            'mobile_number',
+            'user_email',
+            'is_new_user',
+            'role',
+            'doctor_profile',
+            'caepy_current_user_id',
+            'caepy_admin_full_name',
+        ];
+        keysToRemove.forEach((key) => localStorage.removeItem(key));
     },
 };

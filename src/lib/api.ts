@@ -89,6 +89,26 @@ api.interceptors.request.use(
 // the exact extraction it needs without risking breakage.
 // ---------------------------------------------------------------------------
 
+/**
+ * Extract machine-readable API error code from wrapped or legacy error bodies.
+ * Backend AppException uses `{ success, error: { code, message } }`.
+ */
+function extractApiErrorCode(data: unknown): string | null {
+    if (data == null || typeof data !== 'object') return null;
+    const o = data as Record<string, unknown>;
+    if (o.error && typeof o.error === 'object') {
+        const code = (o.error as Record<string, unknown>).code;
+        if (typeof code === 'string') return code;
+    }
+    if (typeof o.error_code === 'string') return o.error_code;
+    const detail = o.detail;
+    if (detail && typeof detail === 'object') {
+        const ec = (detail as Record<string, unknown>).error_code;
+        if (typeof ec === 'string') return ec;
+    }
+    return null;
+}
+
 api.interceptors.response.use(
     (response: AxiosResponse) => response,
     (error: AxiosError) => {
@@ -98,6 +118,14 @@ api.interceptors.response.use(
 
             // Wrong OTP / invalid Google token: do not wipe session or redirect — let the page handle it
             if (!isPublicAuthFailure) {
+                const errorCode = extractApiErrorCode(error.response?.data);
+
+                // Valid JWT but no users row (RBAC / data issue): do not strip tokens or force
+                // login — same session can work after backend repair; avoids false "logout".
+                if (errorCode === 'USER_NOT_FOUND') {
+                    return Promise.reject(error);
+                }
+
                 const keysToRemove = [
                     'access_token', 'token_type', 'expires_in',
                     'doctor_id', 'mobile_number', 'user_email', 'is_new_user',
