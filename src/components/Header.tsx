@@ -13,7 +13,7 @@ interface HeaderProps {
 import { getLoggedInAdmin, logoutAdmin } from '../lib/adminAuth';
 import { mockDataService } from '../services/mockDataService';
 import { isBrowser } from '../lib/isBrowser';
-import { publicAssetUrl } from '../config/basePath';
+import { publicAssetUrl, BRAND_LOGO_MARK_PATH } from '../config/basePath';
 
 const Header: React.FC<HeaderProps> = ({ centerTitle }) => {
     const [openDropdown, setOpenDropdown] = useState<string | null>(null); // 'settings', 'profile', or null
@@ -50,12 +50,12 @@ const Header: React.FC<HeaderProps> = ({ centerTitle }) => {
         <header className={styles.header}>
             <div className={styles.leftSection}>
                 <img
-                    src={publicAssetUrl('/LinQMD.svg')}
-                    alt="Caepy logo"
+                    src={publicAssetUrl(BRAND_LOGO_MARK_PATH)}
+                    alt="CAEPY logo"
                     className={styles.logoIcon}
                 />
                 <div className={styles.logoText}>
-                    <span className={styles.brandName}>Caepy</span>
+                    <span className={styles.brandName}>CAEPY</span>
                     <span className={styles.tagline}>Practice Smarter</span>
                 </div>
             </div>

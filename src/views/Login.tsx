@@ -8,7 +8,7 @@ import styles from './Login.module.css';
 import { authService } from '../services/authService';
 import { doctorService } from '../services/doctorService';
 import { mockDataService } from '../services/mockDataService';
-import { publicAssetUrl } from '../config/basePath';
+import { publicAssetUrl, BRAND_LOGO_MARK_PATH } from '../config/basePath';
 import { parseErrorMessage } from '../lib/api';
 
 const Login = () => {
@@ -240,7 +240,7 @@ const Login = () => {
             image: "https://randomuser.me/api/portraits/women/44.jpg"
         },
         {
-            quote: "Caepy has completely transformed how I manage my online presence. The voice-assisted setup was a game-changer.",
+            quote: "CAEPY has completely transformed how I manage my online presence. The voice-assisted setup was a game-changer.",
             author: "Dr. Rajesh Kumar",
             role: "Cardiologist · Mumbai",
             image: "https://randomuser.me/api/portraits/men/32.jpg"
@@ -332,19 +332,30 @@ const Login = () => {
                 <div className={styles.logoWrapper}>
                     <div className={styles.logoHeader}>
                         <img
-                            src={publicAssetUrl('/LinQMD.svg')}
-                            alt="Caepy logo"
-                            style={{ width: 52, height: 52, display: 'block', objectFit: 'contain' }}
+                            src={publicAssetUrl(BRAND_LOGO_MARK_PATH)}
+                            alt="CAEPY logo"
+                            width={52}
+                            height={52}
+                            style={{
+                                width: 52,
+                                height: 52,
+                                maxWidth: 52,
+                                maxHeight: 52,
+                                display: 'block',
+                                objectFit: 'contain',
+                                objectPosition: 'center',
+                                flexShrink: 0,
+                            }}
                         />
                         <div className={styles.logoTextColumn}>
-                            <span className={styles.brandNameLarge}>Caepy</span>
+                            <span className={styles.brandNameLarge}>CAEPY</span>
                             <span className={styles.taglineLarge}>Practice Smarter</span>
                         </div>
                     </div>
                 </div>
 
                 <div className={styles.formContainer}>
-                    <h2 className={styles.formTitle}>Join Caepy</h2>
+                    <h2 className={styles.formTitle}>Join CAEPY</h2>
                     <p className={styles.formSubtitle}>
                         Create and manage a professional doctor profile using a guided, voice-assisted setup.
                     </p>

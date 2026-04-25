@@ -106,7 +106,7 @@ const WelcomeDialog = ({
                                     animate={{ opacity: 1, y: 0 }}
                                     transition={{ delay: 0.4 }}
                                 >
-                                    Welcome to Caepy!
+                                    Welcome to CAEPY!
                                 </motion.h2>
 
                                 <motion.p

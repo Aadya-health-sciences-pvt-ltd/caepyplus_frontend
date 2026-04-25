@@ -1,11 +1,11 @@
 import React from 'react';
-import { publicAssetUrl } from '../../config/basePath';
+import { publicAssetUrl, BRAND_LOGO_MARK_PATH } from '../../config/basePath';
 
 /**
- * CaepyLogo — uses the official LinQMD.svg brand mark from /public.
+ * CaepyLogo — brand mark from {@link BRAND_LOGO_MARK_PATH} in /public.
  *
  * variant="icon"  → icon mark only (header bar)
- * variant="full"  → icon mark + "Caepy" wordmark + tagline (login / admin pages)
+ * variant="full"  → icon mark + "CAEPY" wordmark + tagline (login / admin pages)
  */
 
 interface CaepyLogoProps {
@@ -23,29 +23,29 @@ const CaepyLogo: React.FC<CaepyLogoProps> = ({
         return (
             // Render just the icon mark — sized via width/height on the img tag
             <img
-                src={publicAssetUrl('/LinQMD.svg')}
-                alt="Caepy logo mark"
+                src={publicAssetUrl(BRAND_LOGO_MARK_PATH)}
+                alt="CAEPY logo mark"
                 width={size}
                 height={size}
                 className={className}
-                style={{ display: 'block', objectFit: 'contain' }}
+                style={{ display: 'block', objectFit: 'contain', flexShrink: 0 }}
             />
         );
     }
 
-    // 'full' — icon mark + "Caepy" wordmark + tagline
+    // 'full' — icon mark + "CAEPY" wordmark + tagline
     return (
         <span
             className={className}
             style={{ display: 'inline-flex', alignItems: 'center', gap: 12 }}
-            aria-label="Caepy — Practice Smarter"
+            aria-label="CAEPY — Practice Smarter"
         >
             <img
-                src={publicAssetUrl('/LinQMD.svg')}
-                alt="Caepy logo mark"
+                src={publicAssetUrl(BRAND_LOGO_MARK_PATH)}
+                alt="CAEPY logo mark"
                 width={size}
                 height={size}
-                style={{ display: 'block', objectFit: 'contain' }}
+                style={{ display: 'block', objectFit: 'contain', flexShrink: 0 }}
             />
 
             <span style={{ display: 'flex', flexDirection: 'column', lineHeight: 1 }}>
@@ -58,7 +58,7 @@ const CaepyLogo: React.FC<CaepyLogoProps> = ({
                         color: '#1E3A8A',
                     }}
                 >
-                    Caepy
+                    CAEPY
                 </span>
                 <span
                     style={{

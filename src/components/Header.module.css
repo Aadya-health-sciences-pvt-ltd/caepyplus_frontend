@@ -19,8 +19,12 @@
 .logoIcon {
   width: 36px;
   height: 36px;
+  max-width: 36px;
+  max-height: 36px;
   object-fit: contain;
+  object-position: left center;
   display: block;
+  flex-shrink: 0;
 }
 
 .logoText {
