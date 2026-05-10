@@ -214,6 +214,22 @@
     box-shadow: 0 0 0 3px rgba(57, 200, 206, 0.1);
 }
 
+.inputError {
+    border-color: #EF4444 !important;
+}
+
+.inputError:focus {
+    border-color: #EF4444 !important;
+    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.12);
+}
+
+.fieldErrorText {
+    font-size: 0.75rem;
+    color: #EF4444;
+    margin: 0.25rem 0 0;
+    line-height: 1.35;
+}
+
 .nextButton {
     background: linear-gradient(90deg, #293991 0%, #1ABFD2 100%);
     /* Teal to Blue gradient */

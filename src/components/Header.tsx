@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { usePathname } from 'next/navigation';
 import { useAppRouter } from '../lib/router';
-import { Settings, User, Phone, LogOut } from 'lucide-react';
+import { HelpCircle, LifeBuoy, User, LogOut } from 'lucide-react';
 import styles from './Header.module.css';
 import { authService } from '../services/authService';
 
@@ -16,7 +16,7 @@ import { isBrowser } from '../lib/isBrowser';
 import { publicAssetUrl, BRAND_LOGO_MARK_PATH } from '../config/basePath';
 
 const Header: React.FC<HeaderProps> = ({ centerTitle }) => {
-    const [openDropdown, setOpenDropdown] = useState<string | null>(null); // 'settings', 'profile', or null
+    const [openDropdown, setOpenDropdown] = useState<string | null>(null); // 'help', 'profile', or null
     const router = useAppRouter();
     const pathname = usePathname();
 
@@ -67,20 +67,20 @@ const Header: React.FC<HeaderProps> = ({ centerTitle }) => {
             )}
 
             <div className={styles.rightSection}>
-                {/* SETTINGS */}
+                {/* HELP & SUPPORT */}
                 <div
                     style={{ position: 'relative', height: '100%', display: 'flex', alignItems: 'center' }}
-                    onMouseEnter={() => setOpenDropdown('settings')}
+                    onMouseEnter={() => setOpenDropdown('help')}
                     onMouseLeave={() => setOpenDropdown(null)}
                 >
                     <button
                         className={styles.iconButton}
-                        aria-label="Settings"
+                        aria-label="Help and support"
                     >
-                        <Settings size={20} />
+                        <HelpCircle size={20} />
                     </button>
 
-                    {openDropdown === 'settings' && (
+                    {openDropdown === 'help' && (
                         <div className={styles.dropdownMenu} style={{ width: '200px' }}>
                             <button
                                 className={styles.dropdownItem}
@@ -89,7 +89,7 @@ const Header: React.FC<HeaderProps> = ({ centerTitle }) => {
                                     setOpenDropdown(null);
                                 }}
                             >
-                                <Phone size={16} /> Contact Support
+                                <LifeBuoy size={16} /> Contact Support
                             </button>
                         </div>
                     )}

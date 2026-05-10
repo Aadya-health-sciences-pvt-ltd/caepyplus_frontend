@@ -95,8 +95,6 @@ const LivePreview: React.FC<LivePreviewProps> = ({ data, focusedField, onEditFie
                             return '';
                         }
                     },
-                    { name: 'experience', label: 'How many years of experience do you have?', getValue: (d) => d.experience ? `${d.experience} years` : '' },
-                    { name: 'postSpecialisationExperience', label: 'Post-Specialisation Exp.', getValue: (d) => d.postSpecialisationExperience ? `${d.postSpecialisationExperience} years` : '' },
                     { name: 'registrationNumber', label: 'Medical Registration Number', getValue: (d) => d.registrationNumber },
                     { name: 'medicalCouncil', label: 'Medical Council', getValue: (d) => d.medicalCouncil },
                     { name: 'languages', label: 'Languages Spoken', getValue: (d) => formatArray(d.languages) },
@@ -105,6 +103,8 @@ const LivePreview: React.FC<LivePreviewProps> = ({ data, focusedField, onEditFie
                 return [
                     { name: 'mbbsYear', label: 'Year of MBBS', getValue: (d) => d.mbbsYear },
                     { name: 'specialisationYear', label: 'Year of Specialisation', getValue: (d) => d.specialisationYear },
+                    { name: 'experience', label: 'How many years of experience do you have?', getValue: (d) => d.experience ? `${d.experience} years` : '' },
+                    { name: 'postSpecialisationExperience', label: 'Post-Specialisation Exp.', getValue: (d) => d.postSpecialisationExperience ? `${d.postSpecialisationExperience} years` : '' },
                     { name: 'fellowships', label: 'Fellowships / Diplomas', getValue: (d) => formatArray(d.fellowships) },
                     { name: 'qualifications', label: 'What is your highest qualification?', getValue: (d) => d.qualifications },
                     { name: 'memberships', label: 'Memberships (Societies)', getValue: (d) => d.memberships },

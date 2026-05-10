@@ -8,6 +8,7 @@ import styles from './Login.module.css';
 import { authService } from '../services/authService';
 import { doctorService } from '../services/doctorService';
 import { mockDataService } from '../services/mockDataService';
+import { calculateProfileProgress } from '../lib/profileProgress';
 import { publicAssetUrl, BRAND_LOGO_MARK_PATH } from '../config/basePath';
 import { parseErrorMessage } from '../lib/api';
 
@@ -50,6 +51,12 @@ const Login = () => {
         } else {
             localStorage.setItem('mobile_number', identifier);
             localStorage.removeItem('user_email');
+        }
+
+        const profileDataForProgress = { ...(profile?.data || {}), ...profile };
+        const onboardingPercent = calculateProfileProgress(profileDataForProgress).totalPercentage;
+        if (typeof window !== 'undefined' && onboardingPercent < 50) {
+            sessionStorage.setItem('caepy_fresh_login_welcome', '1');
         }
 
         console.log("Routing user:", profile);
@@ -355,9 +362,9 @@ const Login = () => {
                 </div>
 
                 <div className={styles.formContainer}>
-                    <h2 className={styles.formTitle}>Join CAEPY</h2>
+                    <h2 className={styles.formTitle}>Get Started</h2>
                     <p className={styles.formSubtitle}>
-                        Create and manage a professional doctor profile using a guided, voice-assisted setup.
+                        Create an Authentic and Elegant Profile by Yourself
                     </p>
 
                     {!isOtpSent ? (

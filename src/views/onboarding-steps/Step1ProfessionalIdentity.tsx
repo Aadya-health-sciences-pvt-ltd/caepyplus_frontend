@@ -1,11 +1,14 @@
 'use client';
-import React from 'react';
+import React, { useState, useCallback } from 'react';
 import dynamic from 'next/dynamic';
 import { Sparkles, Upload } from 'lucide-react';
 import CreatableDropdown from '../../components/ui/CreatableDropdown';
+import CreatableMultiSelect from '../../components/ui/CreatableMultiSelect';
 import styles from '../Onboarding.module.css';
 import { FIELD_NAME_MAP } from './types';
 import type { SharedStepProps, DropdownOption, MasterData } from './types';
+import { SPOKEN_LANGUAGE_OPTIONS } from '../../lib/spokenLanguageOptions';
+import { sanitizeIndianMobileInput, validateIndianMobile, validateIndianMobileOptional } from '../../lib/indianMobile';
 
 // Lazy-load the Google Maps accordion — defers the Maps SDK until the user taps "Add Practice Location"
 const PracticeLocationAccordion = dynamic(
@@ -37,6 +40,20 @@ const Step1ProfessionalIdentity: React.FC<Step1Props> = ({
     isEmailLogin,
     isPhoneLogin,
 }) => {
+    const languagesAsList = (v: string[] | string | undefined): string[] => {
+        if (Array.isArray(v)) return v;
+        if (typeof v === 'string' && v.trim()) return v.split(',').map((s) => s.trim()).filter(Boolean);
+        return [];
+    };
+
+    const [phoneError, setPhoneError] = useState<string | null>(null);
+
+    const handlePhoneBlur = useCallback(() => {
+        if (isPhoneLogin) return;
+        const err = isEmailLogin ? validateIndianMobileOptional(formData.phone) : validateIndianMobile(formData.phone);
+        setPhoneError(err);
+    }, [isPhoneLogin, isEmailLogin, formData.phone]);
+
     return (
         <>
             <div id="section-prompt-block" className={styles.promptItem}>
@@ -115,20 +132,26 @@ const Step1ProfessionalIdentity: React.FC<Step1Props> = ({
                         <input
                             name="phone"
                             type="tel"
+                            inputMode="numeric"
+                            autoComplete="tel-national"
                             maxLength={13}
                             value={formData.phone}
                             onChange={(e) => {
-                                const val = e.target.value;
-                                if (/^\+?[0-9]*$/.test(val) && val.length <= 13) {
-                                    setFormData((prev) => ({ ...prev, phone: val }));
-                                }
+                                setPhoneError(null);
+                                const next = sanitizeIndianMobileInput(e.target.value);
+                                setFormData((prev) => ({ ...prev, phone: next }));
                             }}
+                            onBlur={handlePhoneBlur}
                             onFocus={() => setFocusedField('phone')}
-                            className={styles.input}
-                            placeholder="Mobile Number (e.g. +91XXXXXXXXXX)"
+                            className={`${styles.input} ${phoneError ? styles.inputError : ''}`}
+                            placeholder="+91 — then 10 digits (6–9…)"
                             disabled={isPhoneLogin}
                             style={isPhoneLogin ? { background: '#F3F4F6', cursor: 'not-allowed' } : {}}
+                            aria-invalid={!!phoneError}
                         />
+                        {!isPhoneLogin && phoneError ? (
+                            <p className={styles.fieldErrorText}>{phoneError}</p>
+                        ) : null}
                     </div>
                 </div>
 
@@ -151,41 +174,16 @@ const Step1ProfessionalIdentity: React.FC<Step1Props> = ({
                 <div className={styles.fullWidth}>
                     <div className={styles.inputWrapper}>
                         <label className={styles.label}>Languages Spoken</label>
-                        <div className={styles.tagInput}>
-                            <input
-                                onKeyDown={(e) => {
-                                    if (e.key === 'Enter') {
-                                        const val = (e.target as HTMLInputElement).value.trim();
-                                        if (val) {
-                                            const newLangs = [...(formData.languages || []), val];
-                                            setFormData(prev => ({ ...prev, languages: newLangs }));
-                                            (e.target as HTMLInputElement).value = '';
-                                        }
-                                    }
-                                }}
-                                onBlur={(e) => {
-                                    const val = e.target.value.trim();
-                                    if (val) {
-                                        const newLangs = [...(formData.languages || []), val];
-                                        setFormData(prev => ({ ...prev, languages: newLangs }));
-                                        e.target.value = '';
-                                    }
-                                }}
-                                placeholder="Press Enter to add languages (e.g., English, Hindi, Spanish)"
-                                className={styles.input}
-                            />
-                            <div className={styles.tagsContainer}>
-                                {(formData.languages || []).map((lang: string, i: number) => (
-                                    <span key={i} className={styles.tag}>
-                                        {lang}
-                                        <button onClick={() => {
-                                            const newLangs = formData.languages.filter((_: string, index: number) => index !== i);
-                                            setFormData(prev => ({ ...prev, languages: newLangs }));
-                                        }}>×</button>
-                                    </span>
-                                ))}
-                            </div>
-                        </div>
+                        <CreatableMultiSelect
+                            name="languages"
+                            values={languagesAsList(formData.languages)}
+                            options={SPOKEN_LANGUAGE_OPTIONS}
+                            fieldName="languages"
+                            placeholder="Search and select languages…"
+                            onChange={(vals) => setFormData((prev) => ({ ...prev, languages: vals }))}
+                            onFocus={() => setFocusedField('languages')}
+                            creatable={false}
+                        />
                     </div>
                 </div>
 
@@ -211,36 +209,6 @@ const Step1ProfessionalIdentity: React.FC<Step1Props> = ({
                         onLocationsChange={(locs) => setFormData((prev) => ({ ...prev, practiceLocations: locs }))}
                         onFocus={() => setFocusedField('practiceLocations')}
                     />
-                </div>
-
-                <div className={styles.halfWidth}>
-                    <div className={styles.inputWrapper}>
-                        <label className={styles.label}>Years of Experience <span>*</span></label>
-                        <input
-                            name="experience"
-                            type="number"
-                            value={formData.experience}
-                            onChange={handleInputChange}
-                            onFocus={() => setFocusedField('experience')}
-                            className={styles.input}
-                            placeholder="e.g. 10"
-                        />
-                    </div>
-                </div>
-
-                <div className={styles.halfWidth}>
-                    <div className={styles.inputWrapper}>
-                        <label className={styles.label}>Post-Specialisation Exp.</label>
-                        <input
-                            name="postSpecialisationExperience"
-                            type="number"
-                            value={formData.postSpecialisationExperience}
-                            onChange={handleInputChange}
-                            onFocus={() => setFocusedField('postSpecialisationExperience')}
-                            className={styles.input}
-                            placeholder="(Optional)"
-                        />
-                    </div>
                 </div>
 
                 <div className={styles.halfWidth}>

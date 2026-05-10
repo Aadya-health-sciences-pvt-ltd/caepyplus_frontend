@@ -17,7 +17,9 @@ import { doctorService } from '../services/doctorService';
 import { dropdownService } from '../services/dropdownService';
 import { isBrowser } from '../lib/isBrowser';
 
-import { validateSection1 } from '../lib/validation';
+import { validateSection1, validateSection2 } from '../lib/validation';
+import { normalizeIndianPhoneForForm } from '../lib/indianMobile';
+import { fellowshipsFromCommaList } from '../lib/fellowshipsCommaList';
 import { calculateProfileProgress } from '../lib/profileProgress';
 import Toast from '../components/ui/Toast';
 
@@ -137,37 +139,18 @@ const Onboarding = () => {
 
     const isProfileSubmitted = savedUser?.status === 'submitted' || savedUser?.status === 'verified';
     const shouldSuppressDialog = currentStep >= 6 && isProfileSubmitted;
-    const [showWelcome, setShowWelcome] = useState(!hasTourCompleted && !shouldSuppressDialog);
+    const mergedForWelcomeProgress = { ...(savedData || {}), ...(savedUser || {}) };
+    const initialProfilePct = calculateProfileProgress(mergedForWelcomeProgress).totalPercentage;
+    const freshLoginWelcome = isBrowser() && sessionStorage.getItem('caepy_fresh_login_welcome') === '1';
+    const showWelcomeInitial =
+        !shouldSuppressDialog &&
+        ((initialProfilePct < 50 && (freshLoginWelcome || !hasTourCompleted)) ||
+            (initialProfilePct >= 50 && !hasTourCompleted));
+
+    const [showWelcome, setShowWelcome] = useState(showWelcomeInitial);
     const [showTour, setShowTour] = useState(false);
 
     const showSkipButton = !isNewUser && currentStep >= 3;
-
-    const handleStartTour = () => {
-        setShowWelcome(false);
-        setTimeout(() => setShowTour(true), 400);
-    };
-
-    const handleSkipWelcome = () => {
-        setShowWelcome(false);
-        localStorage.setItem(tourKey, 'true');
-    };
-
-    const handleSkipToReview = () => {
-        setShowWelcome(false);
-        localStorage.setItem(tourKey, 'true');
-        sessionStorage.setItem('nav_state', JSON.stringify({ formData, fromOnboarding: true }));
-        router.push('/doctor/review');
-    };
-
-    const handleTourComplete = () => {
-        setShowTour(false);
-        localStorage.setItem(tourKey, 'true');
-    };
-
-    const handleTourSkip = () => {
-        setShowTour(false);
-        localStorage.setItem(tourKey, 'true');
-    };
 
     // State for API-fetched dropdown options, keyed by frontend field name
     const [dropdownOptions, setDropdownOptions] = useState<Record<string, DropdownOption[]>>({});
@@ -218,7 +201,7 @@ const Onboarding = () => {
     const defaultFormData: OnboardingFormData = {
         fullName: '',
         email: '',
-        phone: '',
+        phone: '+91',
         specialty: '',
         primaryLocation: '',
         practiceLocations: [],
@@ -307,6 +290,8 @@ const Onboarding = () => {
         }
 
         normalizeClinicalMultiFields(baseData as Record<string, unknown>);
+
+        baseData.phone = normalizeIndianPhoneForForm(baseData.phone);
 
         return baseData;
     });
@@ -432,15 +417,18 @@ const Onboarding = () => {
         }
     };
 
-    // Helper for array fields (simple strings)
+    // Fellowships: comma-only split/join (see fellowshipsCommaList.ts) — no trim while typing.
     const handleArrayChange = (field: string, value: string) => {
-        setFormData((prev: any) => ({ ...prev, [field]: value.split(',').map((s: string) => s.trim()) }));
+        setFormData((prev: any) => ({
+            ...prev,
+            [field]: fellowshipsFromCommaList(value),
+        }));
     };
 
     // Map field names to their corresponding step numbers
     const getStepForField = (fieldName: string): number => {
-        if (['fullName', 'email', 'phone', 'specialty', 'primaryLocation', 'practiceLocations', 'experience', 'postSpecialisationExperience', 'registrationNumber', 'medicalCouncil'].includes(fieldName)) return 1;
-        if (['mbbsYear', 'specialisationYear', 'fellowships', 'qualifications', 'memberships', 'awards'].includes(fieldName)) return 2;
+        if (['fullName', 'email', 'phone', 'specialty', 'primaryLocation', 'practiceLocations', 'registrationNumber', 'medicalCouncil', 'languages'].includes(fieldName)) return 1;
+        if (['mbbsYear', 'specialisationYear', 'experience', 'postSpecialisationExperience', 'fellowships', 'qualifications', 'memberships', 'awards'].includes(fieldName)) return 2;
         if (['areasOfInterest', 'practiceSegments', 'commonConditions', 'knownForConditions', 'wantToTreatConditions'].includes(fieldName)) return 3;
         if (['trainingExperience', 'motivation', 'unwinding', 'recognition', 'qualityTime', 'proudAchievement', 'personalAchievement', 'professionalAspiration', 'personalAspiration'].includes(fieldName)) return 4;
         if (['patientValue', 'careApproach', 'practicePhilosophy'].includes(fieldName)) return 5;
@@ -517,6 +505,36 @@ const Onboarding = () => {
     // --- Profile progress memoized once per render cycle ---
     const profileProgress = useMemo(() => calculateProfileProgress(formData), [formData]);
 
+    const handleStartTour = () => {
+        if (isBrowser()) sessionStorage.removeItem('caepy_fresh_login_welcome');
+        setShowWelcome(false);
+        setTimeout(() => setShowTour(true), 400);
+    };
+
+    const handleSkipWelcome = () => {
+        if (isBrowser()) sessionStorage.removeItem('caepy_fresh_login_welcome');
+        setShowWelcome(false);
+        localStorage.setItem(tourKey, 'true');
+    };
+
+    const handleSkipToReview = () => {
+        if (isBrowser()) sessionStorage.removeItem('caepy_fresh_login_welcome');
+        setShowWelcome(false);
+        localStorage.setItem(tourKey, 'true');
+        sessionStorage.setItem('nav_state', JSON.stringify({ formData, fromOnboarding: true }));
+        router.push('/doctor/review');
+    };
+
+    const handleTourComplete = () => {
+        setShowTour(false);
+        localStorage.setItem(tourKey, 'true');
+    };
+
+    const handleTourSkip = () => {
+        setShowTour(false);
+        localStorage.setItem(tourKey, 'true');
+    };
+
     const renderStepContent = () => {
         // Common props passed to every step
         const stepProps = {
@@ -576,6 +594,14 @@ const Onboarding = () => {
     const handleNext = () => {
         if (currentStep === 1) {
             const { isValid, errors } = validateSection1(formData);
+            if (!isValid) {
+                showToast(errors[0], 'error');
+                return;
+            }
+        }
+
+        if (currentStep === 2) {
+            const { isValid, errors } = validateSection2(formData);
             if (!isValid) {
                 showToast(errors[0], 'error');
                 return;

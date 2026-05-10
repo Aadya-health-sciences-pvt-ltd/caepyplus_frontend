@@ -42,6 +42,18 @@ const TOUR_STEPS: TourStep[] = [
         description: 'Click "Next" to move to the next section when you\'re ready. Your progress is auto-saved, so you won\'t lose anything.',
         position: 'top',
     },
+    {
+        target: 'sidebar-dashboard',
+        title: 'Dashboard',
+        description: 'Use Dashboard in the left menu anytime for your overview, profile card, and quick access to key areas of your practice presence.',
+        position: 'right',
+    },
+    {
+        target: 'sidebar-profile',
+        title: 'Profile',
+        description: 'Open Profile from the sidebar to view and manage your professional details, summary, and visibility settings.',
+        position: 'right',
+    },
 ];
 
 const GuidedTour = ({ isActive, onComplete, onSkip }: GuidedTourProps) => {

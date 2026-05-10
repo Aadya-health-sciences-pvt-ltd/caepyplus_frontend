@@ -10,12 +10,15 @@ interface CreatableMultiSelectProps {
     name: string;
     values: string[];
     options: DropdownOption[];
+    /** Used when submitting a user-typed value to the dropdown API; ignored when `creatable` is false. */
     fieldName: string;
     placeholder?: string;
     onChange: (values: string[]) => void;
     onFocus?: () => void;
     onOptionAdded?: (option: DropdownOption) => void;
     className?: string;
+    /** When false, only predefined `options` can be chosen (no “Add …” / API create). Default true. */
+    creatable?: boolean;
 }
 
 const CreatableMultiSelect: React.FC<CreatableMultiSelectProps> = ({
@@ -28,6 +31,7 @@ const CreatableMultiSelect: React.FC<CreatableMultiSelectProps> = ({
     onFocus,
     onOptionAdded,
     className,
+    creatable = true,
 }) => {
     const [isOpen, setIsOpen] = useState(false);
     const [searchText, setSearchText] = useState('');
@@ -51,7 +55,7 @@ const CreatableMultiSelect: React.FC<CreatableMultiSelectProps> = ({
             o.value.toLowerCase() === trimmedSearch.toLowerCase() ||
             o.label.toLowerCase() === trimmedSearch.toLowerCase(),
     );
-    const showAddOption = trimmedSearch.length > 0 && !isExactMatch;
+    const showAddOption = creatable && trimmedSearch.length > 0 && !isExactMatch;
 
     useEffect(() => {
         const handleClickOutside = (e: MouseEvent) => {
