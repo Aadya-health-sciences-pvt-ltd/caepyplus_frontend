@@ -1,14 +1,11 @@
-import { validateIndianMobile, validateIndianMobileOptional } from './indianMobile';
-
 export const validateSection1 = (formData: any) => {
-    const emailStr = (formData.email ?? '').toString().trim();
-    const hasWorkEmail = emailStr.includes('@');
-
     const requiredFields = [
         { key: 'fullName', label: 'Full Name' },
         { key: 'email', label: 'Email' },
+        { key: 'phone', label: 'Phone Number' },
         { key: 'specialty', label: 'Specialty' },
         { key: 'primaryLocation', label: 'Primary Location' },
+        { key: 'experience', label: 'Experience' },
         { key: 'registrationNumber', label: 'Registration Number' },
         { key: 'medicalCouncil', label: 'Medical Council' }
         // practiceLocations check needs special handling if it's an array
@@ -36,13 +33,15 @@ export const validateSection1 = (formData: any) => {
         });
     }
 
-    if (hasWorkEmail) {
-        const pe = validateIndianMobileOptional(formData.phone);
-        if (pe) errors.push(pe);
-    } else {
-        const pe = validateIndianMobile(formData.phone);
-        if (pe) errors.push(pe);
+    // Phone format validation (Max length 13, only numbers and +)
+    if (formData.phone) {
+        const phone = formData.phone.toString();
+        // Allow + at start and numbers only
+        if (!/^\+?[0-9]*$/.test(phone) || phone.length > 13) {
+            errors.push('Phone Number must contain only numbers (and optional + prefix) with a maximum length of 13 characters');
+        }
     }
+
 
     return {
         isValid: errors.length === 0,
@@ -112,6 +111,6 @@ export const validateSection2 = (formData: any) => {
 
     return {
         isValid: errors.length === 0,
-        errors,
+        errors
     };
 };

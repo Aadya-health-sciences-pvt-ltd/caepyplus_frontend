@@ -3,8 +3,9 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
-    LayoutGrid, FileText, User, BookOpen,
+    LayoutGrid, FileText, User,
     ChevronLeft, ChevronRight,
+    PenTool, BookOpen
 } from 'lucide-react';
 import styles from './Sidebar.module.css';
 import { mockDataService } from '../services/mockDataService';

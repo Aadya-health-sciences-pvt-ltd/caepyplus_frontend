@@ -17,6 +17,7 @@ const Login = () => {
     const [mobileNumber, setMobileNumber] = useState('');
     const [email, setEmail] = useState('');
     const [loginMethod] = useState<'phone' | 'email'>('phone');
+    const [otpDeliveryMethod, setOtpDeliveryMethod] = useState<'whatsapp' | 'sms'>('whatsapp');
     const [otp, setOtp] = useState('');
     const [isOtpSent, setIsOtpSent] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
@@ -94,7 +95,8 @@ const Login = () => {
 
         try {
             if (loginMethod === 'phone') {
-                const response = await authService.requestOTP(mobileNumber, 'whatsapp');
+                const response = await authService.requestOTP(mobileNumber, otpDeliveryMethod);
+//                 const response = await authService.requestOTP(mobileNumber, 'whatsapp');
                 if (response.success) {
                     setIsOtpSent(true);
                     setTimer(30); // 30 seconds cooldown
@@ -151,16 +153,21 @@ const Login = () => {
         }
     };
 
-    const handleResendOTP = async () => {
+    const handleResendOTP = async (method: 'whatsapp' | 'sms') => {
         if (timer > 0) return;
         setError(null);
         setIsLoading(true);
 
         try {
-            const response = await authService.resendOTP(mobileNumber, 'whatsapp');
+            const response = await authService.resendOTP(mobileNumber, method);
             if (response.success) {
                 setTimer(30);
-                alert('OTP sent successfully via WhatsApp!');
+                setOtpDeliveryMethod(method);
+                alert(`OTP sent successfully via ${method === 'whatsapp' ? 'WhatsApp' : 'SMS'}!`);
+//             const response = await authService.resendOTP(mobileNumber, 'whatsapp');
+//             if (response.success) {
+//                 setTimer(30);
+//                 alert('OTP sent successfully via WhatsApp!');
             }
         } catch (err: unknown) {
             console.error("OTP Resend Error:", err);
@@ -456,13 +463,23 @@ const Login = () => {
                                     {error && <p className={styles.errorMessage} style={{ color: 'red', fontSize: '0.875rem', marginBottom: '1rem' }}>{error}</p>}
 
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                                        <button
-                                            type="submit"
-                                            className={styles.submitButton}
+                                        <button 
+                                            type="submit" 
+                                            className={styles.submitButton} 
                                             disabled={isLoading}
+                                            onClick={() => setOtpDeliveryMethod('whatsapp')}
                                             style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', background: '#25D366' }}
                                         >
-                                            {isLoading ? <Loader2 className="animate-spin" size={20} /> : 'Get OTP on WhatsApp'}
+                                            {isLoading && otpDeliveryMethod === 'whatsapp' ? <Loader2 className="animate-spin" size={20} /> : 'Get OTP on WhatsApp'}
+                                        </button>
+                                        <button 
+                                            type="submit" 
+                                            className={styles.submitButton} 
+                                            disabled={isLoading}
+                                            onClick={() => setOtpDeliveryMethod('sms')}
+                                            style={{ background: 'transparent', color: '#4B5563', border: '1px solid #E2E8F0', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}
+                                        >
+                                            {isLoading && otpDeliveryMethod === 'sms' ? <Loader2 className="animate-spin" size={20} /> : 'Get OTP via SMS'}
                                         </button>
                                     </div>
                                 </form>
@@ -487,7 +504,7 @@ const Login = () => {
                             <div className={styles.inputGroup}>
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
                                     <label htmlFor="otp" className={styles.label}>
-                                        Enter OTP sent to WhatsApp
+                                        Enter OTP sent to {otpDeliveryMethod === 'whatsapp' ? 'WhatsApp' : 'SMS'}
                                     </label>
                                     <button
                                         type="button"
@@ -518,21 +535,39 @@ const Login = () => {
 
                             <div style={{ marginTop: '1.5rem', display: 'flex', flexDirection: 'column', gap: '0.75rem', alignItems: 'center' }}>
                                 <p style={{ fontSize: '0.875rem', color: '#64748B', marginBottom: '0.25rem' }}>Didn't receive the OTP?</p>
-                                <button
-                                    type="button"
-                                    onClick={() => void handleResendOTP()}
-                                    disabled={timer > 0 || isLoading}
-                                    style={{
-                                        background: 'none',
-                                        border: 'none',
-                                        color: timer > 0 ? '#94a3b8' : '#25D366',
-                                        cursor: timer > 0 ? 'default' : 'pointer',
-                                        fontSize: '0.9rem',
-                                        fontWeight: 500,
-                                    }}
-                                >
-                                    {timer > 0 ? `Resend available in ${timer}s` : 'Resend on WhatsApp'}
-                                </button>
+                                <div style={{ display: 'flex', gap: '1rem' }}>
+                                    <button
+                                        type="button"
+                                        onClick={() => handleResendOTP('whatsapp')}
+                                        disabled={timer > 0 || isLoading}
+                                        style={{
+                                            background: 'none',
+                                            border: 'none',
+                                            color: timer > 0 ? '#94a3b8' : '#25D366',
+                                            cursor: timer > 0 ? 'default' : 'pointer',
+                                            fontSize: '0.9rem',
+                                            fontWeight: 500,
+                                        }}
+                                    >
+                                        {timer > 0 ? `WhatsApp in ${timer}s` : 'Resend on WhatsApp'}
+                                    </button>
+                                    <span style={{ color: '#E2E8F0' }}>|</span>
+                                    <button
+                                        type="button"
+                                        onClick={() => handleResendOTP('sms')}
+                                        disabled={timer > 0 || isLoading}
+                                        style={{
+                                            background: 'none',
+                                            border: 'none',
+                                            color: timer > 0 ? '#94a3b8' : '#3B82F6',
+                                            cursor: timer > 0 ? 'default' : 'pointer',
+                                            fontSize: '0.9rem',
+                                            fontWeight: 500,
+                                        }}
+                                    >
+                                        {timer > 0 ? `SMS in ${timer}s` : 'Resend via SMS'}
+                                    </button>
+                                </div>
                             </div>
                         </form>
                     )}

@@ -384,18 +384,18 @@ const AdminLogin = () => {
                                     </button>
                                 ) : (
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                                        <button
-                                            type="submit"
-                                            className={styles.submitButton}
+                                        <button 
+                                            type="submit" 
+                                            className={styles.submitButton} 
                                             disabled={isLoading}
                                             onClick={() => setOtpDeliveryMethod('whatsapp')}
                                             style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', background: '#25D366' }}
                                         >
                                             {isLoading && otpDeliveryMethod === 'whatsapp' ? <Loader2 className="animate-spin" size={20} /> : 'Get OTP on WhatsApp'}
                                         </button>
-                                        <button
-                                            type="submit"
-                                            className={styles.submitButton}
+                                        <button 
+                                            type="submit" 
+                                            className={styles.submitButton} 
                                             disabled={isLoading}
                                             onClick={() => setOtpDeliveryMethod('sms')}
                                             style={{ background: 'transparent', color: '#4B5563', border: '1px solid #E2E8F0', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}

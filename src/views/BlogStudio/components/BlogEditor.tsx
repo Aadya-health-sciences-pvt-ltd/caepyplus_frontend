@@ -175,7 +175,7 @@ export default function BlogEditor({ topic, keywords, title, subtitle, quote, co
       }
 
       // Upload the image via doctorService
-      const result = await doctorService.uploadBlogImage(currentBlogId, file);
+      const result = await doctorService.uploadBlogImage(file, Number(currentBlogId));
       
       // Inject image into Tiptap
       editor.chain().focus().setImage({ src: result.url }).run();

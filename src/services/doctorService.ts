@@ -350,12 +350,7 @@ export const doctorService = {
 
         const toArrayOrNull = (val: string | string[] | null | undefined): string[] | null => {
             if (val == null) return null;
-            if (Array.isArray(val)) {
-                const cleaned = val
-                    .map((s) => (typeof s === 'string' ? s.trim() : String(s ?? '')))
-                    .filter((s) => s.length > 0);
-                return cleaned.length > 0 ? cleaned : null;
-            }
+            if (Array.isArray(val)) return val.length > 0 ? val : null;
             if (typeof val === 'string' && val.trim()) {
                 return val.split(',').map(s => s.trim()).filter(Boolean);
             }
@@ -606,52 +601,12 @@ export const doctorService = {
     },
 
     /**
-     * Upload an image inside the Blog Editor for a specific blog draft.
-     */
-    uploadBlogImage: async (blogId: string | number, file: File): Promise<{ url: string, message: string }> => {
-        const formData = new FormData();
-        formData.append('file', file);
-
-        const response = await api.post<{ url: string; message: string }>(
-            `/blogs/${blogId}/images`,
-            formData,
-            {
-                headers: {
-                    'Content-Type': 'multipart/form-data',
-                },
-            },
-        );
-
-        // Convert relative URL to absolute URL targeting the backend domain to fix frontend rendering
-        let finalUrl = response.data.url;
-        if (finalUrl && finalUrl.startsWith('/')) {
-            const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
-            try {
-                const parsedBase = new URL(baseUrl);
-                finalUrl = `${parsedBase.origin}${finalUrl}`;
-            } catch (e) {
-                finalUrl = `http://localhost:8000${finalUrl}`;
-            }
-            response.data.url = finalUrl;
-        }
-
-        return response.data;
-    },
-
-    /**
      * Fetch all blogs for the doctor.
      */
     getBlogs: async (status?: string): Promise<any[]> => {
         const url = status ? `/blogs?status=${status}` : '/blogs';
         const response = await api.get(url);
         return parseResponse<any[]>(response);
-    },
-
-    /**
-     * Delete a blog by ID.
-     */
-    deleteBlog: async (blogId: number): Promise<void> => {
-        await api.delete(`/blogs/${blogId}`);
     },
 
     /**
@@ -668,6 +623,26 @@ export const doctorService = {
      */
     updateCommentStatus: async (commentId: number, status: 'approved' | 'rejected'): Promise<void> => {
         await api.put(`/blogs/comments/${commentId}/status`, { status });
+    },
+
+    /**
+     * Delete a blog.
+     */
+    deleteBlog: async (blogId: number): Promise<void> => {
+        await api.delete(`/blogs/${blogId}`);
+    },
+
+    /**
+     * Upload a blog image.
+     */
+    uploadBlogImage: async (file: File, blogId?: number): Promise<{ url: string }> => {
+        const formData = new FormData();
+        formData.append('file', file);
+        if (blogId) formData.append('blog_id', String(blogId));
+        const response = await api.post<{ data: { url: string } }>('/blogs/upload-image', formData, {
+            headers: { 'Content-Type': 'multipart/form-data' },
+        });
+        return { url: response.data.data.url };
     },
 
     /**

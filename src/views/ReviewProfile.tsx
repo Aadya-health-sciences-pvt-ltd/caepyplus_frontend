@@ -63,10 +63,9 @@ const ReviewProfile = () => {
     };
 
     const handleSubmit = async () => {
-        const v1 = validateSection1(formData);
-        const v2 = validateSection2(formData);
-        const errors = [...v1.errors, ...v2.errors];
-        if (!v1.isValid || !v2.isValid) {
+        // Validate Section 1 before submission
+        const { isValid, errors } = validateSection1(formData);
+        if (!isValid) {
             showToast(`Cannot submit: ${errors.join('; ')}`, 'error');
             return;
         }
@@ -121,7 +120,7 @@ const ReviewProfile = () => {
     };
 
     const handleEditSection = (step: number) => {
-        sessionStorage.setItem('nav_state', JSON.stringify({ formData, step }));
+        sessionStorage.setItem('nav_state', JSON.stringify({ formData, step, stage }));
         router.push('/doctor/onboarding');
     };
 
