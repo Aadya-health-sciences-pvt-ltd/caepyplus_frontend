@@ -18,7 +18,7 @@ import { dropdownService } from '../services/dropdownService';
 import { isBrowser } from '../lib/isBrowser';
 
 import { validateSection1, validateSection2 } from '../lib/validation';
-import { normalizeIndianPhoneForForm } from '../lib/indianMobile';
+import { normalizeIndianPhoneForForm, validateIndianMobile } from '../lib/indianMobile';
 import { fellowshipsFromCommaList } from '../lib/fellowshipsCommaList';
 import { calculateProfileProgress } from '../lib/profileProgress';
 import Toast from '../components/ui/Toast';
@@ -591,12 +591,24 @@ const Onboarding = () => {
         }
     };
 
-    const handleNext = () => {
+    const handleNext = async () => {
         if (currentStep === 1) {
             const { isValid, errors } = validateSection1(formData);
             if (!isValid) {
                 showToast(errors[0], 'error');
                 return;
+            }
+            if (isEmailLogin && validateIndianMobile(formData.phone) === null) {
+                try {
+                    const { available, message } = await doctorService.checkPhoneAvailability(formData.phone);
+                    if (!available) {
+                        showToast(message, 'error');
+                        return;
+                    }
+                } catch {
+                    showToast('Could not verify phone number. Please try again.', 'error');
+                    return;
+                }
             }
         }
 

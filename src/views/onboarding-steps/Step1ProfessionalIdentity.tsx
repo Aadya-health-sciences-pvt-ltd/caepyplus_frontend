@@ -1,5 +1,5 @@
 'use client';
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import { Sparkles, Upload } from 'lucide-react';
 import CreatableDropdown from '../../components/ui/CreatableDropdown';
@@ -9,6 +9,7 @@ import { FIELD_NAME_MAP } from './types';
 import type { SharedStepProps, DropdownOption, MasterData } from './types';
 import { SPOKEN_LANGUAGE_OPTIONS } from '../../lib/spokenLanguageOptions';
 import { sanitizeIndianMobileInput, validateIndianMobile, validateIndianMobileOptional } from '../../lib/indianMobile';
+import { doctorService } from '../../services/doctorService';
 
 // Lazy-load the Google Maps accordion — defers the Maps SDK until the user taps "Add Practice Location"
 const PracticeLocationAccordion = dynamic(
@@ -47,11 +48,51 @@ const Step1ProfessionalIdentity: React.FC<Step1Props> = ({
     };
 
     const [phoneError, setPhoneError] = useState<string | null>(null);
+    const phoneRef = useRef(formData.phone);
+    useEffect(() => {
+        phoneRef.current = formData.phone;
+    }, [formData.phone]);
 
     const handlePhoneBlur = useCallback(() => {
         if (isPhoneLogin) return;
-        const err = isEmailLogin ? validateIndianMobileOptional(formData.phone) : validateIndianMobile(formData.phone);
-        setPhoneError(err);
+
+        const trimmed = (formData.phone ?? '').trim();
+        if (!trimmed || trimmed === '+91') {
+            setPhoneError(null);
+            return;
+        }
+
+        const fmtErr = isEmailLogin ? validateIndianMobileOptional(formData.phone) : validateIndianMobile(formData.phone);
+        if (fmtErr) {
+            setPhoneError(fmtErr);
+            return;
+        }
+
+        if (!isEmailLogin) {
+            setPhoneError(null);
+            return;
+        }
+
+        const doctorId = typeof window !== 'undefined' ? localStorage.getItem('doctor_id') : null;
+        if (!doctorId) {
+            setPhoneError(null);
+            return;
+        }
+
+        const phoneAtBlur = formData.phone;
+        void (async () => {
+            try {
+                const { available, message } = await doctorService.checkPhoneAvailability(phoneAtBlur);
+                if (phoneRef.current !== phoneAtBlur) return;
+                if (!available) {
+                    setPhoneError(message);
+                } else {
+                    setPhoneError(null);
+                }
+            } catch {
+                if (phoneRef.current !== phoneAtBlur) return;
+            }
+        })();
     }, [isPhoneLogin, isEmailLogin, formData.phone]);
 
     return (
