@@ -1,0 +1,374 @@
+.container {
+    padding: 2rem;
+}
+
+.header {
+    margin-bottom: 2rem;
+}
+
+.title {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: #111827;
+    margin-bottom: 0.5rem;
+}
+
+.subtitle {
+    font-size: 0.875rem;
+    color: #6B7280;
+}
+
+.statsGrid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.statCard {
+    background: white;
+    padding: 1.5rem;
+    border-radius: 1rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.statIcon {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+}
+
+.statInfo h3 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #111827;
+    margin: 0;
+}
+
+.statInfo p {
+    font-size: 0.875rem;
+    color: #6B7280;
+    margin: 0;
+}
+
+.controls {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 1.5rem;
+}
+
+.searchBar {
+    display: flex;
+    align-items: center;
+    background: white;
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    border: 1px solid #E5E7EB;
+    width: 300px;
+    gap: 0.5rem;
+}
+
+.searchInput {
+    border: none;
+    outline: none;
+    width: 100%;
+}
+
+.tableContainer {
+    background: white;
+    border-radius: 1rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    overflow: hidden;
+}
+
+.table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.table th {
+    background: #F9FAFB;
+    padding: 1rem;
+    text-align: left;
+    font-size: 0.75rem;
+    color: #6B7280;
+    text-transform: uppercase;
+    font-weight: 600;
+    border-bottom: 1px solid #E5E7EB;
+}
+
+.table td {
+    padding: 1rem;
+    border-bottom: 1px solid #F3F4F6;
+    color: #374151;
+    font-size: 0.875rem;
+}
+
+.statusBadge {
+    padding: 0.25rem 0.75rem;
+    border-radius: 99px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.statusPending {
+    background: #FEF3C7;
+    color: #B45309;
+}
+
+.statusVerified {
+    background: #D1FAE5;
+    color: #065F46;
+}
+
+.actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.actionBtn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0.25rem;
+    border-radius: 0.25rem;
+    transition: background 0.2s;
+}
+
+.actionBtn:hover {
+    background: #F3F4F6;
+}
+
+.deleteBtn {
+    color: #EF4444;
+}
+
+.deleteBtn:hover {
+    background: #FEE2E2;
+}
+
+.viewBtn {
+    color: #3B82F6;
+}
+
+.viewBtn:hover {
+    background: #EFF6FF;
+}
+
+.statusRejected {
+    background: #FEE2E2;
+    color: #991B1B;
+}
+
+/* Bulk Upload Modal */
+.modalOverlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    backdrop-filter: blur(4px);
+}
+
+.modalContent {
+    background: white;
+    border-radius: 1rem;
+    padding: 2rem;
+    width: 720px;
+    max-width: 90vw;
+    max-height: 85vh;
+    overflow-y: auto;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+}
+
+.dropZone {
+    border: 2px dashed #D1D5DB;
+    border-radius: 0.75rem;
+    padding: 2.5rem;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    background: #F9FAFB;
+}
+
+.dropZone:hover,
+.dropZoneDragOver {
+    border-color: #3B82F6;
+    background: #EFF6FF;
+}
+
+.previewTable {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.8125rem;
+    margin-top: 1rem;
+}
+
+.previewTable th {
+    background: #F3F4F6;
+    padding: 0.5rem 0.75rem;
+    text-align: left;
+    font-weight: 600;
+    color: #6B7280;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+}
+
+.previewTable td {
+    padding: 0.5rem 0.75rem;
+    border-bottom: 1px solid #F3F4F6;
+    color: #374151;
+    max-width: 200px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.primaryBtn {
+    padding: 0.625rem 1.5rem;
+    background: #3B82F6;
+    color: white;
+    border: none;
+    border-radius: 0.5rem;
+    font-weight: 600;
+    cursor: pointer;
+    font-size: 0.875rem;
+    transition: background 0.2s;
+}
+
+.primaryBtn:hover {
+    background: #2563EB;
+}
+
+.primaryBtn:disabled {
+    background: #93C5FD;
+    cursor: not-allowed;
+}
+
+/* Responsive Utilities */
+.flexBetween {
+    display: flex;
+    justify-content: space-between;
+}
+
+.flexBetweenCenter {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.flexBetweenStart {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+}
+
+.grid2Cols1Fr {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 2rem;
+}
+
+.grid2ColsEqual {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+}
+
+.gridAutoFill {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 1rem;
+}
+
+.regCard {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+/* Tablet: avoid cramped two-column admin sections */
+@media (max-width: 1024px) and (min-width: 769px) {
+    .container {
+        padding: 1.5rem 1.25rem;
+    }
+
+    .statsGrid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .controls {
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+
+    .searchBar {
+        width: 100%;
+        min-width: 0;
+    }
+}
+
+/* Mobile Responsive Override */
+@media (max-width: 768px) {
+    .container {
+        padding: 1rem;
+    }
+
+    .statsGrid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+
+    .controls {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 1rem;
+    }
+
+    .searchBar {
+        width: 100%;
+        box-sizing: border-box;
+    }
+
+    .tableContainer {
+        overflow-x: auto;
+    }
+
+    .modalContent {
+        padding: 1.5rem;
+        width: 95vw;
+    }
+
+    .dropZone {
+        padding: 1.5rem;
+    }
+
+    /* Responsive utilities overrides */
+    .flexBetween,
+    .flexBetweenCenter,
+    .flexBetweenStart,
+    .regCard {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+
+    .grid2Cols1Fr,
+    .grid2ColsEqual {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+
+    .gridAutoFill {
+        grid-template-columns: 1fr;
+    }
+}
