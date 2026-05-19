@@ -57,12 +57,25 @@ const AdminDoctorDetails = () => {
 
     // Build display data — prefer profile (API) over navigation-state doctor
     const identity = profile?.identity;
-    const details = (profile as any)?.doctor || profile?.details;
+    // Lookup returns `doctor` (doctors row); legacy payloads may use `details`. `any` — union of Doctor vs DoctorDetails field shapes in this view.
+    const details = (profile?.doctor ?? profile?.details ?? null) as any;
+
     const media = profile?.media || [];
 
-    const doctorName = identity
-        ? [identity.first_name, identity.last_name].filter(Boolean).join(' ').trim() || (identity as any).full_name || 'Unnamed'
-        : doctor?.full_name || [doctor?.first_name, doctor?.last_name].filter(Boolean).join(' ').trim() || 'Unnamed';
+    /** Admin lookup returns `full_name` on identity and on the doctors row; prefer row then identity (fixes wrong first/last glue). */
+    const trimName = (v: string | null | undefined) => (v ?? '').trim();
+    const identityJoined = identity
+        ? trimName([identity.first_name, identity.last_name].filter(Boolean).join(' '))
+        : '';
+    const detailsFull = trimName(details?.full_name);
+
+    const doctorName =
+        detailsFull ||
+        trimName(identity?.full_name) ||
+        identityJoined ||
+        trimName(doctor?.full_name) ||
+        trimName([doctor?.first_name, doctor?.last_name].filter(Boolean).join(' ')) ||
+        'Unnamed';
 
     const email = identity?.email || doctor?.email || '';
     const phone = identity?.phone_number || doctor?.phone || '';

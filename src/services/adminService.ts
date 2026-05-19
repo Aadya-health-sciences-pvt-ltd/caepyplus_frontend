@@ -58,8 +58,8 @@ export interface Doctor {
     id: number;
     title?: string | null;
     gender?: string | null;
-    first_name: string;
-    last_name: string;
+    first_name?: string | null;
+    last_name?: string | null;
     full_name: string | null;
     email: string;
     phone: string | null;
@@ -140,9 +140,10 @@ export interface Doctor {
 export interface DoctorIdentity {
     id: string;
     doctor_id: number;
+    full_name?: string | null;
     title?: string | null;
-    first_name: string;
-    last_name: string;
+    first_name?: string | null;
+    last_name?: string | null;
     email: string;
     phone_number: string;
     onboarding_status: string;
@@ -260,10 +261,12 @@ export interface DoctorStatusHistory {
     changed_at: string;
 }
 
-/** Matches the backend DoctorWithFullInfoResponse. */
+/** Matches the backend DoctorWithFullInfoResponse (lookup uses `doctor`, not `details`). */
 export interface DoctorFullProfile {
     identity: DoctorIdentity;
-    details: DoctorDetails | null;
+    /** Present on GET /doctors/lookup — main doctors row */
+    doctor?: Doctor | DoctorDetails | null;
+    details?: DoctorDetails | null;
     media: DoctorMedia[];
     status_history: DoctorStatusHistory[];
 }

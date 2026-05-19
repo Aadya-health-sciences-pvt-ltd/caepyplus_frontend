@@ -480,6 +480,29 @@ export const doctorService = {
     },
 
     /**
+     * GET /doctors/phone-availability — true unless another doctor already uses this mobile.
+     */
+    checkPhoneAvailability: async (phone: string): Promise<{ available: boolean; message: string }> => {
+        const response = await api.get<{
+            success?: boolean;
+            message?: string;
+            data?: { available: boolean };
+        }>(`/doctors/phone-availability`, {
+            params: { phone_number: phone },
+        });
+        const data = parseResponse<{ available: boolean }>(response);
+        const body = response.data;
+        const rawMsg =
+            body && typeof body === 'object' && typeof body.message === 'string' ? body.message : '';
+        return {
+            available: !!data?.available,
+            message:
+                rawMsg ||
+                'Doctor already registered with this mobile number. Please enter a different number.',
+        };
+    },
+
+    /**
      * Update doctor details via PUT /doctors/{doctor_id}.
      */
     // eslint-disable-next-line @typescript-eslint/no-explicit-any

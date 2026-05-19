@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react';
 import { useAppRouter } from '../../lib/router';
 import {
     Users, AlertCircle, TrendingUp, Clock,
-    CheckCircle, Activity, FileText
 } from 'lucide-react';
 import { adminService, type Doctor } from '../../services/adminService';
 import styles from './AdminDashboard.module.css';
@@ -54,7 +53,7 @@ const AdminDashboard = () => {
         <div className={styles.container}>
             <div className={styles.header}>
                 <h1 className={styles.title}>Operational Dashboard</h1>
-                <p className={styles.subtitle}>Overview of doctor onboarding and system activity.</p>
+                <p className={styles.subtitle}>Overview of doctor onboarding.</p>
             </div>
 
             {/* Enhanced Stats Grid */}
@@ -97,10 +96,7 @@ const AdminDashboard = () => {
                 </div>
             </div>
 
-            <div className={styles.grid2Cols1Fr}>
-
-                {/* Main Column */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+            <div className={styles.dashboardMainColumn}>
 
                     {/* Onboarding Trends Chart Wrapper */}
                     <div style={{ background: 'white', padding: '1.5rem', borderRadius: '1rem', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
@@ -156,38 +152,6 @@ const AdminDashboard = () => {
                             ))
                         )}
                     </div>
-
-                </div>
-
-                {/* Right Column: Activity Feed */}
-                <div style={{ background: 'white', padding: '1.5rem', borderRadius: '1rem', boxShadow: '0 1px 3px rgba(0,0,0,0.05)', height: 'fit-content' }}>
-                    <h3 className={styles.sectionTitle}>Recent Activity</h3>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', marginTop: '1rem' }}>
-                        {[
-                            { icon: <CheckCircle size={16} />, color: '#10B981', bg: '#D1FAE5', text: 'Dr. Sunil Sharma verified', time: '10m ago' },
-                            { icon: <FileText size={16} />, color: '#3B82F6', bg: '#EFF6FF', text: 'Dr. Anil Kapoor uploaded license', time: '30m ago' },
-                            { icon: <Activity size={16} />, color: '#8B5CF6', bg: '#F5F3FF', text: 'System maintenance scheduled', time: '2h ago' },
-                            { icon: <Users size={16} />, color: '#6B7280', bg: '#F3F4F6', text: '5 new signups today', time: '4h ago' },
-                        ].map((item, idx) => (
-                            <div key={idx} style={{ display: 'flex', gap: '0.75rem' }}>
-                                <div style={{
-                                    width: '32px', height: '32px', borderRadius: '50%',
-                                    background: item.bg, color: item.color,
-                                    display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0
-                                }}>
-                                    {item.icon}
-                                </div>
-                                <div>
-                                    <p style={{ margin: 0, fontSize: '0.85rem', color: '#374151' }}>{item.text}</p>
-                                    <p style={{ margin: 0, fontSize: '0.75rem', color: '#9CA3AF' }}>{item.time}</p>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                    <button style={{ width: '100%', padding: '0.75rem', marginTop: '1.5rem', background: 'none', border: '1px solid #E5E7EB', borderRadius: '6px', color: '#6B7280', cursor: 'pointer', fontSize: '0.875rem' }}>
-                        View All Activity
-                    </button>
-                </div>
 
             </div>
         </div>

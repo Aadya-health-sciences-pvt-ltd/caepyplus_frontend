@@ -278,6 +278,12 @@
     gap: 2rem;
 }
 
+.dashboardMainColumn {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+}
+
 .grid2ColsEqual {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -365,6 +371,10 @@
     .grid2Cols1Fr,
     .grid2ColsEqual {
         grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+
+    .dashboardMainColumn {
         gap: 1rem;
     }
 
