@@ -1,19 +1,31 @@
 /** Display / entry prefix for Indian mobile numbers in onboarding. */
 export const INDIAN_MOBILE_PREFIX = '+91';
 
+/** True when the field only has the country prefix (or nothing) — not a complete mobile. */
+export function isIndianPhoneEmpty(phone: string | undefined | null): boolean {
+    const p = (phone ?? '').trim();
+    return !p || p === INDIAN_MOBILE_PREFIX;
+}
+
 /** Strip to up to 10 national digits (after removing leading 91 if present). */
 function extractNationalDigits(input: string): string {
     const d = input.replace(/\D/g, '');
-    if (d.length >= 12 && d.startsWith('91')) return d.slice(2, 12);
-    if (d.length >= 11 && d.startsWith('91')) return d.slice(2);
-    return d.slice(0, 10);
+    if (!d || d === '91') return '';
+
+    let national: string;
+    if (d.startsWith('91') && d.length > 10) {
+        national = d.slice(2);
+    } else {
+        national = d;
+    }
+    return national.slice(0, 10);
 }
 
 /**
  * Normalize any stored value to `+91` + up to 10 digits (does not enforce first-digit rule).
  */
 export function normalizeIndianPhoneForForm(phone: string | undefined | null): string {
-    if (!phone || !String(phone).trim()) return INDIAN_MOBILE_PREFIX;
+    if (isIndianPhoneEmpty(phone)) return INDIAN_MOBILE_PREFIX;
     const national = extractNationalDigits(String(phone));
     return national ? `${INDIAN_MOBILE_PREFIX}${national}` : INDIAN_MOBILE_PREFIX;
 }
