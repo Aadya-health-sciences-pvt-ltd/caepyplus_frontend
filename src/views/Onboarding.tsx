@@ -18,7 +18,7 @@ import { dropdownService } from '../services/dropdownService';
 import { isBrowser } from '../lib/isBrowser';
 
 import { validateSection1, validateSection2 } from '../lib/validation';
-import { normalizeIndianPhoneForForm, validateIndianMobile } from '../lib/indianMobile';
+import { normalizeIndianPhoneForForm, validateIndianMobile, isIndianPhoneEmpty } from '../lib/indianMobile';
 import { fellowshipsFromCommaList } from '../lib/fellowshipsCommaList';
 import { calculateProfileProgress } from '../lib/profileProgress';
 import Toast from '../components/ui/Toast';
@@ -266,8 +266,11 @@ const Onboarding = () => {
             const mappedData = doctorService.mapProfileToFormData(storedProfile);
             for (const [key, value] of Object.entries(mappedData)) {
                 const existing = (baseData as any)[key];
-                const isEmpty = existing === '' || existing === null || existing === undefined
-                    || (Array.isArray(existing) && existing.length === 0);
+                const isEmpty =
+                    key === 'phone'
+                        ? isIndianPhoneEmpty(existing)
+                        : existing === '' || existing === null || existing === undefined
+                            || (Array.isArray(existing) && existing.length === 0);
                 if (isEmpty && value !== '' && value !== null && value !== undefined) {
                     (baseData as any)[key] = value;
                 }
@@ -276,10 +279,10 @@ const Onboarding = () => {
 
         if (savedUser) {
             if (!baseData.email && savedUser.email) baseData.email = savedUser.email;
-            if (!baseData.phone && savedUser.phone) baseData.phone = savedUser.phone;
+            if (isIndianPhoneEmpty(baseData.phone) && savedUser.phone) baseData.phone = savedUser.phone;
         }
 
-        if (!baseData.phone) {
+        if (isIndianPhoneEmpty(baseData.phone)) {
             const storedPhone = localStorage.getItem('mobile_number');
             if (storedPhone) baseData.phone = storedPhone;
         }
@@ -330,8 +333,11 @@ const Onboarding = () => {
                     const updated = { ...prev };
                     for (const [key, value] of Object.entries(mappedData)) {
                         const existing = updated[key as keyof typeof updated];
-                        const isEmpty = existing === '' || existing === null || existing === undefined
-                            || (Array.isArray(existing) && existing.length === 0);
+                        const isEmpty =
+                            key === 'phone'
+                                ? isIndianPhoneEmpty(existing as string)
+                                : existing === '' || existing === null || existing === undefined
+                                    || (Array.isArray(existing) && existing.length === 0);
                         if (isEmpty && value !== '' && value !== null && value !== undefined) {
                             (updated as Record<string, unknown>)[key] = value;
                         }

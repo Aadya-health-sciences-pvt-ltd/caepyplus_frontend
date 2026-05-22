@@ -12,6 +12,32 @@ import { calculateProfileProgress } from '../lib/profileProgress';
 import { publicAssetUrl, BRAND_LOGO_MARK_PATH } from '../config/basePath';
 import { parseErrorMessage } from '../lib/api';
 
+const LOGIN_SUBTITLE = 'Create an Authentic and Elegant Profile by Yourself';
+const SUBTITLE_ACCENT_EXCLUDE = new Set(['an', 'and', 'by']);
+
+function LoginFormSubtitle() {
+    return (
+        <p className={styles.formSubtitle}>
+            {LOGIN_SUBTITLE.split(' ').map((word, index) => {
+                const excluded = SUBTITLE_ACCENT_EXCLUDE.has(word.toLowerCase());
+                return (
+                    <span key={`${word}-${index}`}>
+                        {index > 0 ? ' ' : null}
+                        {excluded ? (
+                            word
+                        ) : (
+                            <>
+                                <span className={styles.subtitleAccent}>{word.charAt(0)}</span>
+                                {word.slice(1)}
+                            </>
+                        )}
+                    </span>
+                );
+            })}
+        </p>
+    );
+}
+
 const Login = () => {
     const router = useAppRouter();
     const [mobileNumber, setMobileNumber] = useState('');
@@ -287,7 +313,7 @@ const Login = () => {
             <div className={styles.heroSection}>
                 <div className={styles.heroContent}>
                     <h1 className={styles.heroTitle}>
-                        Create your professional presence in minutes
+                        Create your professional online presence in minutes
                     </h1>
                     <p className={styles.heroSubtitle}>
                         AI-assisted onboarding designed for doctors—accurate, secure, and clinically relevant.
@@ -363,9 +389,7 @@ const Login = () => {
 
                 <div className={styles.formContainer}>
                     <h2 className={styles.formTitle}>Get Started</h2>
-                    <p className={styles.formSubtitle}>
-                        Create an Authentic and Elegant Profile by Yourself
-                    </p>
+                    <LoginFormSubtitle />
 
                     {!isOtpSent ? (
                         <>
