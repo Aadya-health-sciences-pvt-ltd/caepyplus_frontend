@@ -219,6 +219,16 @@
     font-size: 1rem;
 }
 
+/* First letter accent — same gradient as left hero pane */
+.subtitleAccent {
+    font-weight: 700;
+    background: linear-gradient(135deg, #293991 0%, #1ABFD2 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
+}
+
 .inputGroup {
     margin-bottom: 1.5rem;
 }
