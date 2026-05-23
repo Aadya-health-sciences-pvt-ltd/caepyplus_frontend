@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useAppRouter } from '../../lib/router';
-import { Search, Users, AlertCircle, CheckCircle, Eye, Upload, X, Download, FileSpreadsheet, Loader2, ShieldCheck, UserPlus } from 'lucide-react';
+import { Search, Users, AlertCircle, CheckCircle, Eye, Upload, X, Download, FileSpreadsheet, Loader2, ShieldCheck, UserPlus, KeyRound } from 'lucide-react';
 import styles from './AdminDashboard.module.css';
 import { adminService, type Doctor, type CsvValidationResponse, type CsvUploadResponse, type LinqMDSyncResult } from '../../services/adminService';
 import { parseErrorMessage } from '../../lib/api';
@@ -382,7 +382,18 @@ const BulkUploadModal = ({ onClose, onComplete }: BulkUploadModalProps) => {
 
 type LinqMDModalState =
     | { mode: 'success'; username: string; password: string }
+    | {
+        mode: 'view';
+        doctorName: string;
+        linqmdUserId: string;
+        username: string;
+        password: string;
+    }
     | { mode: 'error'; message: string };
+
+function isDoctorVerified(doc: Doctor): boolean {
+    return (doc.onboarding_status ?? '').toLowerCase() === 'verified';
+}
 
 interface LinqMDResultModalProps {
     state: LinqMDModalState;
@@ -391,6 +402,8 @@ interface LinqMDResultModalProps {
 
 const LinqMDResultModal = ({ state, onClose }: LinqMDResultModalProps) => {
     const isSuccess = state.mode === 'success';
+    const isView = state.mode === 'view';
+    const isError = state.mode === 'error';
 
     const copyField = async (value: string) => {
         try {
@@ -409,13 +422,17 @@ const LinqMDResultModal = ({ state, onClose }: LinqMDResultModalProps) => {
             >
                 <div className={styles.flexBetweenCenter} style={{ marginBottom: '1rem' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                        {isSuccess ? (
-                            <CheckCircle size={22} color="#059669" />
-                        ) : (
+                        {isError ? (
                             <AlertCircle size={22} color="#DC2626" />
+                        ) : (
+                            <CheckCircle size={22} color="#059669" />
                         )}
                         <h2 style={{ margin: 0, fontSize: '1.125rem', fontWeight: 700, color: '#111827' }}>
-                            {isSuccess ? 'LinQMD Profile Created' : 'LinQMD Profile Creation Failed'}
+                            {isError
+                                ? 'LinQMD Profile Creation Failed'
+                                : isView
+                                  ? 'LinQMD Credentials'
+                                  : 'LinQMD Profile Created'}
                         </h2>
                     </div>
                     <button
@@ -428,15 +445,25 @@ const LinqMDResultModal = ({ state, onClose }: LinqMDResultModalProps) => {
                     </button>
                 </div>
 
-                {isSuccess ? (
+                {isSuccess || isView ? (
                     <>
                         <p style={{ margin: '0 0 1.25rem', fontSize: '0.9375rem', color: '#374151', lineHeight: 1.5 }}>
-                            Doctor Profile created Successfully in LinQMD. Share these credentials with the doctor.
+                            {isView
+                                ? 'Stored LinQMD credentials for this doctor.'
+                                : 'Doctor Profile created Successfully in LinQMD. Share these credentials with the doctor.'}
                         </p>
-                        {[
-                            { label: 'Username', value: state.username },
-                            { label: 'Password', value: state.password },
-                        ].map(({ label, value }) => (
+                        {(isView
+                            ? [
+                                { label: 'Doctor name', value: state.doctorName },
+                                { label: 'LinQMD user ID', value: state.linqmdUserId },
+                                { label: 'Username', value: state.username },
+                                { label: 'Initial password', value: state.password },
+                            ]
+                            : [
+                                { label: 'Username', value: state.username },
+                                { label: 'Initial password', value: state.password },
+                            ]
+                        ).map(({ label, value }) => (
                             <div
                                 key={label}
                                 style={{
@@ -552,6 +579,25 @@ const AdminDoctorsList = () => {
             console.error("Failed to fetch doctors", error);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleViewLinqMDCredentials = async (id: number) => {
+        try {
+            const creds = await adminService.getLinqMDCredentials(id);
+            setLinqmdModal({
+                mode: 'view',
+                doctorName: creds.doctor_name,
+                linqmdUserId: creds.linqmd_user_id,
+                username: creds.linqmd_username,
+                password: creds.linqmd_password,
+            });
+        } catch (error) {
+            console.error('Failed to load LinQMD credentials', error);
+            setLinqmdModal({
+                mode: 'error',
+                message: parseErrorMessage(error),
+            });
         }
     };
 
@@ -709,14 +755,62 @@ const AdminDoctorsList = () => {
                                                     <Eye size={18} />
                                                 </button>
 
-                                                <button
-                                                    className={`${styles.actionBtn}`}
-                                                    style={{ color: '#3B82F6' }}
-                                                    title="Create Profile in LinQMD"
-                                                    onClick={() => handleSyncLinqMD(doc.id)}
-                                                >
-                                                    <UserPlus size={18} />
-                                                </button>
+                                                {(() => {
+                                                    const verified = isDoctorVerified(doc);
+                                                    const hasProfile = !!doc.has_linqmd_profile;
+                                                    const canCreate = verified && !hasProfile;
+                                                    const createTooltip = !verified
+                                                        ? 'Verification pending'
+                                                        : hasProfile
+                                                          ? 'LinQMD profile already created'
+                                                          : 'Create Profile in LinQMD';
+                                                    const canView = hasProfile;
+                                                    const viewTooltip = canView
+                                                        ? 'View LinQMD credentials'
+                                                        : 'No LinQMD profile on record';
+                                                    const disabledBtnStyle = {
+                                                        opacity: 0.45,
+                                                        cursor: 'not-allowed' as const,
+                                                    };
+                                                    return (
+                                                        <>
+                                                            <span
+                                                                title={createTooltip}
+                                                                style={{ display: 'inline-flex' }}
+                                                            >
+                                                                <button
+                                                                    type="button"
+                                                                    className={styles.actionBtn}
+                                                                    style={{
+                                                                        color: '#3B82F6',
+                                                                        ...(canCreate ? {} : disabledBtnStyle),
+                                                                    }}
+                                                                    disabled={!canCreate}
+                                                                    onClick={() => canCreate && handleSyncLinqMD(doc.id)}
+                                                                >
+                                                                    <UserPlus size={18} />
+                                                                </button>
+                                                            </span>
+                                                            <span
+                                                                title={viewTooltip}
+                                                                style={{ display: 'inline-flex' }}
+                                                            >
+                                                                <button
+                                                                    type="button"
+                                                                    className={styles.actionBtn}
+                                                                    style={{
+                                                                        color: '#059669',
+                                                                        ...(canView ? {} : disabledBtnStyle),
+                                                                    }}
+                                                                    disabled={!canView}
+                                                                    onClick={() => canView && handleViewLinqMDCredentials(doc.id)}
+                                                                >
+                                                                    <KeyRound size={18} />
+                                                                </button>
+                                                            </span>
+                                                        </>
+                                                    );
+                                                })()}
                                             </div>
                                         </td>
                                     </tr>
