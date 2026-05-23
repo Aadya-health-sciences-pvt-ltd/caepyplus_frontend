@@ -134,6 +134,29 @@ export interface Doctor {
     role: string;
     created_at: string;
     updated_at: string | null;
+    has_linqmd_profile?: boolean;
+}
+
+/** Stored LinQMD credentials from GET /onboarding-admin/linqmd-credentials/{doctor_id}. */
+export interface LinqMDCredentials {
+    doctor_id: number;
+    doctor_name: string;
+    linqmd_user_id: string;
+    linqmd_username: string;
+    linqmd_password: string;
+}
+
+/** Response from GET /onboarding-admin/linqmd-sync/{doctor_id} (GenericResponse data). */
+export interface LinqMDSyncResult {
+    doctor_id: number;
+    username?: string | null;
+    password?: string | null;
+    linqmd_response: {
+        Username?: string;
+        Password?: string;
+        error?: string;
+        [key: string]: unknown;
+    };
 }
 
 /** Matches the backend DoctorIdentityResponse. */
@@ -510,9 +533,14 @@ export const adminService = {
         return parseResponse(response);
     },
 
-    syncLinqMDProfile: async (doctorId: number) => {
+    syncLinqMDProfile: async (doctorId: number): Promise<LinqMDSyncResult> => {
         const response = await api.get(`/onboarding-admin/linqmd-sync/${doctorId}`);
-        return parseResponse(response);
+        return parseResponse<LinqMDSyncResult>(response);
+    },
+
+    getLinqMDCredentials: async (doctorId: number): Promise<LinqMDCredentials> => {
+        const response = await api.get(`/onboarding-admin/linqmd-credentials/${doctorId}`);
+        return parseResponse<LinqMDCredentials>(response);
     },
 
     /** Download the official bulk upload CSV template from the backend. */

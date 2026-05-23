@@ -2,9 +2,10 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useAppRouter } from '../../lib/router';
-import { Search, Users, AlertCircle, CheckCircle, Eye, Upload, X, Download, FileSpreadsheet, Loader2, ShieldCheck, UserPlus } from 'lucide-react';
+import { Search, Users, AlertCircle, CheckCircle, Eye, Upload, X, Download, FileSpreadsheet, Loader2, ShieldCheck, UserPlus, KeyRound } from 'lucide-react';
 import styles from './AdminDashboard.module.css';
-import { adminService, type Doctor, type CsvValidationResponse, type CsvUploadResponse } from '../../services/adminService';
+import { adminService, type Doctor, type CsvValidationResponse, type CsvUploadResponse, type LinqMDSyncResult } from '../../services/adminService';
+import { parseErrorMessage } from '../../lib/api';
 import { calculateProfileProgressFromApi } from '../../lib/profileProgress';
 
 // ---------------------------------------------------------------------------
@@ -376,6 +377,181 @@ const BulkUploadModal = ({ onClose, onComplete }: BulkUploadModalProps) => {
 };
 
 // ---------------------------------------------------------------------------
+// LinQMD sync result modal
+// ---------------------------------------------------------------------------
+
+type LinqMDModalState =
+    | { mode: 'success'; username: string; password: string }
+    | {
+        mode: 'view';
+        doctorName: string;
+        linqmdUserId: string;
+        username: string;
+        password: string;
+    }
+    | { mode: 'error'; message: string };
+
+function isDoctorVerified(doc: Doctor): boolean {
+    return (doc.onboarding_status ?? '').toLowerCase() === 'verified';
+}
+
+interface LinqMDResultModalProps {
+    state: LinqMDModalState;
+    onClose: () => void;
+}
+
+const LinqMDResultModal = ({ state, onClose }: LinqMDResultModalProps) => {
+    const isSuccess = state.mode === 'success';
+    const isView = state.mode === 'view';
+    const isError = state.mode === 'error';
+
+    const copyField = async (value: string) => {
+        try {
+            await navigator.clipboard.writeText(value);
+        } catch {
+            // ignore clipboard failures
+        }
+    };
+
+    return (
+        <div className={styles.modalOverlay} onClick={onClose}>
+            <div
+                className={styles.modalContent}
+                onClick={e => e.stopPropagation()}
+                style={{ maxWidth: '480px' }}
+            >
+                <div className={styles.flexBetweenCenter} style={{ marginBottom: '1rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        {isError ? (
+                            <AlertCircle size={22} color="#DC2626" />
+                        ) : (
+                            <CheckCircle size={22} color="#059669" />
+                        )}
+                        <h2 style={{ margin: 0, fontSize: '1.125rem', fontWeight: 700, color: '#111827' }}>
+                            {isError
+                                ? 'LinQMD Profile Creation Failed'
+                                : isView
+                                  ? 'LinQMD Credentials'
+                                  : 'LinQMD Profile Created'}
+                        </h2>
+                    </div>
+                    <button
+                        type="button"
+                        onClick={onClose}
+                        style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '0.25rem' }}
+                        aria-label="Close"
+                    >
+                        <X size={20} color="#6B7280" />
+                    </button>
+                </div>
+
+                {isSuccess || isView ? (
+                    <>
+                        <p style={{ margin: '0 0 1.25rem', fontSize: '0.9375rem', color: '#374151', lineHeight: 1.5 }}>
+                            {isView
+                                ? 'Stored LinQMD credentials for this doctor.'
+                                : 'Doctor Profile created Successfully in LinQMD. Share these credentials with the doctor.'}
+                        </p>
+                        {(isView
+                            ? [
+                                { label: 'Doctor name', value: state.doctorName },
+                                { label: 'LinQMD user ID', value: state.linqmdUserId },
+                                { label: 'Username', value: state.username },
+                                { label: 'Initial password', value: state.password },
+                            ]
+                            : [
+                                { label: 'Username', value: state.username },
+                                { label: 'Initial password', value: state.password },
+                            ]
+                        ).map(({ label, value }) => (
+                            <div
+                                key={label}
+                                style={{
+                                    marginBottom: '0.75rem',
+                                    padding: '0.75rem 1rem',
+                                    borderRadius: '0.5rem',
+                                    border: '1px solid #E5E7EB',
+                                    background: '#F9FAFB',
+                                }}
+                            >
+                                <p style={{ margin: 0, fontSize: '0.75rem', fontWeight: 600, color: '#6B7280', textTransform: 'uppercase' }}>
+                                    {label}
+                                </p>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.375rem' }}>
+                                    <code style={{ flex: 1, fontSize: '0.875rem', color: '#111827', wordBreak: 'break-all' }}>
+                                        {value}
+                                    </code>
+                                    <button
+                                        type="button"
+                                        onClick={() => copyField(value)}
+                                        style={{
+                                            padding: '0.25rem 0.5rem',
+                                            fontSize: '0.75rem',
+                                            fontWeight: 600,
+                                            border: '1px solid #D1D5DB',
+                                            borderRadius: '0.375rem',
+                                            background: 'white',
+                                            cursor: 'pointer',
+                                        }}
+                                    >
+                                        Copy
+                                    </button>
+                                </div>
+                            </div>
+                        ))}
+                    </>
+                ) : (
+                    <div
+                        style={{
+                            padding: '1rem',
+                            borderRadius: '0.5rem',
+                            background: '#FEF2F2',
+                            border: '1px solid #FECACA',
+                        }}
+                    >
+                        <p style={{ margin: 0, fontSize: '0.9375rem', color: '#991B1B', lineHeight: 1.5 }}>
+                            {state.message}
+                        </p>
+                    </div>
+                )}
+
+                <div style={{ marginTop: '1.25rem', display: 'flex', justifyContent: 'flex-end' }}>
+                    <button
+                        type="button"
+                        onClick={onClose}
+                        style={{
+                            padding: '0.5rem 1.25rem',
+                            background: 'linear-gradient(135deg, #293991, #1ABFD2)',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '0.375rem',
+                            cursor: 'pointer',
+                            fontSize: '0.875rem',
+                            fontWeight: 600,
+                        }}
+                    >
+                        Close
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+function credentialsFromLinqMDResult(result: LinqMDSyncResult): { username: string; password: string } {
+    const resp = result.linqmd_response ?? {};
+    const username =
+        result.username ??
+        resp.Username ??
+        (typeof resp.username === 'string' ? resp.username : '');
+    const password =
+        result.password ??
+        resp.Password ??
+        (typeof resp.password === 'string' ? resp.password : '');
+    return { username: String(username), password: String(password) };
+}
+
+// ---------------------------------------------------------------------------
 // Admin Doctors List Page
 // ---------------------------------------------------------------------------
 
@@ -387,6 +563,7 @@ const AdminDoctorsList = () => {
     const [page, setPage] = useState(1);
     const [total, setTotal] = useState(0);
     const [showUploadModal, setShowUploadModal] = useState(false);
+    const [linqmdModal, setLinqmdModal] = useState<LinqMDModalState | null>(null);
 
     useEffect(() => {
         fetchDoctors();
@@ -405,16 +582,43 @@ const AdminDoctorsList = () => {
         }
     };
 
+    const handleViewLinqMDCredentials = async (id: number) => {
+        try {
+            const creds = await adminService.getLinqMDCredentials(id);
+            setLinqmdModal({
+                mode: 'view',
+                doctorName: creds.doctor_name,
+                linqmdUserId: creds.linqmd_user_id,
+                username: creds.linqmd_username,
+                password: creds.linqmd_password,
+            });
+        } catch (error) {
+            console.error('Failed to load LinQMD credentials', error);
+            setLinqmdModal({
+                mode: 'error',
+                message: parseErrorMessage(error),
+            });
+        }
+    };
+
     const handleSyncLinqMD = async (id: number) => {
-        if (window.confirm("Are you sure you want to create a profile in LinQMD for this doctor?")) {
-            try {
-                await adminService.syncLinqMDProfile(id);
-                alert("Profile created successfully");
-                fetchDoctors(); // Refresh list to reflect state changes if any
-            } catch (error) {
-                console.error("LinQMD sync failed", error);
-                alert("Failed to create profile in LinQMD");
+        if (!window.confirm("Are you sure you want to create a profile in LinQMD for this doctor?")) {
+            return;
+        }
+        try {
+            const result = await adminService.syncLinqMDProfile(id);
+            const { username, password } = credentialsFromLinqMDResult(result);
+            if (!username || !password) {
+                throw new Error('LinQMD credentials were not returned by the server.');
             }
+            setLinqmdModal({ mode: 'success', username, password });
+            fetchDoctors();
+        } catch (error) {
+            console.error("LinQMD sync failed", error);
+            setLinqmdModal({
+                mode: 'error',
+                message: parseErrorMessage(error),
+            });
         }
     };
 
@@ -551,14 +755,62 @@ const AdminDoctorsList = () => {
                                                     <Eye size={18} />
                                                 </button>
 
-                                                <button
-                                                    className={`${styles.actionBtn}`}
-                                                    style={{ color: '#3B82F6' }}
-                                                    title="Create Profile in LinQMD"
-                                                    onClick={() => handleSyncLinqMD(doc.id)}
-                                                >
-                                                    <UserPlus size={18} />
-                                                </button>
+                                                {(() => {
+                                                    const verified = isDoctorVerified(doc);
+                                                    const hasProfile = !!doc.has_linqmd_profile;
+                                                    const canCreate = verified && !hasProfile;
+                                                    const createTooltip = !verified
+                                                        ? 'Verification pending'
+                                                        : hasProfile
+                                                          ? 'LinQMD profile already created'
+                                                          : 'Create Profile in LinQMD';
+                                                    const canView = hasProfile;
+                                                    const viewTooltip = canView
+                                                        ? 'View LinQMD credentials'
+                                                        : 'No LinQMD profile on record';
+                                                    const disabledBtnStyle = {
+                                                        opacity: 0.45,
+                                                        cursor: 'not-allowed' as const,
+                                                    };
+                                                    return (
+                                                        <>
+                                                            <span
+                                                                title={createTooltip}
+                                                                style={{ display: 'inline-flex' }}
+                                                            >
+                                                                <button
+                                                                    type="button"
+                                                                    className={styles.actionBtn}
+                                                                    style={{
+                                                                        color: '#3B82F6',
+                                                                        ...(canCreate ? {} : disabledBtnStyle),
+                                                                    }}
+                                                                    disabled={!canCreate}
+                                                                    onClick={() => canCreate && handleSyncLinqMD(doc.id)}
+                                                                >
+                                                                    <UserPlus size={18} />
+                                                                </button>
+                                                            </span>
+                                                            <span
+                                                                title={viewTooltip}
+                                                                style={{ display: 'inline-flex' }}
+                                                            >
+                                                                <button
+                                                                    type="button"
+                                                                    className={styles.actionBtn}
+                                                                    style={{
+                                                                        color: '#059669',
+                                                                        ...(canView ? {} : disabledBtnStyle),
+                                                                    }}
+                                                                    disabled={!canView}
+                                                                    onClick={() => canView && handleViewLinqMDCredentials(doc.id)}
+                                                                >
+                                                                    <KeyRound size={18} />
+                                                                </button>
+                                                            </span>
+                                                        </>
+                                                    );
+                                                })()}
                                             </div>
                                         </td>
                                     </tr>
@@ -623,6 +875,13 @@ const AdminDoctorsList = () => {
             </div>
 
             {/* Bulk Upload Modal */}
+            {linqmdModal && (
+                <LinqMDResultModal
+                    state={linqmdModal}
+                    onClose={() => setLinqmdModal(null)}
+                />
+            )}
+
             {showUploadModal && (
                 <BulkUploadModal
                     onClose={() => setShowUploadModal(false)}

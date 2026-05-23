@@ -264,38 +264,32 @@ const Login = () => {
     };
 
 
-    // Testimonials Data
+    // Testimonials Data — photos in /public/testimonials/
     const testimonials = [
         {
             quote: "The onboarding felt surprisingly natural. I spoke for most of it, reviewed what was filled in, and was done in under 15 minutes. It reflected my practice accurately — without feeling like a form.",
-            author: "Dr. Srividhya",
-            role: "Consultant Physician · Bangalore",
-            image: "https://randomuser.me/api/portraits/women/44.jpg"
+            author: "Dr. Yamini Nandhini",
+            role: "Maxillofacial Prosthetics & Full Mouth Rehabilitation",
+            image: publicAssetUrl('/testimonials/yamini.png'),
         },
         {
             quote: "CAEPY has completely transformed how I manage my online presence. The voice-assisted setup was a game-changer.",
-            author: "Dr. Rajesh Kumar",
-            role: "Cardiologist · Mumbai",
-            image: "https://randomuser.me/api/portraits/men/32.jpg"
+            author: "Dr. Anantharaju Prasad",
+            role: "Neurosurgeon",
+            image: publicAssetUrl('/testimonials/prasad.png'),
         },
         {
             quote: "Finally, a platform that understands doctors. Simple, efficient, and professional. Highly recommended.",
-            author: "Dr. Saranya Sole",
-            role: "Pediatrician · Delhi",
-            image: "https://randomuser.me/api/portraits/women/68.jpg"
-        },
-        {
-            quote: "I was skeptical at first, but the AI accuracy is impressive. It saved me hours of manual data entry.",
-            author: "Dr. Amit Patel",
-            role: "Orthopedic Surgeon · Chennai",
-            image: "https://randomuser.me/api/portraits/men/55.jpg"
+            author: "Dr. Deepa Chandran",
+            role: "Neuroanesthesia & Critical Care",
+            image: publicAssetUrl('/testimonials/deepa.png'),
         },
         {
             quote: "The best onboarding experience I've had in 15 years of practice. Smooth, intuitive, and fast.",
-            author: "Dr. Priya Sharma",
-            role: "Dermatologist · Hyderabad",
-            image: "https://randomuser.me/api/portraits/women/29.jpg"
-        }
+            author: "Dr. Pallavi Chalasani",
+            role: "Obstetrics and Gynecology",
+            image: publicAssetUrl('/testimonials/pallavi.png'),
+        },
     ];
 
     const [currentTestimonial, setCurrentTestimonial] = useState(0);
