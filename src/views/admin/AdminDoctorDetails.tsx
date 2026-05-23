@@ -6,7 +6,7 @@ import { useAppRouter } from '../../lib/router';
 import {
     ArrowLeft, X, ShieldCheck, User, MapPin, Briefcase, Mail, Phone,
     Calendar, FileText, IndianRupee, GraduationCap, Clock,
-    AlertTriangle, Stethoscope, Heart, MessageSquare, Image, Loader2,
+    AlertTriangle, Stethoscope, Heart, MessageSquare, Loader2,
     Send
 } from 'lucide-react';
 import styles from './AdminDashboard.module.css';
@@ -59,8 +59,6 @@ const AdminDoctorDetails = () => {
     const identity = profile?.identity;
     // Lookup returns `doctor` (doctors row); legacy payloads may use `details`. `any` — union of Doctor vs DoctorDetails field shapes in this view.
     const details = (profile?.doctor ?? profile?.details ?? null) as any;
-
-    const media = profile?.media || [];
 
     /** Admin lookup returns `full_name` on identity and on the doctors row; prefer row then identity (fixes wrong first/last glue). */
     const trimName = (v: string | null | undefined) => (v ?? '').trim();
@@ -387,31 +385,6 @@ The CAEPY Team`,
                                 {details.professional_overview && <TextBlock label="Professional Overview" value={details.professional_overview} />}
                                 {details.about_me && <TextBlock label="About Me" value={details.about_me} />}
                                 {details.profile_summary && <TextBlock label="Profile Summary" value={details.profile_summary} />}
-                            </SectionCard>
-                        )}
-
-                        {/* Media / Documents */}
-                        {media.length > 0 && (
-                            <SectionCard title="Media & Documents" icon={<Image size={18} />}>
-                                <div className={styles.gridAutoFill}>
-                                    {media.map(m => (
-                                        <div key={m.media_id} style={{ background: '#F9FAFB', borderRadius: '0.5rem', padding: '1rem', border: '1px solid #E5E7EB' }}>
-                                            <p style={{ fontSize: '0.8125rem', fontWeight: 600, color: '#111827', margin: '0 0 0.25rem 0', wordBreak: 'break-all' }}>{m.file_name}</p>
-                                            <p style={{ fontSize: '0.75rem', color: '#6B7280', margin: '0 0 0.5rem 0' }}>
-                                                {m.media_category} • {m.media_type}
-                                                {m.file_size ? ` • ${(m.file_size / 1024).toFixed(0)} KB` : ''}
-                                            </p>
-                                            <a
-                                                href={m.file_uri}
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                                style={{ fontSize: '0.8125rem', color: '#4F46E5', textDecoration: 'none', fontWeight: 500 }}
-                                            >
-                                                View File ↗
-                                            </a>
-                                        </div>
-                                    ))}
-                                </div>
                             </SectionCard>
                         )}
                     </div>
