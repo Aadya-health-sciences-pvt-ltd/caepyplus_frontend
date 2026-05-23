@@ -1,12 +1,42 @@
 import { validateIndianMobile, validateIndianMobileOptional } from './indianMobile';
 
+/** Returns null when valid; otherwise a user-facing message. */
+export function validateEmailValue(value: unknown, options?: { required?: boolean }): string | null {
+    const required = options?.required ?? true;
+    const raw = value == null ? '' : String(value).trim();
+
+    if (!raw) {
+        return required ? 'Email is required' : null;
+    }
+
+    if (raw.length > 254) {
+        return 'Email address is too long';
+    }
+
+    // Aligns with common HTML5 / Pydantic EmailStr expectations (local@domain.tld).
+    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+    if (!emailPattern.test(raw)) {
+        return 'Enter a valid email address';
+    }
+
+    const [localPart, domainPart] = raw.split('@');
+    if (!localPart || !domainPart || localPart.startsWith('.') || localPart.endsWith('.')) {
+        return 'Enter a valid email address';
+    }
+
+    if (domainPart.startsWith('.') || domainPart.endsWith('.') || domainPart.includes('..')) {
+        return 'Enter a valid email address';
+    }
+
+    return null;
+}
+
 export const validateSection1 = (formData: any) => {
-    const emailStr = (formData.email ?? '').toString().trim();
-    const hasWorkEmail = emailStr.includes('@');
+    const emailErr = validateEmailValue(formData.email);
+    const hasWorkEmail = emailErr === null && String(formData.email ?? '').trim().length > 0;
 
     const requiredFields = [
         { key: 'fullName', label: 'Full Name' },
-        { key: 'email', label: 'Email' },
         { key: 'specialty', label: 'Specialty' },
         { key: 'primaryLocation', label: 'Primary Location' },
         { key: 'registrationNumber', label: 'Registration Number' },
@@ -15,6 +45,10 @@ export const validateSection1 = (formData: any) => {
     ];
 
     const errors: string[] = [];
+
+    if (emailErr) {
+        errors.push(emailErr);
+    }
 
     requiredFields.forEach(field => {
         if (!formData[field.key] || !formData[field.key].toString().trim()) {
