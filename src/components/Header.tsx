@@ -115,11 +115,6 @@ const Header: React.FC<HeaderProps> = ({ centerTitle }) => {
                                 {displayIdentifier && <p style={{ fontSize: '0.75rem', color: '#6B7280' }}>{displayIdentifier}</p>}
                             </div>
                             <div style={{ padding: '0.5rem' }}>
-                                {!isAdminRoute ? (
-                                    <button type="button" className={styles.dropdownItem}>
-                                        <User size={16} /> Account
-                                    </button>
-                                ) : null}
                                 <button
                                     type="button"
                                     onClick={handleLogout}

@@ -4,7 +4,7 @@ import {
     Calendar, Settings,
     Eye, FileText, CheckCircle,
     PenTool, Video, Info, TrendingUp, Users, Zap,
-    ArrowRight, Edit3, Globe, Share2
+    ArrowRight, Edit3, Globe, Share2, Sparkles
 } from 'lucide-react';
 
 import { useAppRouter } from '../lib/router';
@@ -156,6 +156,7 @@ const ProfileView = () => {
                         </div>
 
                         {/* 2. Practice Hub */}
+                        <ComingSoonSection>
                         <div className={styles.card}>
                             <div className={styles.cardHeader}>
                                 <Globe className={styles.cardIcon} size={20} />
@@ -195,8 +196,10 @@ const ProfileView = () => {
                                 </div>
                             </div>
                         </div>
+                        </ComingSoonSection>
 
                         {/* 3. Content Creation */}
+                        <ComingSoonSection>
                         <div className={styles.card}>
                             <div className={styles.cardHeader}>
                                 <PenTool className={styles.cardIcon} size={20} />
@@ -222,8 +225,10 @@ const ProfileView = () => {
                                 </div>
                             </div>
                         </div>
+                        </ComingSoonSection>
 
                         {/* 4. Appointments Overview */}
+                        <ComingSoonSection>
                         <div className={styles.card}>
                             <div className={styles.cardHeader}>
                                 <Calendar className={styles.cardIcon} size={20} />
@@ -242,6 +247,7 @@ const ProfileView = () => {
 
                             <button className={styles.btnOutline} style={{ marginTop: '1.5rem', width: 'fit-content' }}>View Full Schedule</button>
                         </div>
+                        </ComingSoonSection>
 
                     </div>
 
@@ -249,6 +255,7 @@ const ProfileView = () => {
                     <div className={styles.col}>
 
                         {/* 5. Clinical Insights */}
+                        <ComingSoonSection>
                         <div className={styles.card}>
                             <div className={styles.cardHeader}>
                                 <TrendingUp className={styles.cardIcon} size={20} />
@@ -269,8 +276,10 @@ const ProfileView = () => {
                                 Create Educational Content <ArrowRight size={16} />
                             </button>
                         </div>
+                        </ComingSoonSection>
 
                         {/* 6. Analytics Snapshot */}
+                        <ComingSoonSection>
                         <div className={styles.card}>
                             <div className={styles.cardHeader}>
                                 <TrendingUp className={styles.cardIcon} size={20} />
@@ -284,8 +293,10 @@ const ProfileView = () => {
                                 <MetricRow label="Referrals" value="18" change="+3%" />
                             </div>
                         </div>
+                        </ComingSoonSection>
 
                         {/* 7. Referrals & Circles */}
+                        <ComingSoonSection>
                         <div className={styles.card}>
                             <div className={styles.cardHeader}>
                                 <Users className={styles.cardIcon} size={20} />
@@ -308,8 +319,10 @@ const ProfileView = () => {
                                 View Referrals <ArrowRight size={14} />
                             </button>
                         </div>
+                        </ComingSoonSection>
 
                         {/* 8. Subscription & Tokens */}
+                        <ComingSoonSection>
                         <div className={styles.card}>
                             <div className={styles.cardHeader}>
                                 <Zap className={styles.cardIcon} size={20} />
@@ -333,6 +346,7 @@ const ProfileView = () => {
                                 <Settings size={14} /> Manage Plan
                             </button>
                         </div>
+                        </ComingSoonSection>
 
                     </div>
 
@@ -344,6 +358,21 @@ const ProfileView = () => {
 
 // Sub-components for cleaner code
 
+interface ComingSoonSectionProps {
+    children: React.ReactNode;
+}
+
+const ComingSoonSection = ({ children }: ComingSoonSectionProps) => (
+    <div className={styles.comingSoonWrap}>
+        <div className={styles.comingSoonContent}>
+            {children}
+        </div>
+        <span className={styles.comingSoonBadge}>
+            <Sparkles size={12} aria-hidden />
+            Coming Soon
+        </span>
+    </div>
+);
 
 const CheckItem = ({ label, done = false }: { label: string, done?: boolean }) => (
     <div className={`${styles.checkItem} ${done ? styles.done : ''}`}>

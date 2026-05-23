@@ -9,6 +9,7 @@ import { FIELD_NAME_MAP } from './types';
 import type { SharedStepProps, DropdownOption, MasterData } from './types';
 import { SPOKEN_LANGUAGE_OPTIONS } from '../../lib/spokenLanguageOptions';
 import { sanitizeIndianMobileInput, validateIndianMobile, validateIndianMobileOptional } from '../../lib/indianMobile';
+import { validateEmailValue } from '../../lib/validation';
 import { doctorService } from '../../services/doctorService';
 
 // Lazy-load the Google Maps accordion — defers the Maps SDK until the user taps "Add Practice Location"
@@ -48,6 +49,7 @@ const Step1ProfessionalIdentity: React.FC<Step1Props> = ({
     };
 
     const [phoneError, setPhoneError] = useState<string | null>(null);
+    const [emailError, setEmailError] = useState<string | null>(null);
     const phoneRef = useRef(formData.phone);
     useEffect(() => {
         phoneRef.current = formData.phone;
@@ -94,6 +96,14 @@ const Step1ProfessionalIdentity: React.FC<Step1Props> = ({
             }
         })();
     }, [isPhoneLogin, isEmailLogin, formData.phone]);
+
+    const handleEmailBlur = useCallback(() => {
+        if (isEmailLogin) {
+            setEmailError(null);
+            return;
+        }
+        setEmailError(validateEmailValue(formData.email));
+    }, [isEmailLogin, formData.email]);
 
     return (
         <>
@@ -157,13 +167,22 @@ const Step1ProfessionalIdentity: React.FC<Step1Props> = ({
                             name="email"
                             type="email"
                             value={formData.email}
-                            onChange={handleInputChange}
+                            onChange={(e) => {
+                                setEmailError(null);
+                                handleInputChange(e);
+                            }}
+                            onBlur={handleEmailBlur}
                             onFocus={() => setFocusedField('email')}
-                            className={styles.input}
+                            className={`${styles.input} ${emailError ? styles.inputError : ''}`}
                             placeholder="doctor@example.com"
                             disabled={isEmailLogin}
                             style={isEmailLogin ? { background: '#F3F4F6', cursor: 'not-allowed' } : {}}
+                            aria-invalid={!!emailError}
+                            autoComplete="email"
                         />
+                        {!isEmailLogin && emailError ? (
+                            <p className={styles.fieldErrorText}>{emailError}</p>
+                        ) : null}
                     </div>
                 </div>
 
