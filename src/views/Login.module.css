@@ -1,6 +1,9 @@
 .pageWrapper {
     display: flex;
+    min-height: 100vh;
+    min-height: 100dvh;
     height: 100vh;
+    height: 100dvh;
     overflow: hidden;
     font-family: 'Inter', sans-serif;
 }
@@ -216,6 +219,16 @@
     font-size: 1rem;
 }
 
+/* First letter accent — same gradient as left hero pane */
+.subtitleAccent {
+    font-weight: 700;
+    background: linear-gradient(135deg, #293991 0%, #1ABFD2 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
+}
+
 .inputGroup {
     margin-bottom: 1.5rem;
 }
@@ -346,6 +359,7 @@
         flex-direction: column;
         height: auto;
         min-height: 100vh;
+        min-height: 100dvh;
         overflow-y: auto;
     }
 
@@ -392,5 +406,23 @@
     .testimonial {
         display: none;
         /* Optionally hide or simplify testimonials on narrow mobile heights to focus on login */
+    }
+}
+
+@media (max-width: 480px) {
+    .formTitle {
+        font-size: 1.75rem;
+    }
+
+    .formSection {
+        padding: 1.5rem 1rem 2rem;
+    }
+
+    .heroSection {
+        padding: 2rem 1rem;
+    }
+
+    .brandNameLarge {
+        font-size: 2rem;
     }
 }

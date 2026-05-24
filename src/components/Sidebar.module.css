@@ -126,11 +126,14 @@
     }
 
     .navItem {
-        padding: 0.5rem;
+        padding: 0.5rem 0.35rem;
+        min-height: 2.75rem;
+        min-width: 0;
         flex: 1;
         justify-content: center;
         flex-direction: column;
         gap: 0.25rem;
+        -webkit-tap-highlight-color: transparent;
     }
 
     .icon {

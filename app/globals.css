@@ -40,12 +40,30 @@
   padding: 0;
 }
 
+html {
+  height: 100%;
+  /* Prevent iOS from inflating text in landscape */
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
 body {
   font-family: var(--font-family);
   background-color: var(--background-color);
   color: var(--text-color);
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
+  min-height: 100%;
+  min-height: 100dvh;
+  /* Avoid horizontal scroll from wide children (fixed overlays still paint correctly) */
+  overflow-x: clip;
+}
+
+/* Prevent wide media from causing horizontal page scroll */
+img,
+video,
+canvas {
+  max-width: 100%;
 }
 
 button {

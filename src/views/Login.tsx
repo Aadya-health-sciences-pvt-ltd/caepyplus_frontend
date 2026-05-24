@@ -8,8 +8,35 @@ import styles from './Login.module.css';
 import { authService } from '../services/authService';
 import { doctorService } from '../services/doctorService';
 import { mockDataService } from '../services/mockDataService';
-import { publicAssetUrl } from '../config/basePath';
+import { calculateProfileProgress } from '../lib/profileProgress';
+import { publicAssetUrl, BRAND_LOGO_MARK_PATH } from '../config/basePath';
 import { parseErrorMessage } from '../lib/api';
+
+const LOGIN_SUBTITLE = 'Create an Authentic and Elegant Profile by Yourself';
+const SUBTITLE_ACCENT_EXCLUDE = new Set(['an', 'and', 'by']);
+
+function LoginFormSubtitle() {
+    return (
+        <p className={styles.formSubtitle}>
+            {LOGIN_SUBTITLE.split(' ').map((word, index) => {
+                const excluded = SUBTITLE_ACCENT_EXCLUDE.has(word.toLowerCase());
+                return (
+                    <span key={`${word}-${index}`}>
+                        {index > 0 ? ' ' : null}
+                        {excluded ? (
+                            word
+                        ) : (
+                            <>
+                                <span className={styles.subtitleAccent}>{word.charAt(0)}</span>
+                                {word.slice(1)}
+                            </>
+                        )}
+                    </span>
+                );
+            })}
+        </p>
+    );
+}
 
 const Login = () => {
     const router = useAppRouter();
@@ -50,6 +77,12 @@ const Login = () => {
         } else {
             localStorage.setItem('mobile_number', identifier);
             localStorage.removeItem('user_email');
+        }
+
+        const profileDataForProgress = { ...(profile?.data || {}), ...profile };
+        const onboardingPercent = calculateProfileProgress(profileDataForProgress).totalPercentage;
+        if (typeof window !== 'undefined' && onboardingPercent < 50) {
+            sessionStorage.setItem('caepy_fresh_login_welcome', '1');
         }
 
         console.log("Routing user:", profile);
@@ -231,38 +264,32 @@ const Login = () => {
     };
 
 
-    // Testimonials Data
+    // Testimonials Data — photos in /public/testimonials/
     const testimonials = [
         {
             quote: "The onboarding felt surprisingly natural. I spoke for most of it, reviewed what was filled in, and was done in under 15 minutes. It reflected my practice accurately — without feeling like a form.",
-            author: "Dr. Srividhya",
-            role: "Consultant Physician · Bangalore",
-            image: "https://randomuser.me/api/portraits/women/44.jpg"
+            author: "Dr. Yamini Nandhini",
+            role: "Maxillofacial Prosthetics & Full Mouth Rehabilitation",
+            image: publicAssetUrl('/testimonials/yamini.png'),
         },
         {
-            quote: "Caepy has completely transformed how I manage my online presence. The voice-assisted setup was a game-changer.",
-            author: "Dr. Rajesh Kumar",
-            role: "Cardiologist · Mumbai",
-            image: "https://randomuser.me/api/portraits/men/32.jpg"
+            quote: "CAEPY has completely transformed how I manage my online presence. The voice-assisted setup was a game-changer.",
+            author: "Dr. Anantharaju Prasad",
+            role: "Neurosurgeon",
+            image: publicAssetUrl('/testimonials/prasad.png'),
         },
         {
             quote: "Finally, a platform that understands doctors. Simple, efficient, and professional. Highly recommended.",
-            author: "Dr. Saranya Sole",
-            role: "Pediatrician · Delhi",
-            image: "https://randomuser.me/api/portraits/women/68.jpg"
-        },
-        {
-            quote: "I was skeptical at first, but the AI accuracy is impressive. It saved me hours of manual data entry.",
-            author: "Dr. Amit Patel",
-            role: "Orthopedic Surgeon · Chennai",
-            image: "https://randomuser.me/api/portraits/men/55.jpg"
+            author: "Dr. Deepa Chandran",
+            role: "Neuroanesthesia & Critical Care",
+            image: publicAssetUrl('/testimonials/deepa.png'),
         },
         {
             quote: "The best onboarding experience I've had in 15 years of practice. Smooth, intuitive, and fast.",
-            author: "Dr. Priya Sharma",
-            role: "Dermatologist · Hyderabad",
-            image: "https://randomuser.me/api/portraits/women/29.jpg"
-        }
+            author: "Dr. Pallavi Chalasani",
+            role: "Obstetrics and Gynecology",
+            image: publicAssetUrl('/testimonials/pallavi.png'),
+        },
     ];
 
     const [currentTestimonial, setCurrentTestimonial] = useState(0);
@@ -280,7 +307,7 @@ const Login = () => {
             <div className={styles.heroSection}>
                 <div className={styles.heroContent}>
                     <h1 className={styles.heroTitle}>
-                        Create your professional presence in minutes
+                        Create your professional online presence in minutes
                     </h1>
                     <p className={styles.heroSubtitle}>
                         AI-assisted onboarding designed for doctors—accurate, secure, and clinically relevant.
@@ -332,22 +359,31 @@ const Login = () => {
                 <div className={styles.logoWrapper}>
                     <div className={styles.logoHeader}>
                         <img
-                            src={publicAssetUrl('/LinQMD.svg')}
-                            alt="Caepy logo"
-                            style={{ width: 52, height: 52, display: 'block', objectFit: 'contain' }}
+                            src={publicAssetUrl(BRAND_LOGO_MARK_PATH)}
+                            alt="CAEPY logo"
+                            width={52}
+                            height={52}
+                            style={{
+                                width: 52,
+                                height: 52,
+                                maxWidth: 52,
+                                maxHeight: 52,
+                                display: 'block',
+                                objectFit: 'contain',
+                                objectPosition: 'center',
+                                flexShrink: 0,
+                            }}
                         />
                         <div className={styles.logoTextColumn}>
-                            <span className={styles.brandNameLarge}>Caepy</span>
+                            <span className={styles.brandNameLarge}>CAEPY</span>
                             <span className={styles.taglineLarge}>Practice Smarter</span>
                         </div>
                     </div>
                 </div>
 
                 <div className={styles.formContainer}>
-                    <h2 className={styles.formTitle}>Join Caepy</h2>
-                    <p className={styles.formSubtitle}>
-                        Create and manage a professional doctor profile using a guided, voice-assisted setup.
-                    </p>
+                    <h2 className={styles.formTitle}>Get Started</h2>
+                    <LoginFormSubtitle />
 
                     {!isOtpSent ? (
                         <>

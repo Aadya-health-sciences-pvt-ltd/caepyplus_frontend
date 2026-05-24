@@ -10,7 +10,7 @@ import Toast from '../components/ui/Toast';
 import styles from './ReviewProfile.module.css';
 import { mockDataService } from '../services/mockDataService';
 import { doctorService } from '../services/doctorService';
-import { validateSection1 } from '../lib/validation';
+import { validateSection1, validateSection2 } from '../lib/validation';
 import { calculateProfileProgress } from '../lib/profileProgress';
 import { useResolvedProfilePhotoDisplayUrl } from '../hooks/useResolvedProfilePhotoDisplayUrl';
 import { parseErrorMessage } from '../lib/api';
@@ -63,9 +63,10 @@ const ReviewProfile = () => {
     };
 
     const handleSubmit = async () => {
-        // Validate Section 1 before submission
-        const { isValid, errors } = validateSection1(formData);
-        if (!isValid) {
+        const v1 = validateSection1(formData);
+        const v2 = validateSection2(formData);
+        const errors = [...v1.errors, ...v2.errors];
+        if (!v1.isValid || !v2.isValid) {
             showToast(`Cannot submit: ${errors.join('; ')}`, 'error');
             return;
         }
@@ -210,7 +211,6 @@ const ReviewProfile = () => {
                     <div className={styles.sectionContent}>
                         <ReviewRow icon={<UserIcon size={20} />} label="FULL NAME" value={getVal('fullName')} />
                         <ReviewRow icon={<Activity size={20} />} label="SPECIALTY" value={getVal('specialty')} />
-                        <ReviewRow icon={<Briefcase size={20} />} label="EXPERIENCE" value={getVal('experience') ? `${getVal('experience')} years` : 'Not provided'} />
                         <ReviewRow icon={<Building size={20} />} label="PRIMARY LOCATION" value={getVal('primaryLocation')} />
                         <ReviewRow icon={<MapPin size={20} />} label="PRACTICE LOCATIONS" value={formData.practiceLocations?.length ? `${formData.practiceLocations.length} locations added` : 'None added'} />
                         <ReviewRow icon={<FileText size={20} />} label="REGISTRATION NUMBER" value={getVal('registrationNumber')} />
@@ -227,6 +227,8 @@ const ReviewProfile = () => {
                     <div className={styles.sectionContent}>
                         <ReviewRow icon={<GraduationCap size={20} />} label="MBBS YEAR" value={getVal('mbbsYear')} />
                         <ReviewRow icon={<GraduationCap size={20} />} label="SPECIALISATION YEAR" value={getVal('specialisationYear')} />
+                        <ReviewRow icon={<Briefcase size={20} />} label="EXPERIENCE" value={getVal('experience') ? `${getVal('experience')} years` : 'Not provided'} />
+                        <ReviewRow icon={<Briefcase size={20} />} label="POST-SPECIALISATION" value={formData.postSpecialisationExperience ? `${formData.postSpecialisationExperience} years` : 'Not provided'} />
                         <ReviewRow icon={<FileText size={20} />} label="QUALIFICATIONS" value={getVal('qualifications')} />
                         <ReviewRow icon={<Award size={20} />} label="FELLOWSHIPS" value={getArr('fellowships')} />
                     </div>

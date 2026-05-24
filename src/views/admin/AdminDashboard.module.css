@@ -278,6 +278,12 @@
     gap: 2rem;
 }
 
+.dashboardMainColumn {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+}
+
 .grid2ColsEqual {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -294,6 +300,27 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
+}
+
+/* Tablet: avoid cramped two-column admin sections */
+@media (max-width: 1024px) and (min-width: 769px) {
+    .container {
+        padding: 1.5rem 1.25rem;
+    }
+
+    .statsGrid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .controls {
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+
+    .searchBar {
+        width: 100%;
+        min-width: 0;
+    }
 }
 
 /* Mobile Responsive Override */
@@ -344,6 +371,10 @@
     .grid2Cols1Fr,
     .grid2ColsEqual {
         grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+
+    .dashboardMainColumn {
         gap: 1rem;
     }
 

@@ -67,7 +67,7 @@ const ResumeUpload = () => {
 
             <div className={styles.card}>
                 <div className={styles.iconCircle}>
-                    {/* Placeholder for the Caepy logo/icon using Share2 roughly looking like a connection */}
+                    {/* Placeholder for the CAEPY logo/icon using Share2 roughly looking like a connection */}
                     <Sparkles size={24} />
                 </div>
 

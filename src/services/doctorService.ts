@@ -1,4 +1,5 @@
 import api, { parseResponse } from '../lib/api';
+import { normalizeIndianPhoneForForm } from '../lib/indianMobile';
 
 export interface DoctorProfile {
     id: number;
@@ -228,7 +229,7 @@ export const doctorService = {
             if (parts.length) formData.fullName = parts.join(' ');
         }
         if (profile.email && !profile.email.startsWith('pending_')) formData.email = profile.email;
-        if (profile.phone_number) formData.phone = profile.phone_number;
+        if (profile.phone_number) formData.phone = normalizeIndianPhoneForForm(profile.phone_number);
         if (profile.specialty) {
             formData.specialty = profile.specialty;
         } else if (profile.primary_specialization) {
@@ -349,7 +350,12 @@ export const doctorService = {
 
         const toArrayOrNull = (val: string | string[] | null | undefined): string[] | null => {
             if (val == null) return null;
-            if (Array.isArray(val)) return val.length > 0 ? val : null;
+            if (Array.isArray(val)) {
+                const cleaned = val
+                    .map((s) => (typeof s === 'string' ? s.trim() : String(s ?? '')))
+                    .filter((s) => s.length > 0);
+                return cleaned.length > 0 ? cleaned : null;
+            }
             if (typeof val === 'string' && val.trim()) {
                 return val.split(',').map(s => s.trim()).filter(Boolean);
             }
@@ -470,6 +476,29 @@ export const doctorService = {
             registration_number: toStringOrNull(formData.registrationNumber),
             languages: toArrayOrNull(formData.languages),
             practice_locations: practiceLocations,
+        };
+    },
+
+    /**
+     * GET /doctors/phone-availability — true unless another doctor already uses this mobile.
+     */
+    checkPhoneAvailability: async (phone: string): Promise<{ available: boolean; message: string }> => {
+        const response = await api.get<{
+            success?: boolean;
+            message?: string;
+            data?: { available: boolean };
+        }>(`/doctors/phone-availability`, {
+            params: { phone_number: phone },
+        });
+        const data = parseResponse<{ available: boolean }>(response);
+        const body = response.data;
+        const rawMsg =
+            body && typeof body === 'object' && typeof body.message === 'string' ? body.message : '';
+        return {
+            available: !!data?.available,
+            message:
+                rawMsg ||
+                'Doctor already registered with this mobile number. Please enter a different number.',
         };
     },
 
@@ -694,7 +723,9 @@ export const doctorService = {
             formData.fullName = [firstName, lastName].filter(Boolean).join(' ');
         }
         if (data.personal_details?.email) formData.email = data.personal_details.email;
-        if (data.personal_details?.phone) formData.phone = data.personal_details.phone;
+        if (data.personal_details?.phone) {
+            formData.phone = normalizeIndianPhoneForForm(data.personal_details.phone);
+        }
 
         // Professional Info
         if (data.professional_information?.primary_specialization) {

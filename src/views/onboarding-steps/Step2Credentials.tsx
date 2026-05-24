@@ -1,8 +1,10 @@
 'use client';
-import React from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { Sparkles } from 'lucide-react';
 import styles from '../Onboarding.module.css';
 import type { SharedStepProps } from './types';
+import { validateMbbsYearValue, validateSpecialisationYearValue, getCredentialsYearMax } from '../../lib/validation';
+import { fellowshipsToCommaList } from '../../lib/fellowshipsCommaList';
 
 interface Step2Props extends SharedStepProps {
     handleArrayChange: (field: string, value: string) => void;
@@ -10,11 +12,67 @@ interface Step2Props extends SharedStepProps {
 
 const Step2Credentials: React.FC<Step2Props> = ({
     formData,
+    setFormData,
     handleInputChange,
     setFocusedField,
     profileProgress,
     handleArrayChange,
 }) => {
+    const [mbbsYearError, setMbbsYearError] = useState<string | null>(null);
+    const [specialisationYearError, setSpecialisationYearError] = useState<string | null>(null);
+
+    const handleMbbsBlur = useCallback(() => {
+        const err = validateMbbsYearValue(formData.mbbsYear);
+        setMbbsYearError(err);
+        const specRaw = formData.specialisationYear;
+        if (specRaw != null && String(specRaw).trim()) {
+            setSpecialisationYearError(validateSpecialisationYearValue(specRaw, formData.mbbsYear));
+        } else {
+            setSpecialisationYearError(null);
+        }
+    }, [formData.mbbsYear, formData.specialisationYear]);
+
+    const handleSpecialisationBlur = useCallback(() => {
+        setSpecialisationYearError(validateSpecialisationYearValue(formData.specialisationYear, formData.mbbsYear));
+    }, [formData.mbbsYear, formData.specialisationYear]);
+
+    useEffect(() => {
+        const yMax = getCredentialsYearMax();
+        const raw = String(formData.mbbsYear ?? '').trim();
+        if (!raw) {
+            setFormData((prev) => (prev.experience === '' ? prev : { ...prev, experience: '' }));
+            return;
+        }
+        if (validateMbbsYearValue(formData.mbbsYear) !== null) return;
+        const mbbsY = parseInt(raw, 10);
+        const exp = Math.max(0, yMax - mbbsY);
+        const next = String(exp);
+        setFormData((prev) => (prev.experience === next ? prev : { ...prev, experience: next }));
+    }, [formData.mbbsYear, setFormData]);
+
+    useEffect(() => {
+        const yMax = getCredentialsYearMax();
+        const raw = String(formData.specialisationYear ?? '').trim();
+        if (!raw) {
+            setFormData((prev) =>
+                prev.postSpecialisationExperience === '' ? prev : { ...prev, postSpecialisationExperience: '' },
+            );
+            return;
+        }
+        if (validateSpecialisationYearValue(formData.specialisationYear, formData.mbbsYear) !== null) {
+            setFormData((prev) =>
+                prev.postSpecialisationExperience === '' ? prev : { ...prev, postSpecialisationExperience: '' },
+            );
+            return;
+        }
+        const specY = parseInt(raw, 10);
+        const post = Math.max(0, yMax - specY);
+        const next = String(post);
+        setFormData((prev) =>
+            prev.postSpecialisationExperience === next ? prev : { ...prev, postSpecialisationExperience: next },
+        );
+    }, [formData.specialisationYear, formData.mbbsYear, setFormData]);
+
     return (
         <>
             <div id="section-prompt-block" className={styles.promptItem}>
@@ -40,12 +98,20 @@ const Step2Credentials: React.FC<Step2Props> = ({
                         <label className={styles.label}>Year of MBBS <span>*</span></label>
                         <input
                             name="mbbsYear"
+                            inputMode="numeric"
+                            autoComplete="off"
                             value={formData.mbbsYear}
-                            onChange={handleInputChange}
+                            onChange={(e) => {
+                                setMbbsYearError(null);
+                                handleInputChange(e);
+                            }}
+                            onBlur={handleMbbsBlur}
                             onFocus={() => setFocusedField('mbbsYear')}
-                            className={styles.input}
+                            className={`${styles.input} ${mbbsYearError ? styles.inputError : ''}`}
                             placeholder="YYYY"
+                            aria-invalid={!!mbbsYearError}
                         />
+                        {mbbsYearError ? <p className={styles.fieldErrorText}>{mbbsYearError}</p> : null}
                     </div>
                 </div>
 
@@ -54,11 +120,49 @@ const Step2Credentials: React.FC<Step2Props> = ({
                         <label className={styles.label}>Year of Specialisation</label>
                         <input
                             name="specialisationYear"
+                            inputMode="numeric"
+                            autoComplete="off"
                             value={formData.specialisationYear}
-                            onChange={handleInputChange}
+                            onChange={(e) => {
+                                setSpecialisationYearError(null);
+                                handleInputChange(e);
+                            }}
+                            onBlur={handleSpecialisationBlur}
                             onFocus={() => setFocusedField('specialisationYear')}
-                            className={styles.input}
+                            className={`${styles.input} ${specialisationYearError ? styles.inputError : ''}`}
                             placeholder="YYYY"
+                            aria-invalid={!!specialisationYearError}
+                        />
+                        {specialisationYearError ? <p className={styles.fieldErrorText}>{specialisationYearError}</p> : null}
+                    </div>
+                </div>
+
+                <div className={styles.halfWidth}>
+                    <div className={styles.inputWrapper}>
+                        <label className={styles.label}>Years of Experience <span>*</span></label>
+                        <input
+                            name="experience"
+                            type="number"
+                            value={formData.experience}
+                            onChange={handleInputChange}
+                            onFocus={() => setFocusedField('experience')}
+                            className={styles.input}
+                            placeholder="e.g. 10"
+                        />
+                    </div>
+                </div>
+
+                <div className={styles.halfWidth}>
+                    <div className={styles.inputWrapper}>
+                        <label className={styles.label}>Post-Specialisation Exp.</label>
+                        <input
+                            name="postSpecialisationExperience"
+                            type="number"
+                            value={formData.postSpecialisationExperience}
+                            onChange={handleInputChange}
+                            onFocus={() => setFocusedField('postSpecialisationExperience')}
+                            className={styles.input}
+                            placeholder="(Optional)"
                         />
                     </div>
                 </div>
@@ -68,11 +172,11 @@ const Step2Credentials: React.FC<Step2Props> = ({
                         <label className={styles.label}>Fellowships</label>
                         <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
                             <input
-                                value={Array.isArray(formData.fellowships) ? formData.fellowships.join(', ') : formData.fellowships}
+                                value={fellowshipsToCommaList(formData.fellowships)}
                                 onChange={(e) => handleArrayChange('fellowships', e.target.value)}
                                 onFocus={() => setFocusedField('fellowships')}
                                 className={styles.input}
-                                placeholder="Add fellowship..."
+                                placeholder="e.g. Cardiology Fellowship, National Heart Institute"
                                 style={{ flex: 3 }}
                             />
                         </div>

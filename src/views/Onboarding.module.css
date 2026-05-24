@@ -4,10 +4,12 @@
     margin: 0 auto;
     padding: 2rem;
     height: calc(100vh - 80px);
+    height: calc(100dvh - 80px);
     box-sizing: border-box;
     overflow: hidden;
     display: flex;
     flex-direction: column;
+    min-width: 0;
 }
 
 .header {
@@ -52,11 +54,13 @@
     align-items: flex-start;
     flex: 1;
     min-height: 0;
+    min-width: 0;
 }
 
 .leftColumn {
     flex: 1;
     max-width: 700px;
+    min-width: 0;
     display: flex;
     flex-direction: column;
     height: 100%;
@@ -64,8 +68,10 @@
 }
 
 .rightColumn {
+    flex: 0 1 400px;
+    min-width: 0;
     width: 400px;
-    flex-shrink: 0;
+    max-width: 100%;
     position: sticky;
     top: 0;
     /* sticky is not really needed anymore since wrapper doesn't scroll but doesn't hurt */
@@ -206,6 +212,22 @@
     border-color: #39C8CE;
     background-color: white;
     box-shadow: 0 0 0 3px rgba(57, 200, 206, 0.1);
+}
+
+.inputError {
+    border-color: #EF4444 !important;
+}
+
+.inputError:focus {
+    border-color: #EF4444 !important;
+    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.12);
+}
+
+.fieldErrorText {
+    font-size: 0.75rem;
+    color: #EF4444;
+    margin: 0.25rem 0 0;
+    line-height: 1.35;
 }
 
 .nextButton {
@@ -614,10 +636,21 @@
     font-size: 0.75rem;
 }
 
+@media (max-width: 1024px) and (min-width: 769px) {
+    .pageWrapper {
+        padding: 1.5rem 1.25rem;
+    }
+
+    .mainContent {
+        gap: 1.5rem;
+    }
+}
+
 @media (max-width: 768px) {
     .pageWrapper {
         padding: 1rem;
         height: calc(100vh - 64px);
+        height: calc(100dvh - 64px);
     }
 
     .header {

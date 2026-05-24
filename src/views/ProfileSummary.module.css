@@ -2,8 +2,14 @@
     max-width: 1400px;
     margin: 0 auto;
     padding: 1rem;
+    padding-left: max(1rem, env(safe-area-inset-left, 0px));
+    padding-right: max(1rem, env(safe-area-inset-right, 0px));
     background-color: #F9FAFB;
     min-height: 100vh;
+    min-height: 100dvh;
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
 }
 
 .container {

@@ -8,7 +8,7 @@ import { signInWithPopup } from 'firebase/auth';
 import { auth, googleProvider } from '../../lib/firebase';
 import { getCurrentUserRole, setLoggedInAdmin } from '../../lib/adminAuth';
 import { authService } from '../../services/authService';
-import { publicAssetUrl } from '../../config/basePath';
+import { publicAssetUrl, BRAND_LOGO_MARK_PATH } from '../../config/basePath';
 import styles from './AdminLogin.module.css';
 
 const AdminLogin = () => {
@@ -262,12 +262,23 @@ const AdminLogin = () => {
                 <div className={styles.logoWrapper}>
                     <div className={styles.logoHeader}>
                         <img
-                            src={publicAssetUrl('/LinQMD.svg')}
-                            alt="Caepy logo"
-                            style={{ width: 52, height: 52, display: 'block', objectFit: 'contain' }}
+                            src={publicAssetUrl(BRAND_LOGO_MARK_PATH)}
+                            alt="CAEPY logo"
+                            width={52}
+                            height={52}
+                            style={{
+                                width: 52,
+                                height: 52,
+                                maxWidth: 52,
+                                maxHeight: 52,
+                                display: 'block',
+                                objectFit: 'contain',
+                                objectPosition: 'center',
+                                flexShrink: 0,
+                            }}
                         />
                         <div className={styles.logoTextColumn}>
-                            <span className={styles.brandNameLarge}>Caepy</span>
+                            <span className={styles.brandNameLarge}>CAEPY</span>
                             <span className={styles.taglineLarge}>Practice Smarter</span>
                         </div>
                     </div>

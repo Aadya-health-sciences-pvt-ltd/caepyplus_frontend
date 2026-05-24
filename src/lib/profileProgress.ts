@@ -2,7 +2,8 @@
  * Centralized Profile Progress Calculation
  *
  * Section weights (total = 100%):
- *  Section 1 – Professional Identity: 20% WITH profile picture, 15% WITHOUT
+ *  Section 1 – Professional Identity: 20% WITH profile picture, 15% WITHOUT.
+ *  While section 1 is incomplete, an uploaded profile picture alone earns 5% toward strength.
  *  Section 2 – Credentials & Trust Markers: 20%
  *  Section 3 – Clinical Focus & Expertise: 20%
  *  Section 4 – The Human Side: 15%
@@ -45,7 +46,7 @@ function isNonEmpty(v: any): boolean {
 
 /**
  * Section 1 – Professional Identity
- * Required fields: fullName, specialty, primaryLocation, experience,
+ * Required fields: fullName, specialty, primaryLocation,
  *                  registrationNumber, medicalCouncil
  * Bonus: profileImage
  */
@@ -54,7 +55,6 @@ function checkSection1(data: Record<string, any>): { done: boolean; hasPhoto: bo
     'fullName',
     'specialty',
     'primaryLocation',
-    'experience',
     'registrationNumber',
     'medicalCouncil',
   ];
@@ -65,12 +65,11 @@ function checkSection1(data: Record<string, any>): { done: boolean; hasPhoto: bo
 
 /**
  * Section 2 – Credentials & Trust Markers
- * Required field: mbbsYear
- * Optional but counted: qualifications, specialisationYear, fellowships
+ * Required fields: mbbsYear, experience (years of clinical experience)
+ * Optional: postSpecialisationExperience, qualifications, specialisationYear, fellowships, etc.
  */
 function checkSection2(data: Record<string, any>): boolean {
-  // At least mbbsYear is required
-  return isNonEmpty(data.mbbsYear);
+  return isNonEmpty(data.mbbsYear) && isNonEmpty(data.experience);
 }
 
 /**
@@ -141,9 +140,8 @@ function isNonEmptyApi(v: any): boolean {
 function checkSection1Api(data: Record<string, any>): { done: boolean; hasPhoto: boolean } {
   const requiredFields = [
     'full_name',
-    'specialty',        // or primary_specialization
+    'specialty', // or primary_specialization
     'primary_practice_location',
-    'years_of_clinical_experience', // or years_of_experience
     'medical_registration_number',
     'medical_council',
   ];
@@ -155,7 +153,9 @@ function checkSection1Api(data: Record<string, any>): { done: boolean; hasPhoto:
 }
 
 function checkSection2Api(data: Record<string, any>): boolean {
-  return isNonEmptyApi(data.year_of_mbbs);
+  const hasExperience =
+    isNonEmptyApi(data.years_of_clinical_experience) || isNonEmptyApi(data.years_of_experience);
+  return isNonEmptyApi(data.year_of_mbbs) && hasExperience;
 }
 
 function checkSection3Api(data: Record<string, any>): boolean {
@@ -202,7 +202,7 @@ function checkSection6Api(data: Record<string, any>): boolean {
 export function calculateProfileProgress(formData: Record<string, any>): ProfileProgress {
   const { done: s1done, hasPhoto } = checkSection1(formData);
   const s1Weight = hasPhoto ? 20 : 15;
-  const s1Earned = s1done ? s1Weight : 0;
+  const s1Earned = s1done ? s1Weight : hasPhoto ? 5 : 0;
 
   const s2done = checkSection2(formData);
   const s3done = checkSection3(formData);
@@ -231,7 +231,7 @@ export function calculateProfileProgress(formData: Record<string, any>): Profile
 export function calculateProfileProgressFromApi(data: Record<string, any>): ProfileProgress {
   const { done: s1done, hasPhoto } = checkSection1Api(data);
   const s1Weight = hasPhoto ? 20 : 15;
-  const s1Earned = s1done ? s1Weight : 0;
+  const s1Earned = s1done ? s1Weight : hasPhoto ? 5 : 0;
 
   const s2done = checkSection2Api(data);
   const s3done = checkSection3Api(data);

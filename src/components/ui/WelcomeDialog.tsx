@@ -45,6 +45,9 @@ const WelcomeDialog = ({
             : stepBasedPercent;
     const displayName = userName || 'Doctor';
     const nextSection = SECTION_NAMES[currentStep] || `Section ${currentStep}`;
+    const showQuickTourWithContinue = !isNewUser && completionPercent < 50;
+    const hasReturningSecondaryRow =
+        showQuickTourWithContinue || (showSkipButton && !!onSkipToReview);
 
     const confettiColors = ['#0F766E', '#10B981', '#39C8CE', '#FCD34D', '#818CF8', '#F472B6'];
 
@@ -106,7 +109,7 @@ const WelcomeDialog = ({
                                     animate={{ opacity: 1, y: 0 }}
                                     transition={{ delay: 0.4 }}
                                 >
-                                    Welcome to Caepy!
+                                    Welcome to CAEPY!
                                 </motion.h2>
 
                                 <motion.p
@@ -193,14 +196,54 @@ const WelcomeDialog = ({
                                     initial={{ opacity: 0, y: 10 }}
                                     animate={{ opacity: 1, y: 0 }}
                                     transition={{ delay: 0.65 }}
-                                    style={{ justifyContent: showSkipButton ? 'space-between' : 'center' }}
+                                    style={{
+                                        justifyContent: hasReturningSecondaryRow ? 'space-between' : 'center',
+                                        flexWrap: 'wrap',
+                                        alignItems: 'center',
+                                    }}
                                 >
-                                    {showSkipButton && onSkipToReview && (
-                                        <button className={styles.secondaryButton} onClick={onSkipToReview}>
-                                            Skip to Review
-                                        </button>
+                                    {hasReturningSecondaryRow && (
+                                        <div
+                                            style={{
+                                                display: 'flex',
+                                                gap: '0.75rem',
+                                                flexWrap: 'wrap',
+                                                alignItems: 'center',
+                                                justifyContent: 'flex-start',
+                                            }}
+                                        >
+                                            {showSkipButton && onSkipToReview && (
+                                                <button
+                                                    type="button"
+                                                    className={styles.secondaryButton}
+                                                    onClick={onSkipToReview}
+                                                >
+                                                    Skip to Review
+                                                </button>
+                                            )}
+                                            {showQuickTourWithContinue && (
+                                                <button type="button" className={styles.secondaryButton} onClick={onStartTour}>
+                                                    <span
+                                                        style={{
+                                                            display: 'flex',
+                                                            alignItems: 'center',
+                                                            gap: '0.5rem',
+                                                            justifyContent: 'center',
+                                                        }}
+                                                    >
+                                                        Take a Quick Tour <ArrowRight size={16} />
+                                                    </span>
+                                                </button>
+                                            )}
+                                        </div>
                                     )}
-                                    <button className={styles.primaryButton} onClick={onSkip} style={{ flex: 'unset' }}>
+                                    <button
+                                        type="button"
+                                        className={styles.primaryButton}
+                                        onClick={onSkip}
+                                        style={{ flex: hasReturningSecondaryRow ? '0 1 auto' : 'unset' }}
+                                        autoFocus
+                                    >
                                         <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', justifyContent: 'center' }}>
                                             Continue <ArrowRight size={16} />
                                         </span>

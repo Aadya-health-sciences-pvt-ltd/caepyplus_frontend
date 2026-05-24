@@ -22,8 +22,6 @@ export const ONBOARDING_VOICE_CONTEXT: Record<number, StepContext> = {
             { key: "specialty", label: "Specialty", description: "Your primary medical specialty", required: true },
             { key: "primaryLocation", label: "Primary Location", description: "City or hospital where you practice", required: true },
             { key: "practiceLocations", label: "Practice Locations", description: "List of clinics or hospitals you practice at", required: false },
-            { key: "experience", label: "Years of Experience", description: "Total years of medical practice", required: true },
-            { key: "postSpecialisationExperience", label: "Post-Specialization Experience", description: "Years since specialization", required: false },
             { key: "registrationNumber", label: "Registration Number", description: "Your medical registration or license number", required: true },
         ]
     },
@@ -33,6 +31,8 @@ export const ONBOARDING_VOICE_CONTEXT: Record<number, StepContext> = {
         fields: [
             { key: "mbbsYear", label: "MBBS Year", description: "Year of MBBS completion", required: true },
             { key: "specialisationYear", label: "Specialisation Year", description: "Year of specialization completion", required: false },
+            { key: "experience", label: "Years of Experience", description: "Total years of medical practice", required: true },
+            { key: "postSpecialisationExperience", label: "Post-Specialization Experience", description: "Years since specialization", required: false },
             { key: "fellowships", label: "Fellowships", description: "Any fellowships completed", required: false },
             { key: "qualifications", label: "Qualifications", description: "List of degrees (MD, DM, etc.)", required: false },
             { key: "memberships", label: "Memberships", description: "Professional memberships", required: false },

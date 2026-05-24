@@ -1,5 +1,8 @@
 .layoutWrapper {
+    min-height: 100vh;
+    min-height: 100dvh;
     height: 100vh;
+    height: 100dvh;
     display: flex;
     flex-direction: column;
 }
@@ -7,24 +10,29 @@
 .mainContentWrapper {
     display: flex;
     flex: 1;
+    min-width: 0;
+    min-height: 0;
     overflow: hidden;
 }
 
 .mainContent {
     flex: 1;
+    min-width: 0;
     overflow-y: auto;
+    overflow-x: hidden;
     background-color: #F9FAFB;
+    /* iOS / notched safe area when content scrolls to bottom */
+    padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 
 @media (max-width: 768px) {
     .mainContentWrapper {
         flex-direction: column;
         overflow: auto;
-        /* Allow scrolling on wrapper if needed */
+        -webkit-overflow-scrolling: touch;
     }
 
     .mainContent {
         overflow-y: visible;
-        /* Main scrolling handled by wrapper on mobile */
     }
 }

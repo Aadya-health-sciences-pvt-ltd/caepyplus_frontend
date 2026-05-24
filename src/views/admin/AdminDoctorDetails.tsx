@@ -6,7 +6,7 @@ import { useAppRouter } from '../../lib/router';
 import {
     ArrowLeft, X, ShieldCheck, User, MapPin, Briefcase, Mail, Phone,
     Calendar, FileText, IndianRupee, GraduationCap, Clock,
-    AlertTriangle, Stethoscope, Heart, MessageSquare, Image, Loader2,
+    AlertTriangle, Stethoscope, Heart, MessageSquare, Loader2,
     Send
 } from 'lucide-react';
 import styles from './AdminDashboard.module.css';
@@ -57,12 +57,23 @@ const AdminDoctorDetails = () => {
 
     // Build display data — prefer profile (API) over navigation-state doctor
     const identity = profile?.identity;
-    const details = (profile as any)?.doctor || profile?.details;
-    const media = profile?.media || [];
+    // Lookup returns `doctor` (doctors row); legacy payloads may use `details`. `any` — union of Doctor vs DoctorDetails field shapes in this view.
+    const details = (profile?.doctor ?? profile?.details ?? null) as any;
 
-    const doctorName = identity
-        ? [identity.first_name, identity.last_name].filter(Boolean).join(' ').trim() || (identity as any).full_name || 'Unnamed'
-        : doctor?.full_name || [doctor?.first_name, doctor?.last_name].filter(Boolean).join(' ').trim() || 'Unnamed';
+    /** Admin lookup returns `full_name` on identity and on the doctors row; prefer row then identity (fixes wrong first/last glue). */
+    const trimName = (v: string | null | undefined) => (v ?? '').trim();
+    const identityJoined = identity
+        ? trimName([identity.first_name, identity.last_name].filter(Boolean).join(' '))
+        : '';
+    const detailsFull = trimName(details?.full_name);
+
+    const doctorName =
+        detailsFull ||
+        trimName(identity?.full_name) ||
+        identityJoined ||
+        trimName(doctor?.full_name) ||
+        trimName([doctor?.first_name, doctor?.last_name].filter(Boolean).join(' ')) ||
+        'Unnamed';
 
     const email = identity?.email || doctor?.email || '';
     const phone = identity?.phone_number || doctor?.phone || '';
@@ -79,10 +90,10 @@ const AdminDoctorDetails = () => {
     const [emailBody, setEmailBody] = useState('');
 
     const getVerifyEmailContent = useCallback(() => ({
-        subject: `Profile Verified - Welcome to Caepy, Dr. ${doctorName}!`,
+        subject: `Profile Verified - Welcome to CAEPY, Dr. ${doctorName}!`,
         body: `Dear Dr. ${doctorName},
 
-Congratulations! We are delighted to inform you that your profile on Caepy has been reviewed and verified successfully.
+Congratulations! We are delighted to inform you that your profile on CAEPY has been reviewed and verified successfully.
 
 Here is a summary of your verified profile:
 - Name: Dr. ${doctorName}
@@ -91,19 +102,19 @@ Here is a summary of your verified profile:
 - Email: ${email}
 - Phone: ${phone}
 
-Your profile is now live and visible to patients on the Caepy platform. You can log in at any time to update your information, manage appointments, and engage with your patients.
+Your profile is now live and visible to patients on the CAEPY platform. You can log in at any time to update your information, manage appointments, and engage with your patients.
 
 If you have any questions or need assistance, please don't hesitate to reach out to our support team.
 
 Warm regards,
-The Caepy Team`,
+The CAEPY Team`,
     }), [doctorName, specialty, regNumber, email, phone]);
 
     const getRejectEmailContent = useCallback(() => ({
         subject: `Profile Review Update - Action Required, Dr. ${doctorName}`,
         body: `Dear Dr. ${doctorName},
 
-Thank you for registering on Caepy. After a careful review of your submitted profile, we regret to inform you that your profile could not be verified at this time.
+Thank you for registering on CAEPY. After a careful review of your submitted profile, we regret to inform you that your profile could not be verified at this time.
 
 Reason for rejection:
 [Please specify the reason for rejection here]
@@ -117,7 +128,7 @@ Profile details:
 We encourage you to review the feedback above, update your profile accordingly, and resubmit for verification. If you believe this decision was made in error, please contact our support team.
 
 Best regards,
-The Caepy Team`,
+The CAEPY Team`,
     }), [doctorName, specialty, regNumber, email]);
 
     const adminViewDoctorId =
@@ -374,31 +385,6 @@ The Caepy Team`,
                                 {details.professional_overview && <TextBlock label="Professional Overview" value={details.professional_overview} />}
                                 {details.about_me && <TextBlock label="About Me" value={details.about_me} />}
                                 {details.profile_summary && <TextBlock label="Profile Summary" value={details.profile_summary} />}
-                            </SectionCard>
-                        )}
-
-                        {/* Media / Documents */}
-                        {media.length > 0 && (
-                            <SectionCard title="Media & Documents" icon={<Image size={18} />}>
-                                <div className={styles.gridAutoFill}>
-                                    {media.map(m => (
-                                        <div key={m.media_id} style={{ background: '#F9FAFB', borderRadius: '0.5rem', padding: '1rem', border: '1px solid #E5E7EB' }}>
-                                            <p style={{ fontSize: '0.8125rem', fontWeight: 600, color: '#111827', margin: '0 0 0.25rem 0', wordBreak: 'break-all' }}>{m.file_name}</p>
-                                            <p style={{ fontSize: '0.75rem', color: '#6B7280', margin: '0 0 0.5rem 0' }}>
-                                                {m.media_category} • {m.media_type}
-                                                {m.file_size ? ` • ${(m.file_size / 1024).toFixed(0)} KB` : ''}
-                                            </p>
-                                            <a
-                                                href={m.file_uri}
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                                style={{ fontSize: '0.8125rem', color: '#4F46E5', textDecoration: 'none', fontWeight: 500 }}
-                                            >
-                                                View File ↗
-                                            </a>
-                                        </div>
-                                    ))}
-                                </div>
                             </SectionCard>
                         )}
                     </div>

@@ -1,5 +1,5 @@
 'use client';
-import { Search, Settings, MoreHorizontal, FileText, Activity, Pill, Send } from 'lucide-react';
+import { Search, HelpCircle, Settings, MoreHorizontal, FileText, Activity, Pill, Send } from 'lucide-react';
 import styles from './Dashboard.module.css';
 
 const Dashboard = () => {
@@ -19,8 +19,8 @@ const Dashboard = () => {
                                 <input type="text" placeholder="Search..." className={styles.searchInput} />
                                 <span className={styles.shortcut}>⌘ K</span>
                             </div>
-                            <button style={{ background: 'white', padding: '0.5rem', borderRadius: '50%', border: '1px solid #E5E7EB', cursor: 'pointer' }}>
-                                <Settings size={20} color="#374151" />
+                            <button type="button" aria-label="Help" style={{ background: 'white', padding: '0.5rem', borderRadius: '50%', border: '1px solid #E5E7EB', cursor: 'pointer' }}>
+                                <HelpCircle size={20} color="#374151" />
                             </button>
                         </div>
                     </div>

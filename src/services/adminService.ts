@@ -58,8 +58,8 @@ export interface Doctor {
     id: number;
     title?: string | null;
     gender?: string | null;
-    first_name: string;
-    last_name: string;
+    first_name?: string | null;
+    last_name?: string | null;
     full_name: string | null;
     email: string;
     phone: string | null;
@@ -134,15 +134,39 @@ export interface Doctor {
     role: string;
     created_at: string;
     updated_at: string | null;
+    has_linqmd_profile?: boolean;
+}
+
+/** Stored LinQMD credentials from GET /onboarding-admin/linqmd-credentials/{doctor_id}. */
+export interface LinqMDCredentials {
+    doctor_id: number;
+    doctor_name: string;
+    linqmd_user_id: string;
+    linqmd_username: string;
+    linqmd_password: string;
+}
+
+/** Response from GET /onboarding-admin/linqmd-sync/{doctor_id} (GenericResponse data). */
+export interface LinqMDSyncResult {
+    doctor_id: number;
+    username?: string | null;
+    password?: string | null;
+    linqmd_response: {
+        Username?: string;
+        Password?: string;
+        error?: string;
+        [key: string]: unknown;
+    };
 }
 
 /** Matches the backend DoctorIdentityResponse. */
 export interface DoctorIdentity {
     id: string;
     doctor_id: number;
+    full_name?: string | null;
     title?: string | null;
-    first_name: string;
-    last_name: string;
+    first_name?: string | null;
+    last_name?: string | null;
     email: string;
     phone_number: string;
     onboarding_status: string;
@@ -260,10 +284,12 @@ export interface DoctorStatusHistory {
     changed_at: string;
 }
 
-/** Matches the backend DoctorWithFullInfoResponse. */
+/** Matches the backend DoctorWithFullInfoResponse (lookup uses `doctor`, not `details`). */
 export interface DoctorFullProfile {
     identity: DoctorIdentity;
-    details: DoctorDetails | null;
+    /** Present on GET /doctors/lookup — main doctors row */
+    doctor?: Doctor | DoctorDetails | null;
+    details?: DoctorDetails | null;
     media: DoctorMedia[];
     status_history: DoctorStatusHistory[];
 }
@@ -507,9 +533,14 @@ export const adminService = {
         return parseResponse(response);
     },
 
-    syncLinqMDProfile: async (doctorId: number) => {
+    syncLinqMDProfile: async (doctorId: number): Promise<LinqMDSyncResult> => {
         const response = await api.get(`/onboarding-admin/linqmd-sync/${doctorId}`);
-        return parseResponse(response);
+        return parseResponse<LinqMDSyncResult>(response);
+    },
+
+    getLinqMDCredentials: async (doctorId: number): Promise<LinqMDCredentials> => {
+        const response = await api.get(`/onboarding-admin/linqmd-credentials/${doctorId}`);
+        return parseResponse<LinqMDCredentials>(response);
     },
 
     /** Download the official bulk upload CSV template from the backend. */
