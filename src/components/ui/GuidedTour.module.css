@@ -164,3 +164,64 @@
         transform: scale(1.02);
     }
 }
+
+/* Mobile + tablet tour only (desktop keeps default .tooltip above) */
+.tooltipCompact {
+    width: 260px !important;
+    max-width: calc(100vw - 24px);
+    max-height: calc(100dvh - 24px - env(safe-area-inset-bottom, 0px));
+    padding: 0.75rem 0.875rem;
+    padding-bottom: calc(0.75rem + env(safe-area-inset-bottom, 0px));
+    border-radius: 12px;
+    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.12), 0 0 0 1px rgba(0, 0, 0, 0.04);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.tooltipCompact .tooltipHeader {
+    margin-bottom: 0.35rem;
+}
+
+.tooltipCompact .stepBadge {
+    font-size: 0.625rem;
+    padding: 2px 7px;
+}
+
+.tooltipCompact .tooltipTitle {
+    font-size: 0.875rem;
+}
+
+.tooltipCompact .tooltipDescription {
+    font-size: 0.75rem;
+    line-height: 1.4;
+    margin: 0.25rem 0 0.625rem;
+    overflow-y: auto;
+    flex: 1 1 auto;
+    min-height: 0;
+    -webkit-overflow-scrolling: touch;
+}
+
+.tooltipCompact .tooltipFooter {
+    gap: 0.25rem;
+    flex-shrink: 0;
+}
+
+.tooltipCompact .skipButton {
+    font-size: 0.7rem;
+    padding: 0.3rem 0.5rem;
+}
+
+.tooltipCompact .nextButton {
+    font-size: 0.75rem;
+    padding: 0.4rem 0.75rem;
+}
+
+.tooltipCompact .dot {
+    width: 5px;
+    height: 5px;
+}
+
+.tooltipCompact .dotActive {
+    width: 14px;
+}
