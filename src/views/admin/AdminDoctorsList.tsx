@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useAppRouter } from '../../lib/router';
-import { Search, Users, AlertCircle, CheckCircle, Eye, Upload, X, Download, FileSpreadsheet, Loader2, ShieldCheck, UserPlus, KeyRound } from 'lucide-react';
+import { Search, Users, AlertCircle, CheckCircle, Eye, Upload, X, Download, FileSpreadsheet, Loader2, ShieldCheck, UserPlus, KeyRound, Copy, Check } from 'lucide-react';
 import styles from './AdminDashboard.module.css';
 import { adminService, type Doctor, type CsvValidationResponse, type CsvUploadResponse, type LinqMDSyncResult } from '../../services/adminService';
 import { parseErrorMessage } from '../../lib/api';
@@ -400,16 +400,44 @@ interface LinqMDResultModalProps {
     onClose: () => void;
 }
 
+const COPY_FEEDBACK_MS = 2200;
+
 const LinqMDResultModal = ({ state, onClose }: LinqMDResultModalProps) => {
     const isSuccess = state.mode === 'success';
     const isView = state.mode === 'view';
     const isError = state.mode === 'error';
+    const [copiedField, setCopiedField] = useState<string | null>(null);
+    const [copyFailedField, setCopyFailedField] = useState<string | null>(null);
+    const copyFeedbackTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-    const copyField = async (value: string) => {
+    useEffect(() => {
+        return () => {
+            if (copyFeedbackTimerRef.current) {
+                clearTimeout(copyFeedbackTimerRef.current);
+            }
+        };
+    }, []);
+
+    const scheduleCopyFeedbackReset = () => {
+        if (copyFeedbackTimerRef.current) {
+            clearTimeout(copyFeedbackTimerRef.current);
+        }
+        copyFeedbackTimerRef.current = setTimeout(() => {
+            setCopiedField(null);
+            setCopyFailedField(null);
+        }, COPY_FEEDBACK_MS);
+    };
+
+    const copyField = async (fieldKey: string, value: string) => {
         try {
             await navigator.clipboard.writeText(value);
+            setCopyFailedField(null);
+            setCopiedField(fieldKey);
+            scheduleCopyFeedbackReset();
         } catch {
-            // ignore clipboard failures
+            setCopiedField(null);
+            setCopyFailedField(fieldKey);
+            scheduleCopyFeedbackReset();
         }
     };
 
@@ -483,18 +511,36 @@ const LinqMDResultModal = ({ state, onClose }: LinqMDResultModalProps) => {
                                     </code>
                                     <button
                                         type="button"
-                                        onClick={() => copyField(value)}
-                                        style={{
-                                            padding: '0.25rem 0.5rem',
-                                            fontSize: '0.75rem',
-                                            fontWeight: 600,
-                                            border: '1px solid #D1D5DB',
-                                            borderRadius: '0.375rem',
-                                            background: 'white',
-                                            cursor: 'pointer',
-                                        }}
+                                        className={[
+                                            styles.linqmdCopyBtn,
+                                            copiedField === label ? styles.linqmdCopyBtnCopied : '',
+                                            copyFailedField === label ? styles.linqmdCopyBtnFailed : '',
+                                        ].filter(Boolean).join(' ')}
+                                        onClick={() => copyField(label, value)}
+                                        aria-label={
+                                            copiedField === label
+                                                ? `${label} copied`
+                                                : copyFailedField === label
+                                                  ? `Failed to copy ${label}`
+                                                  : `Copy ${label}`
+                                        }
                                     >
-                                        Copy
+                                        {copiedField === label ? (
+                                            <>
+                                                <Check size={14} aria-hidden />
+                                                Copied!
+                                            </>
+                                        ) : copyFailedField === label ? (
+                                            <>
+                                                <AlertCircle size={14} aria-hidden />
+                                                Failed
+                                            </>
+                                        ) : (
+                                            <>
+                                                <Copy size={14} aria-hidden />
+                                                Copy
+                                            </>
+                                        )}
                                     </button>
                                 </div>
                             </div>
