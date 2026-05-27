@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowRight, X } from 'lucide-react';
 import styles from './GuidedTour.module.css';
@@ -56,12 +56,41 @@ const TOUR_STEPS: TourStep[] = [
     },
 ];
 
+/** Tablet + mobile only — desktop web uses full tour (min-width: 1025px). */
+const COMPACT_TOUR_MEDIA = '(max-width: 1024px)';
+const LIVE_PREVIEW_STEP_TARGET = 'live-preview';
+
+const COMPACT_TOOLTIP_WIDTH = 260;
+const COMPACT_VIEWPORT_MARGIN = 12;
+
 const GuidedTour = ({ isActive, onComplete, onSkip }: GuidedTourProps) => {
     const [currentStepIndex, setCurrentStepIndex] = useState(0);
     const [tooltipPos, setTooltipPos] = useState({ top: 0, left: 0 });
+    const [compactTooltipTop, setCompactTooltipTop] = useState<number | null>(null);
     const [spotlightRect, setSpotlightRect] = useState({ top: 0, left: 0, width: 0, height: 0 });
+    const [isCompactTour, setIsCompactTour] = useState(false);
+    const tooltipRef = useRef<HTMLDivElement>(null);
 
-    const currentStep = TOUR_STEPS[currentStepIndex];
+    useEffect(() => {
+        if (typeof window === 'undefined') return;
+        const mq = window.matchMedia(COMPACT_TOUR_MEDIA);
+        const sync = () => setIsCompactTour(mq.matches);
+        sync();
+        mq.addEventListener('change', sync);
+        return () => mq.removeEventListener('change', sync);
+    }, []);
+
+    const activeSteps = isCompactTour
+        ? TOUR_STEPS.filter((step) => step.target !== LIVE_PREVIEW_STEP_TARGET)
+        : TOUR_STEPS;
+
+    const currentStep = activeSteps[currentStepIndex] ?? activeSteps[0];
+
+    useEffect(() => {
+        if (currentStepIndex >= activeSteps.length) {
+            setCurrentStepIndex(Math.max(0, activeSteps.length - 1));
+        }
+    }, [activeSteps.length, currentStepIndex]);
 
     const calculatePositions = useCallback(() => {
         if (!isActive || !currentStep) return;
@@ -70,7 +99,7 @@ const GuidedTour = ({ isActive, onComplete, onSkip }: GuidedTourProps) => {
         if (!targetEl) return;
 
         const rect = targetEl.getBoundingClientRect();
-        const padding = 8;
+        const padding = isCompactTour ? 6 : 8;
 
         // Spotlight rectangle
         setSpotlightRect({
@@ -80,9 +109,50 @@ const GuidedTour = ({ isActive, onComplete, onSkip }: GuidedTourProps) => {
             height: rect.height + padding * 2,
         });
 
-        // Tooltip position
-        const tooltipWidth = 320;
-        const tooltipHeight = 200; // approximate
+        const tooltipWidth = isCompactTour
+            ? Math.min(COMPACT_TOOLTIP_WIDTH, window.innerWidth - COMPACT_VIEWPORT_MARGIN * 2)
+            : 320;
+        const tooltipHeight = isCompactTour
+            ? (tooltipRef.current?.getBoundingClientRect().height ?? 180)
+            : 200;
+
+        if (isCompactTour) {
+            const viewHeight = window.visualViewport?.height ?? window.innerHeight;
+            const spotTop = rect.top - padding;
+            const spotBottom = rect.bottom + padding;
+            const gap = 10;
+            const left = Math.max(COMPACT_VIEWPORT_MARGIN, (window.innerWidth - tooltipWidth) / 2);
+
+            // Default: anchor to bottom so actions stay on-screen.
+            let top = viewHeight - tooltipHeight - COMPACT_VIEWPORT_MARGIN;
+
+            const overlapsSpotlight = top < spotBottom + gap && top + tooltipHeight > spotTop - gap;
+            if (overlapsSpotlight) {
+                const aboveTop = spotTop - gap - tooltipHeight;
+                const belowTop = spotBottom + gap;
+
+                if (aboveTop >= COMPACT_VIEWPORT_MARGIN) {
+                    top = aboveTop;
+                } else if (belowTop + tooltipHeight <= viewHeight - COMPACT_VIEWPORT_MARGIN) {
+                    top = belowTop;
+                } else {
+                    top = COMPACT_VIEWPORT_MARGIN;
+                }
+            }
+
+            top = Math.max(
+                COMPACT_VIEWPORT_MARGIN,
+                Math.min(top, viewHeight - tooltipHeight - COMPACT_VIEWPORT_MARGIN),
+            );
+
+            setCompactTooltipTop(top);
+            setTooltipPos({ top, left });
+            return;
+        }
+
+        setCompactTooltipTop(null);
+
+        // Desktop tooltip position (unchanged)
         let top = 0;
         let left = 0;
 
@@ -113,20 +183,30 @@ const GuidedTour = ({ isActive, onComplete, onSkip }: GuidedTourProps) => {
         top = Math.max(16, Math.min(top, window.innerHeight - tooltipHeight - 16));
 
         setTooltipPos({ top, left });
-    }, [isActive, currentStep]);
+    }, [isActive, currentStep, isCompactTour]);
 
     useEffect(() => {
         calculatePositions();
 
-        const handleResize = () => calculatePositions();
-        window.addEventListener('resize', handleResize);
-        window.addEventListener('scroll', handleResize, true);
+        const handleReposition = () => calculatePositions();
+        window.addEventListener('resize', handleReposition);
+        window.addEventListener('scroll', handleReposition, true);
+        window.visualViewport?.addEventListener('resize', handleReposition);
+
+        const tooltipEl = tooltipRef.current;
+        let resizeObserver: ResizeObserver | undefined;
+        if (tooltipEl && isCompactTour) {
+            resizeObserver = new ResizeObserver(handleReposition);
+            resizeObserver.observe(tooltipEl);
+        }
 
         return () => {
-            window.removeEventListener('resize', handleResize);
-            window.removeEventListener('scroll', handleResize, true);
+            window.removeEventListener('resize', handleReposition);
+            window.removeEventListener('scroll', handleReposition, true);
+            window.visualViewport?.removeEventListener('resize', handleReposition);
+            resizeObserver?.disconnect();
         };
-    }, [calculatePositions, currentStepIndex]);
+    }, [calculatePositions, currentStepIndex, isCompactTour]);
 
     // Scroll target into view
     useEffect(() => {
@@ -134,15 +214,25 @@ const GuidedTour = ({ isActive, onComplete, onSkip }: GuidedTourProps) => {
 
         const targetEl = document.querySelector(`[data-tour="${currentStep.target}"]`);
         if (targetEl) {
-            targetEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            const block = isCompactTour ? 'start' : 'center';
+            targetEl.scrollIntoView({ behavior: 'smooth', block });
             // Recalculate after scroll
             const timer = setTimeout(calculatePositions, 400);
             return () => clearTimeout(timer);
         }
-    }, [currentStepIndex, isActive, currentStep, calculatePositions]);
+    }, [currentStepIndex, isActive, currentStep, calculatePositions, isCompactTour]);
+
+    // Re-measure compact tooltip after step content paints.
+    useEffect(() => {
+        if (!isActive || !isCompactTour) return;
+        const frame = requestAnimationFrame(() => {
+            calculatePositions();
+        });
+        return () => cancelAnimationFrame(frame);
+    }, [currentStepIndex, isActive, isCompactTour, calculatePositions]);
 
     const handleNext = () => {
-        if (currentStepIndex < TOUR_STEPS.length - 1) {
+        if (currentStepIndex < activeSteps.length - 1) {
             setCurrentStepIndex((prev) => prev + 1);
         } else {
             onComplete();
@@ -153,9 +243,9 @@ const GuidedTour = ({ isActive, onComplete, onSkip }: GuidedTourProps) => {
         onSkip();
     };
 
-    if (!isActive) return null;
+    if (!isActive || !currentStep) return null;
 
-    const isLastStep = currentStepIndex === TOUR_STEPS.length - 1;
+    const isLastStep = currentStepIndex === activeSteps.length - 1;
 
     return (
         <>
@@ -189,12 +279,29 @@ const GuidedTour = ({ isActive, onComplete, onSkip }: GuidedTourProps) => {
             {/* Tooltip */}
             <AnimatePresence mode="wait">
                 <motion.div
+                    ref={tooltipRef}
                     key={currentStepIndex}
-                    className={styles.tooltip}
-                    style={{
-                        top: tooltipPos.top,
-                        left: tooltipPos.left,
-                    }}
+                    className={`${styles.tooltip} ${isCompactTour ? styles.tooltipCompact : ''}`}
+                    style={
+                        isCompactTour
+                            ? {
+                                top: compactTooltipTop ?? 'auto',
+                                bottom: compactTooltipTop == null
+                                    ? `calc(${COMPACT_VIEWPORT_MARGIN}px + env(safe-area-inset-bottom, 0px))`
+                                    : 'auto',
+                                left: tooltipPos.left,
+                                width: Math.min(
+                                    COMPACT_TOOLTIP_WIDTH,
+                                    typeof window !== 'undefined'
+                                        ? window.innerWidth - COMPACT_VIEWPORT_MARGIN * 2
+                                        : COMPACT_TOOLTIP_WIDTH,
+                                ),
+                            }
+                            : {
+                                top: tooltipPos.top,
+                                left: tooltipPos.left,
+                            }
+                    }
                     initial={{ opacity: 0, y: 10, scale: 0.95 }}
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: -10, scale: 0.95 }}
@@ -206,7 +313,7 @@ const GuidedTour = ({ isActive, onComplete, onSkip }: GuidedTourProps) => {
                 >
                     <div className={styles.tooltipHeader}>
                         <span className={styles.stepBadge}>
-                            {currentStepIndex + 1} / {TOUR_STEPS.length}
+                            {currentStepIndex + 1} / {activeSteps.length}
                         </span>
                     </div>
 
@@ -220,7 +327,7 @@ const GuidedTour = ({ isActive, onComplete, onSkip }: GuidedTourProps) => {
                         </button>
 
                         <div className={styles.dots}>
-                            {TOUR_STEPS.map((_, i) => (
+                            {activeSteps.map((_, i) => (
                                 <div
                                     key={i}
                                     className={`${styles.dot} ${i === currentStepIndex ? styles.dotActive : ''}`}
