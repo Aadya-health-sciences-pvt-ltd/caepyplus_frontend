@@ -82,25 +82,6 @@ const Step5PatientValue: React.FC<SharedStepProps> = ({
                         </div>
                     </div>
                 </div>
-
-                <div className={styles.halfWidth}>
-                    <div className={styles.inputWrapper}>
-                        <label className={styles.label}>Consultation Fee (Optional)</label>
-                        <div className={styles.feeInputWrapper}>
-                            <span className={styles.currencyPrefix}>₹</span>
-                            <input
-                                name="consultationFee"
-                                type="number"
-                                value={formData.consultationFee}
-                                onChange={handleInputChange}
-                                onFocus={() => setFocusedField('consultationFee')}
-                                className={styles.input}
-                                placeholder="e.g. 500"
-                                style={{ paddingLeft: '2.5rem' }}
-                            />
-                        </div>
-                    </div>
-                </div>
             </div>
         </>
     );

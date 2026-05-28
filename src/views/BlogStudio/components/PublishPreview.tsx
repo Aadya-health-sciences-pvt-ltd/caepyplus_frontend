@@ -57,10 +57,8 @@ export default function PublishPreview({ formData, setFormData, onPublish, onBac
     <div className={styles.stepContent}>
       
       <div style={{ padding: '2rem', border: '1px solid var(--border-color)', borderRadius: '1.25rem', marginBottom: '2rem', backgroundColor: '#F8FAFC', boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.02)' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.25rem' }}>
-          <div style={{ padding: '0.4rem 0.75rem', background: 'var(--primary-color)', color: 'white', fontSize: '0.65rem', fontWeight: 800, borderRadius: '4px', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Practice Hub</div>
-          <div style={{ height: '1px', flex: 1, background: 'var(--border-color)' }}></div>
-          <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 600 }}>PREVIEW</div>
+        <div style={{ marginBottom: '1.25rem' }}>
+          <div style={{ display: 'inline-block', padding: '0.4rem 0.75rem', background: 'var(--primary-color)', color: 'white', fontSize: '0.65rem', fontWeight: 800, borderRadius: '4px', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Practice Hub</div>
         </div>
         
         <h3 style={{ fontSize: '1.35rem', fontWeight: 800, color: 'var(--text-color)', marginBottom: '0.5rem', lineHeight: 1.3 }}>

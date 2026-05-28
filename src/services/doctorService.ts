@@ -90,6 +90,14 @@ export interface DoctorProfile {
 
     // Media
     profile_photo?: string | null;
+
+    has_linqmd_profile?: boolean;
+    public_profile_url?: string | null;
+}
+
+/** True when onboarding_status is verified (case-insensitive). */
+export function isDoctorVerified(status: string | null | undefined): boolean {
+    return (status ?? '').toLowerCase() === 'verified';
 }
 
 interface DoctorApiResponse {

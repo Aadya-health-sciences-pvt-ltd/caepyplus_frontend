@@ -11,14 +11,23 @@ import { useAppRouter } from '../lib/router';
 import styles from './ProfileView.module.css';
 
 import { mockDataService } from '../services/mockDataService';
+import {
+    doctorService,
+    isDoctorVerified,
+    type DoctorProfile,
+} from '../services/doctorService';
 import { calculateProfileProgress } from '../lib/profileProgress';
 import { useResolvedProfilePhotoDisplayUrl } from '../hooks/useResolvedProfilePhotoDisplayUrl';
+import { isBrowser } from '../lib/isBrowser';
+
+const PREVIEW_DISABLED_TOOLTIP = 'Public profile can be viewed after verification';
 
 const ProfileView = () => {
     const router = useAppRouter();
     const currentUser = mockDataService.getCurrentUser();
 
     const [navFormData, setNavFormData] = useState<Record<string, any>>({});
+    const [apiProfile, setApiProfile] = useState<DoctorProfile | null>(null);
 
     useEffect(() => {
         try {
@@ -28,10 +37,43 @@ const ProfileView = () => {
         } catch { }
     }, []);
 
+    useEffect(() => {
+        if (!isBrowser()) return;
+        const doctorId = localStorage.getItem('doctor_id');
+        if (!doctorId) return;
+
+        let cancelled = false;
+        (async () => {
+            try {
+                const profile = await doctorService.fetchAndStoreProfile(doctorId);
+                if (!cancelled) setApiProfile(profile);
+            } catch (err) {
+                console.error('Failed to load doctor profile for dashboard:', err);
+                const stored = doctorService.getStoredProfile();
+                if (!cancelled && stored) setApiProfile(stored);
+            }
+        })();
+
+        return () => {
+            cancelled = true;
+        };
+    }, []);
+
+    const mappedApiForm = apiProfile
+        ? doctorService.mapProfileToFormData(apiProfile)
+        : {};
+
     const formData = {
         ...(currentUser?.data || {}),
         ...currentUser,
-        ...navFormData
+        ...mappedApiForm,
+        ...navFormData,
+        ...(apiProfile
+            ? {
+                onboarding_status: apiProfile.onboarding_status,
+                public_profile_url: apiProfile.public_profile_url,
+            }
+            : {}),
     };
 
     const rawProfileImage = typeof formData.profileImage === 'string' ? formData.profileImage : '';
@@ -47,7 +89,19 @@ const ProfileView = () => {
     const specialty = formData.specialty || formData.personalInfo?.specialty || 'General Practitioner';
     const loc = formData.primaryLocation || formData.personalInfo?.primaryLocation || 'India';
     const exp = formData.experience || formData.personalInfo?.experience;
-    const isVerified = (formData.onboarding_status || formData.status) === 'verified';
+    const onboardingStatus =
+        apiProfile?.onboarding_status ??
+        formData.onboarding_status ??
+        formData.status;
+    const isVerified = isDoctorVerified(
+        typeof onboardingStatus === 'string' ? onboardingStatus : undefined,
+    );
+    const publicProfileUrl =
+        (typeof formData.public_profile_url === 'string' &&
+            formData.public_profile_url) ||
+        apiProfile?.public_profile_url ||
+        null;
+    const canPreviewPublicProfile = isVerified && !!publicProfileUrl;
     const displayProfilePhoto = resolvedProfilePhotoUrl;
     const hasPhoto = !!displayProfilePhoto;
 
@@ -67,9 +121,23 @@ const ProfileView = () => {
                             {specialty} · {loc} {exp ? `· ${exp} Years Exp.` : ''}
                         </p>
                     </div>
-                    <button className={styles.previewBtn}>
-                        <Eye size={16} /> Preview Public Profile
-                    </button>
+                    <span
+                        className={styles.previewBtnWrap}
+                        title={!isVerified ? PREVIEW_DISABLED_TOOLTIP : undefined}
+                    >
+                        <button
+                            type="button"
+                            className={`${styles.previewBtn} ${!canPreviewPublicProfile ? styles.previewBtnDisabled : ''}`}
+                            disabled={!canPreviewPublicProfile}
+                            onClick={() => {
+                                if (publicProfileUrl) {
+                                    window.open(publicProfileUrl, '_blank', 'noopener,noreferrer');
+                                }
+                            }}
+                        >
+                            <Eye size={16} /> Preview Public Profile
+                        </button>
+                    </span>
                 </div>
 
                 <div className={styles.dashboardGrid}>
