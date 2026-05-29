@@ -13,6 +13,11 @@ import styles from './AdminDashboard.module.css';
 
 import { adminService, type Doctor, type DoctorFullProfile, type DoctorDetails } from '../../services/adminService';
 import { calculateProfileProgressFromApi } from '../../lib/profileProgress';
+import {
+    resolveDoctorDisplayEmail,
+    resolveDoctorDisplayName,
+    resolveDoctorDisplayPhone,
+} from '../../lib/adminDoctorIdentity';
 import { useResolvedProfilePhotoDisplayUrl } from '../../hooks/useResolvedProfilePhotoDisplayUrl';
 
 const AdminDoctorDetails = () => {
@@ -68,15 +73,22 @@ const AdminDoctorDetails = () => {
     const detailsFull = trimName(details?.full_name);
 
     const doctorName =
-        detailsFull ||
-        trimName(identity?.full_name) ||
-        identityJoined ||
-        trimName(doctor?.full_name) ||
-        trimName([doctor?.first_name, doctor?.last_name].filter(Boolean).join(' ')) ||
-        'Unnamed';
+        resolveDoctorDisplayName(
+            detailsFull ||
+                trimName(doctor?.full_name) ||
+                trimName([doctor?.first_name, doctor?.last_name].filter(Boolean).join(' ')),
+            identity?.full_name,
+            identityJoined,
+        ) || 'Unnamed';
 
-    const email = identity?.email || doctor?.email || '';
-    const phone = identity?.phone_number || doctor?.phone || '';
+    const email = resolveDoctorDisplayEmail(
+        identity?.email,
+        details?.email ?? doctor?.email,
+    );
+    const phone = resolveDoctorDisplayPhone(
+        identity?.phone_number,
+        details?.phone ?? doctor?.phone,
+    );
     const specialty = details?.primary_specialization || details?.specialty || doctor?.specialty || 'Specialty not set';
     const locationStr = details?.primary_practice_location || doctor?.primary_practice_location || 'Location not set';
     const joinedDate = identity?.registered_at || doctor?.created_at;
