@@ -686,6 +686,25 @@ export const doctorService = {
     },
 
     /**
+     * Publish blog to LinQMD Practice Hub (login + multipart blog create).
+     */
+    publishBlogToPracticeHub: async (
+        blogId: string | number,
+        credentials?: { username: string; password: string },
+    ): Promise<{
+        blog_id: number;
+        status: string;
+        drupal_node_id?: string | null;
+        practice_hub_response?: Record<string, unknown> | null;
+    }> => {
+        const body = credentials
+            ? { credentials: { username: credentials.username, password: credentials.password } }
+            : {};
+        const response = await api.post(`/blogs/${blogId}/publish-practice-hub`, body);
+        return parseResponse(response);
+    },
+
+    /**
      * Fetch all comments for the doctor.
      */
     getComments: async (status?: string): Promise<any[]> => {
