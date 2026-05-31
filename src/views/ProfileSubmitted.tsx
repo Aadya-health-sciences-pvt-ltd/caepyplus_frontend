@@ -1,9 +1,10 @@
 'use client';
 import React, { useState, useEffect } from 'react';
 import { useAppRouter } from '../lib/router';
-import { Check, Clock, UserCheck, Sparkles, MapPin, Edit2, LayoutGrid, Eye, Send, CheckCircle, LifeBuoy } from 'lucide-react';
+import { Check, Clock, UserCheck, Sparkles, MapPin, Edit2, LayoutGrid, Send, CheckCircle, LifeBuoy } from 'lucide-react';
 import styles from './ProfileSubmitted.module.css';
 import { useResolvedProfilePhotoDisplayUrl } from '../hooks/useResolvedProfilePhotoDisplayUrl';
+import { PreviewPublicProfileButton } from '../components/PreviewPublicProfileButton';
 
 const ProfileSubmitted = () => {
     const router = useAppRouter();
@@ -134,15 +135,11 @@ const ProfileSubmitted = () => {
 
                 {/* Action Buttons */}
                 <div className={styles.actionButtons}>
-                    <button
+                    <PreviewPublicProfileButton
+                        variant="submitted"
                         className={`${styles.btn} ${styles.btnPrimary}`}
-                        onClick={() => {
-                            sessionStorage.setItem('nav_state', JSON.stringify({ formData }));
-                            router.push('/doctor/profile-summary');
-                        }}
-                    >
-                        <Eye size={18} /> Preview Public Profile
-                    </button>
+                        disabledClassName={styles.btnPrimaryDisabled}
+                    />
                     <button
                         className={styles.btn}
                         onClick={() => {

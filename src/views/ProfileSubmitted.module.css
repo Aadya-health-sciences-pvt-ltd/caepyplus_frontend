@@ -287,9 +287,16 @@
     box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.2);
 }
 
-.btnPrimary:hover {
+.btnPrimary:hover:not(:disabled) {
     opacity: 0.95;
     box-shadow: 0 6px 8px -1px rgba(59, 130, 246, 0.3);
+}
+
+.btnPrimaryDisabled,
+.btnPrimary:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+    box-shadow: none;
 }
 
 .noticeBox {
