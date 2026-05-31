@@ -21,6 +21,9 @@ interface CreatableMultiSelectProps {
     creatable?: boolean;
 }
 
+/** Window to treat a second pointer down on the same control as double-click (cancel action). */
+const DOUBLE_CLICK_PAIR_MS = 450;
+
 const CreatableMultiSelect: React.FC<CreatableMultiSelectProps> = ({
     name,
     values,
@@ -40,6 +43,33 @@ const CreatableMultiSelect: React.FC<CreatableMultiSelectProps> = ({
     const wrapperRef = useRef<HTMLDivElement>(null);
     const inputRef = useRef<HTMLInputElement>(null);
     const listRef = useRef<HTMLDivElement>(null);
+    const valuesRef = useRef(values);
+    valuesRef.current = values;
+
+    const armedActionRef = useRef<{ actionKey: string; at: number } | null>(null);
+
+    const cancelArmedAction = useCallback(() => {
+        armedActionRef.current = null;
+    }, []);
+
+    /**
+     * Run action on the next tick unless a second pointer down (double-click) disarms it first.
+     * Single click: immediate. Double-click: both mousedowns arrive before timeout → no toggle.
+     */
+    const runProtectedPointerAction = useCallback((actionKey: string, action: () => void) => {
+        const now = Date.now();
+        const armed = armedActionRef.current;
+        if (armed?.actionKey === actionKey && now - armed.at < DOUBLE_CLICK_PAIR_MS) {
+            armedActionRef.current = null;
+            return;
+        }
+        armedActionRef.current = { actionKey, at: now };
+        setTimeout(() => {
+            if (armedActionRef.current?.actionKey !== actionKey) return;
+            armedActionRef.current = null;
+            action();
+        }, 0);
+    }, []);
 
     const filteredOptions = searchText.trim()
         ? options.filter(
@@ -60,13 +90,16 @@ const CreatableMultiSelect: React.FC<CreatableMultiSelectProps> = ({
     useEffect(() => {
         const handleClickOutside = (e: MouseEvent) => {
             if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node)) {
+                cancelArmedAction();
                 setIsOpen(false);
                 setSearchText('');
             }
         };
         document.addEventListener('mousedown', handleClickOutside);
         return () => document.removeEventListener('mousedown', handleClickOutside);
-    }, []);
+    }, [cancelArmedAction]);
+
+    useEffect(() => () => cancelArmedAction(), [cancelArmedAction]);
 
     useEffect(() => {
         if (highlightedIndex >= 0 && listRef.current) {
@@ -81,16 +114,17 @@ const CreatableMultiSelect: React.FC<CreatableMultiSelectProps> = ({
         (optionValue: string) => {
             const v = optionValue.trim();
             if (!v) return;
-            if (values.includes(v)) {
-                onChange(values.filter(x => x !== v));
-            } else {
-                onChange([...values, v]);
-            }
+            const current = valuesRef.current;
+            const next = current.includes(v)
+                ? current.filter(x => x !== v)
+                : [...current, v];
+            valuesRef.current = next;
+            onChange(next);
             setSearchText('');
             setIsOpen(false);
             setHighlightedIndex(-1);
         },
-        [onChange, values],
+        [onChange],
     );
 
     const handleAddNew = useCallback(async () => {
@@ -102,8 +136,11 @@ const CreatableMultiSelect: React.FC<CreatableMultiSelectProps> = ({
 
         if (success) {
             const v = trimmedSearch.trim();
-            if (!values.includes(v)) {
-                onChange([...values, v]);
+            const current = valuesRef.current;
+            if (!current.includes(v)) {
+                const next = [...current, v];
+                valuesRef.current = next;
+                onChange(next);
             }
             onOptionAdded?.({ value: v, label: v });
         }
@@ -111,7 +148,7 @@ const CreatableMultiSelect: React.FC<CreatableMultiSelectProps> = ({
         setSearchText('');
         setIsOpen(false);
         setHighlightedIndex(-1);
-    }, [trimmedSearch, isSubmitting, fieldName, onChange, onOptionAdded, values]);
+    }, [trimmedSearch, isSubmitting, fieldName, onChange, onOptionAdded]);
 
     const handleKeyDown = (e: React.KeyboardEvent) => {
         if (!isOpen) {
@@ -138,9 +175,9 @@ const CreatableMultiSelect: React.FC<CreatableMultiSelectProps> = ({
                 if (highlightedIndex >= 0 && highlightedIndex < filteredOptions.length) {
                     toggleValue(filteredOptions[highlightedIndex].value);
                 } else if (showAddOption && highlightedIndex === filteredOptions.length) {
-                    handleAddNew();
+                    void handleAddNew();
                 } else if (showAddOption && highlightedIndex === -1) {
-                    handleAddNew();
+                    void handleAddNew();
                 }
                 break;
             case 'Escape':
@@ -157,12 +194,21 @@ const CreatableMultiSelect: React.FC<CreatableMultiSelectProps> = ({
         if (!isOpen) setIsOpen(true);
     };
 
-    const handleFocus = () => {
-        onFocus?.();
-    };
+    const handlePointerSelect = useCallback(
+        (actionKey: string, action: () => void) => (e: React.MouseEvent) => {
+            e.preventDefault();
+            if (e.detail > 1) {
+                cancelArmedAction();
+                return;
+            }
+            runProtectedPointerAction(actionKey, action);
+        },
+        [cancelArmedAction, runProtectedPointerAction],
+    );
 
     const handleClearAll = (e: React.MouseEvent) => {
         e.stopPropagation();
+        valuesRef.current = [];
         onChange([]);
         setSearchText('');
         setIsOpen(false);
@@ -170,7 +216,9 @@ const CreatableMultiSelect: React.FC<CreatableMultiSelectProps> = ({
     };
 
     const removeChip = (v: string) => {
-        onChange(values.filter(x => x !== v));
+        const next = valuesRef.current.filter(x => x !== v);
+        valuesRef.current = next;
+        onChange(next);
     };
 
     const showClear = values.length > 0 && !isOpen;
@@ -185,7 +233,11 @@ const CreatableMultiSelect: React.FC<CreatableMultiSelectProps> = ({
                             <button
                                 type="button"
                                 className={styles.chipRemove}
-                                onClick={() => removeChip(v)}
+                                onMouseDown={e => e.stopPropagation()}
+                                onClick={e => {
+                                    e.stopPropagation();
+                                    removeChip(v);
+                                }}
                                 aria-label={`Remove ${v}`}
                             >
                                 ×
@@ -203,8 +255,13 @@ const CreatableMultiSelect: React.FC<CreatableMultiSelectProps> = ({
                     value={isOpen ? searchText : ''}
                     placeholder={placeholder}
                     onChange={handleInputChange}
-                    onFocus={handleFocus}
-                    onClick={() => setIsOpen(prev => !prev)}
+                    onFocus={() => {
+                        onFocus?.();
+                        setIsOpen(true);
+                    }}
+                    onMouseDown={e => {
+                        if (e.detail > 1) e.preventDefault();
+                    }}
                     onKeyDown={handleKeyDown}
                     className={`${styles.input} ${isOpen ? styles.inputOpen : ''} ${className || ''}`}
                     style={showClear ? { paddingRight: '2.25rem' } : {}}
@@ -230,10 +287,9 @@ const CreatableMultiSelect: React.FC<CreatableMultiSelectProps> = ({
                             className={`${styles.option} ${
                                 highlightedIndex === index ? styles.optionHighlighted : ''
                             } ${values.includes(option.value) ? styles.optionSelected : ''}`}
-                            onMouseDown={e => {
-                                e.preventDefault();
-                                toggleValue(option.value);
-                            }}
+                            onMouseDown={handlePointerSelect(`opt:${option.value}`, () =>
+                                toggleValue(option.value),
+                            )}
                             onMouseEnter={() => setHighlightedIndex(index)}
                         >
                             {option.label}
@@ -244,10 +300,9 @@ const CreatableMultiSelect: React.FC<CreatableMultiSelectProps> = ({
                         <div
                             data-option
                             className={styles.addOption}
-                            onMouseDown={e => {
-                                e.preventDefault();
-                                handleAddNew();
-                            }}
+                            onMouseDown={handlePointerSelect(`add:${trimmedSearch}`, () => {
+                                void handleAddNew();
+                            })}
                             onMouseEnter={() => setHighlightedIndex(filteredOptions.length)}
                         >
                             <span className={styles.addIcon}>+</span>

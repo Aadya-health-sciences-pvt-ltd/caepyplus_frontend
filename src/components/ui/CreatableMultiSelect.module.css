@@ -22,12 +22,14 @@
     font-size: 0.8125rem;
     font-weight: 500;
     max-width: 100%;
+    user-select: none;
 }
 
 .chipLabel {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    user-select: none;
 }
 
 .chipRemove {
@@ -99,6 +101,7 @@
     cursor: pointer;
     transition: background-color 0.15s;
     border-bottom: 1px solid #F3F4F6;
+    user-select: none;
 }
 
 .option:last-child {
@@ -122,6 +125,7 @@
     font-size: 0.875rem;
     color: #0F766E;
     cursor: pointer;
+    user-select: none;
     transition: background-color 0.15s;
     display: flex;
     align-items: center;
