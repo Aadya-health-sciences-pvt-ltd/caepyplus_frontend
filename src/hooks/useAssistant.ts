@@ -1,124 +1,151 @@
 'use client';
 import { useState, useRef, useEffect, useCallback } from 'react';
+import { LiveClient } from '../lib/live-client';
 
 interface UseAssistantReturn {
-    isSpeaking: boolean;
-    isListening: boolean;
-    transcript: string;
-    speak: (text: string, onEnd?: () => void) => void;
-    listen: (onResult: (text: string) => void) => void;
-    stop: () => void;
-    cancel: () => void;
+    status: 'connected' | 'disconnected' | 'connecting';
+    startSession: (context: any, onToolUpdate: (data: any) => void) => void;
+    stopSession: () => void;
+    volume: number;
 }
 
 export const useAssistant = (): UseAssistantReturn => {
-    const [isSpeaking, setIsSpeaking] = useState(false);
-    const [isListening, setIsListening] = useState(false);
-    const [transcript, setTranscript] = useState('');
+    const [status, setStatus] = useState<'connected' | 'disconnected' | 'connecting'>('disconnected');
+    const [volume, setVolume] = useState(0);
+    const clientRef = useRef<LiveClient | null>(null);
+    const lastSpokeTimeRef = useRef<number>(Date.now());
+    const lastProgressTimeRef = useRef<number>(Date.now());
+    const inactivityTimerRef = useRef<NodeJS.Timeout | null>(null);
 
-    const speechSynthRef = useRef<SpeechSynthesis | null>(null);
-    const recognitionRef = useRef<any>(null); // Type as any for WebSpeech API
-    const mountedRef = useRef(true);
+    const startSession = useCallback((context: any, onToolUpdate: (data: any) => void) => {
+        if (clientRef.current) return;
 
+        setStatus('connecting');
+        // Serialize Context into URL 
+        const contextStr = encodeURIComponent(JSON.stringify(context || {}));
+        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+
+        // Retrieve token for WebSocket authentication
+        const token = typeof window !== 'undefined' ? localStorage.getItem('access_token') : null;
+        const tokenParam = token ? `&token=${encodeURIComponent(token)}` : '';
+
+        // Match the FastAPI Router path for Voice
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000/caepy/api/v1';
+        let wsUrl = '';
+        if (apiUrl.startsWith('http')) {
+            wsUrl = apiUrl.replace(/^http/, 'ws') + `/voice/ws?context=${contextStr}${tokenParam}`;
+        } else {
+            wsUrl = `${protocol}//${window.location.hostname}:8000/caepy/api/v1/voice/ws?context=${contextStr}${tokenParam}`;
+        }
+
+        const client = new LiveClient(wsUrl);
+
+        client.on('open', () => {
+            setStatus('connected');
+        });
+
+        client.on('volume', (vol: number) => {
+            setVolume(vol);
+            // Only reset timer if volume is high AND fluctuating (ignores constant background hum/noise)
+            if (vol > 0.05 && Math.abs(vol - (client as any)._lastVol || 0) > 0.01) {
+                lastSpokeTimeRef.current = Date.now();
+            }
+            (client as any)._lastVol = vol;
+        });
+
+        client.on('bot_audio', () => {
+            lastSpokeTimeRef.current = Date.now();
+            lastProgressTimeRef.current = Date.now();
+        });
+
+        client.on('message', (msg: any) => {
+            if (msg.type === 'tool_update') {
+                onToolUpdate(msg.data);
+                lastProgressTimeRef.current = Date.now();
+            } else if (msg.type === 'error') {
+                console.error("LiveClient Backend Error:", msg.message);
+            } else if (msg.type === 'session_complete') {
+                // After session is complete, wait for the AI's final audio to finish playing then stop tracking
+                setTimeout(() => {
+                    // Only cleanup if this client is still the active one
+                    if (clientRef.current === client) {
+                        clientRef.current.disconnect();
+                        clientRef.current = null;
+                        setStatus('disconnected');
+                        setVolume(0);
+                    }
+                }, 9000); // 9 sec buffer for the final TTS audio
+            }
+        });
+
+        client.on('close', () => {
+            // Only update state if this is the active client (prevents old closures from killing new sessions)
+            if (clientRef.current === client) {
+                setStatus('disconnected');
+                setVolume(0);
+                clientRef.current = null;
+            }
+        });
+
+        client.on('error', (err: any) => {
+            console.error("LiveClient WS Error:", err);
+            if (clientRef.current === client) {
+                setStatus('disconnected');
+                setVolume(0);
+            }
+        });
+
+        client.connect();
+        clientRef.current = client;
+    }, []);
+
+    const stopSession = useCallback(() => {
+        if (clientRef.current) {
+            clientRef.current.disconnect();
+            clientRef.current = null;
+        }
+        setStatus('disconnected');
+        setVolume(0);
+    }, []);
+
+    // Inactivity timeout effect
     useEffect(() => {
-        speechSynthRef.current = window.speechSynthesis;
+        if (status === 'connected') {
+            lastSpokeTimeRef.current = Date.now();
+            lastProgressTimeRef.current = Date.now();
+            inactivityTimerRef.current = setInterval(() => {
+                // If the bot is still speaking, constantly reset the inactivity timer
+                if (clientRef.current && (clientRef.current as any).isBotSpeaking?.()) {
+                    lastSpokeTimeRef.current = Date.now();
+                    lastProgressTimeRef.current = Date.now();
+                }
 
-        // Initialize SpeechRecognition if available
-        const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-        if (SpeechRecognition) {
-            recognitionRef.current = new SpeechRecognition();
-            recognitionRef.current.continuous = false;
-            recognitionRef.current.interimResults = false;
-            recognitionRef.current.lang = 'en-US';
+                if (Date.now() - lastSpokeTimeRef.current > 9000) {
+                    console.log('Mic auto-off due to 9 seconds of inactivity.');
+                    stopSession();
+                } else if (Date.now() - lastProgressTimeRef.current > 13000) {
+                    console.log('Mic auto-off due to 13 seconds of no progress/decoding.');
+                    stopSession();
+                }
+            }, 1000);
+        } else {
+            if (inactivityTimerRef.current) {
+                clearInterval(inactivityTimerRef.current);
+                inactivityTimerRef.current = null;
+            }
         }
 
         return () => {
-            mountedRef.current = false;
-            cancel();
+            if (inactivityTimerRef.current) {
+                clearInterval(inactivityTimerRef.current);
+            }
         };
-    }, []);
-
-    const speak = useCallback((text: string, onEnd?: () => void) => {
-        // Cancel any existing speech
-        if (speechSynthRef.current) speechSynthRef.current.cancel();
-        speakNative(text, onEnd);
-    }, []);
-
-    const speakNative = (text: string, onEnd?: () => void) => {
-        if (!speechSynthRef.current) return;
-
-        const utterance = new SpeechSynthesisUtterance(text);
-        const voices = speechSynthRef.current.getVoices();
-        const preferredVoice = voices.find(v => v.lang === 'en-US' && v.name.includes('Google')) || voices[0];
-        if (preferredVoice) utterance.voice = preferredVoice;
-
-        utterance.rate = 1;
-        utterance.onstart = () => {
-            if (mountedRef.current) setIsSpeaking(true);
-        };
-        utterance.onend = () => {
-            if (mountedRef.current) setIsSpeaking(false);
-            if (onEnd) onEnd();
-        };
-        utterance.onerror = () => {
-            if (mountedRef.current) setIsSpeaking(false);
-        };
-
-        speechSynthRef.current.speak(utterance);
-    };
-
-    const listen = useCallback((onResult: (text: string) => void) => {
-        if (!recognitionRef.current) {
-            console.warn('Speech Recognition not supported in this browser.');
-            return;
-        }
-
-        if (isListening) return; // Already listening
-
-        try {
-            recognitionRef.current.start();
-            setIsListening(true);
-            setTranscript('');
-
-            recognitionRef.current.onresult = (event: any) => {
-                const text = event.results[0][0].transcript;
-                setTranscript(text);
-                onResult(text);
-            };
-
-            recognitionRef.current.onend = () => {
-                if (mountedRef.current) setIsListening(false);
-            };
-
-            recognitionRef.current.onerror = (event: any) => {
-                console.error('Speech recognition error', event.error);
-                if (mountedRef.current) setIsListening(false);
-            };
-
-        } catch (e) {
-            console.error('Failed to start recognition', e);
-            setIsListening(false);
-        }
-    }, [isListening]);
-
-    const stop = useCallback(() => {
-        if (speechSynthRef.current) speechSynthRef.current.cancel();
-        if (recognitionRef.current) recognitionRef.current.stop();
-        setIsSpeaking(false);
-        setIsListening(false);
-    }, []);
-
-    const cancel = useCallback(() => {
-        stop();
-    }, [stop]);
+    }, [status, stopSession]);
 
     return {
-        isSpeaking,
-        isListening,
-        transcript,
-        speak,
-        listen,
-        stop,
-        cancel
+        status,
+        startSession,
+        stopSession,
+        volume
     };
 };
