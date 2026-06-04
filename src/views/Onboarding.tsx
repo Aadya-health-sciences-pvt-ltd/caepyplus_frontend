@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import dynamic from 'next/dynamic';
 import { useAppRouter } from '../lib/router';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Mic, Sparkles, MicOff } from 'lucide-react';
 import Stepper from '../components/ui/Stepper';
 import LivePreview from '../components/ui/LivePreview';
 import WelcomeDialog from '../components/ui/WelcomeDialog';
@@ -11,6 +11,9 @@ import ImageCropperModal from '../components/ui/ImageCropperModal';
 import styles from './Onboarding.module.css';
 import { getMasterData, type MasterData } from '../lib/masterData';
 import type { DropdownOption } from '../components/ui/CreatableDropdown';
+import { useAssistant } from '../hooks/useAssistant';
+import { voiceService } from '../services/voiceService';
+import type { StepContext } from '../lib/voiceContext';
 
 import { mockDataService } from '../services/mockDataService';
 import { doctorService } from '../services/doctorService';
@@ -123,6 +126,8 @@ const Onboarding = () => {
     const [currentStep, setCurrentStep] = useState(navState.step || (savedStep && savedStep > 0 ? savedStep : 1));
     const totalSteps = 6;
     const [focusedField, setFocusedField] = useState<string>(navState.focusedField || '');
+    const [skippedFields, setSkippedFields] = useState<string[]>([]);
+    const [voiceConfig, setVoiceConfig] = useState<{ context: Record<string, StepContext>, instructions: Record<string, string> } | null>(null);
     const [masterData, setMasterData] = useState<MasterData>({
         specialties: [],
         locations: [],
@@ -130,6 +135,11 @@ const Onboarding = () => {
         commonConditions: [],
         areasOfInterest: []
     });
+
+    // Reset skipped fields when navigating between steps so they can be prompted again
+    useEffect(() => {
+        setSkippedFields([]);
+    }, [currentStep]);
 
     // Welcome Dialog & Guided Tour State
     const isNewUser = isBrowser() ? localStorage.getItem('is_new_user') === 'true' : false;
@@ -157,6 +167,9 @@ const Onboarding = () => {
 
     useEffect(() => {
         setMasterData(getMasterData());
+        voiceService.getConfig()
+            .then(config => setVoiceConfig(config))
+            .catch(err => console.error("Failed to load voice config", err));
     }, []);
 
     // Fetch dropdown options from the API on mount
@@ -496,7 +509,157 @@ const Onboarding = () => {
         return () => clearTimeout(timer);
     }, [currentStep]);
 
+    // AI Assistant Integration
+    const { status: assistantStatus, startSession: startWsSession, stopSession, volume } = useAssistant();
+    const isListening = assistantStatus === 'connected';
+    const isSpeaking = assistantStatus === 'connecting';
+    const [sessionId, setSessionId] = useState<string | null>(null);
+
+    const handleMicClick = async () => {
+        if (isListening || isSpeaking) {
+            stopSession();
+            setSessionId(null);
+            return;
+        }
+
+        const currentFocused = focusedField;
+        setFocusedField('');
+
+        if (!voiceConfig) return;
+        const baseContext = voiceConfig.context[currentStep.toString()];
+
+        const missingFields = baseContext.fields.filter(f => {
+            if (f.voiceSkip) return false;
+            if (currentFocused && f.key === currentFocused) return true;
+            if (skippedFields.includes(f.key)) return false;
+
+            if (f.key.startsWith('contentSeed.')) {
+                const subKey = f.key.split('.')[1] as keyof typeof formData.contentSeed;
+                const val = formData.contentSeed ? formData.contentSeed[subKey] : undefined;
+                return !val;
+            } else {
+                const val = formData[f.key as keyof typeof formData];
+                if (Array.isArray(val)) {
+                    const validItems = val.filter(i => i && String(i).trim() !== '');
+                    return validItems.length === 0;
+                }
+                return !val;
+            }
+        });
+
+        const context = {
+            step: currentStep,
+            section: baseContext.section_name,
+            focused_field_key: currentFocused || null,
+            instruction: missingFields.length === 0
+                ? voiceConfig.instructions.complete
+                : voiceConfig.instructions.incomplete,
+            missing_fields: missingFields.map(f => ({ key: f.key, label: f.label, description: f.description, required: f.required ?? true })),
+            manual_fields_skipped: baseContext.fields.filter(f => f.voiceSkip).map(f => f.label),
+            _debug_formData: Object.keys(FIELD_NAME_MAP).reduce((acc, key) => ({ ...acc, [key]: formData[key as keyof typeof formData] }), {})
+        };
+
+        try {
+            const response = await voiceService.startSession('en', context);
+            setSessionId(response.session_id);
+
+            startWsSession(context, (toolData: any) => {
+                console.log("Tool Update received:", toolData);
+                if (toolData && Object.keys(toolData).length > 0) {
+                    const newlySkipped = Object.entries(toolData)
+                        .filter(([_, value]) => value === '[SKIPPED]' || (Array.isArray(value) && value.length === 1 && value[0] === '[SKIPPED]'))
+                        .map(([key, _]) => key);
+
+                    if (newlySkipped.length > 0) {
+                        setSkippedFields(prev => [...new Set([...prev, ...newlySkipped])]);
+                    }
+
+                    setFormData((prev: any) => {
+                        const newData = { ...prev };
+                        for (const [key, value] of Object.entries(toolData)) {
+                            if (key === 'transcript') continue;
+
+                            const fieldCtx = baseContext.fields.find(f => f.key === key);
+                            if (fieldCtx && fieldCtx.voiceSkip) continue;
+
+                            if (value === '[SKIPPED]' || (Array.isArray(value) && value.length === 1 && value[0] === '[SKIPPED]')) {
+                                continue;
+                            }
+
+                            if (value === null || value === undefined) continue;
+                            if (typeof value === 'string' && value.trim() === '') continue;
+
+                            if (typeof value === 'string') {
+                                const lowerVal = value.toLowerCase();
+                                if (
+                                    lowerVal.includes("great progress! let's handle this section") ||
+                                    lowerVal.includes("hello! i'm caepy ai") ||
+                                    lowerVal.includes("all the details are filled") ||
+                                    lowerVal.includes("click next to continue")
+                                ) {
+                                    console.warn(`Filtered out AI greeting from being saved in field [${key}]: ${value}`);
+                                    continue;
+                                }
+                            }
+
+                            if (Array.isArray(value) && value.length === 0) continue;
+
+                            if (key.startsWith('contentSeed.')) {
+                                const field = key.split('.')[1];
+                                newData.contentSeed = {
+                                    ...newData.contentSeed,
+                                    [field]: value
+                                };
+                            } else if (key === 'practiceLocations') {
+                                const locs = Array.isArray(value) ? value : (typeof value === 'string' ? value.split(',').map((s: string) => s.trim()).filter(Boolean) : []);
+                                newData[key] = locs.map((loc: any) => typeof loc === 'string' ? { name: loc, address: '', schedule: '' } : loc);
+                            } else if (['languages', 'fellowships', 'areasOfInterest', 'practiceSegments', 'commonConditions', 'knownForConditions'].includes(key)) {
+                                if (typeof value === 'string') {
+                                    newData[key] = value.split(',').map((s: string) => s.trim()).filter(Boolean);
+                                } else {
+                                    newData[key] = value;
+                                }
+                            } else if (['trainingExperience', 'motivation', 'unwinding'].includes(key)) {
+                                if (typeof value === 'string' && value.trim()) {
+                                    newData[key] = [value.trim()];
+                                } else if (Array.isArray(value) && value.length > 0) {
+                                    newData[key] = value;
+                                }
+                            } else if (['experience', 'postSpecialisationExperience', 'mbbsYear', 'specialisationYear', 'consultationFee'].includes(key)) {
+                                const raw = String(value).trim();
+                                const match = raw.match(/^(\d+(?:\.\d+)?)/);
+                                newData[key] = match ? match[1] : raw;
+                            } else {
+                                newData[key] = value;
+                            }
+                        }
+                        return newData;
+                    });
+                    showToast(`Updated fields based on voice input`, 'success');
+                }
+            });
+        } catch (error) {
+            console.error(error);
+            showToast('Failed to connect to Voice Assistant', 'error');
+        }
+    };
+
+    const autoStartMic = React.useRef(false);
+
+    // Auto-start mic when advancing to next step
+    useEffect(() => {
+        if (autoStartMic.current) {
+            autoStartMic.current = false;
+            setTimeout(() => {
+                handleMicClick();
+            }, 500);
+        }
+    }, [currentStep]);
+
     const handleBack = () => {
+        if (isListening || isSpeaking) {
+            stopSession();
+        }
         if (currentStep > 1) {
             const doctorId = localStorage.getItem('doctor_id');
             if (doctorId) {
@@ -598,6 +761,9 @@ const Onboarding = () => {
     };
 
     const handleNext = async () => {
+        if (isListening || isSpeaking) {
+            stopSession();
+        }
         if (currentStep === 1) {
             const { isValid, errors } = validateSection1(formData);
             if (!isValid) {
@@ -648,6 +814,7 @@ const Onboarding = () => {
         if (currentStep < totalSteps) {
             setCurrentStep((prev: number) => prev + 1);
             setFocusedField('');
+            autoStartMic.current = true;
         } else {
             sessionStorage.setItem('nav_state', JSON.stringify({ formData, stage: 'final' }));
             router.push('/doctor/review');
@@ -655,6 +822,9 @@ const Onboarding = () => {
     };
 
     const handleStepJump = (step: number) => {
+        if (isListening || isSpeaking) {
+            stopSession();
+        }
         if (step < currentStep) {
             const doctorId = localStorage.getItem('doctor_id');
             if (doctorId) {
@@ -680,17 +850,103 @@ const Onboarding = () => {
 
             <div className={styles.mainContent}>
                 <div className={styles.leftColumn}>
-                    {currentStep > 1 && (
-                        <div className={styles.onboardingBackRow}>
+                    {currentStep > 1 ? (
+                        <div className={styles.aiBanner}>
                             <button
                                 type="button"
                                 onClick={handleBack}
-                                className={styles.onboardingBackButton}
+                                className={styles.inlineBackButton}
                                 aria-label="Go back to previous section"
                             >
                                 <ArrowLeft size={18} aria-hidden />
-                                Back
                             </button>
+                            <div className={styles.aiContent}>
+                                <div className={styles.aiIconCircle}>
+                                    <Sparkles size={24} />
+                                </div>
+                                <div className={styles.aiText}>
+                                    <h4>CAEPY AI</h4>
+                                    <p>Speak naturally, I'll take care of the rest</p>
+                                </div>
+                            </div>
+
+                            <div className={styles.audioControls}>
+                                {isListening || isSpeaking ? (
+                                    <>
+                                        <div className={styles.listeningBadge}>
+                                            <div className={`${styles.listeningDot} ${isSpeaking ? styles.isTalking : styles.isListening}`}></div>
+                                            {isSpeaking ? 'connecting...' : 'listening'}
+                                        </div>
+                                        <div className={styles.wave}>
+                                            {[1, 2, 3, 4, 5].map(i => <div key={i} className={styles.waveBar} style={{ transform: `scaleY(${Math.max(0.1, Math.min(volume * 1.5, 1.5))})`, transition: 'transform 0.1s', display: 'inline-block', transformOrigin: 'bottom' }}></div>)}
+                                        </div>
+                                        <button
+                                            className={`${styles.micButton} ${styles.active}`}
+                                            onClick={handleMicClick}
+                                        >
+                                            <MicOff size={24} />
+                                        </button>
+                                    </>
+                                ) : (
+                                    <>
+                                        <div className={styles.listeningBadge}>
+                                            <div className={styles.listeningDot} style={{ backgroundColor: '#39C8CE', boxShadow: 'none', border: 'none' }}></div>
+                                            Ready to Speak
+                                        </div>
+                                        <button
+                                            className={`${styles.micButton} ${styles.ready}`}
+                                            onClick={handleMicClick}
+                                        >
+                                            <Mic size={24} />
+                                        </button>
+                                    </>
+                                )}
+                            </div>
+                        </div>
+                    ) : (
+                        <div className={styles.aiBanner}>
+                            <div className={styles.aiContent}>
+                                <div className={styles.aiIconCircle}>
+                                    <Sparkles size={24} />
+                                </div>
+                                <div className={styles.aiText}>
+                                    <h4>CAEPY AI</h4>
+                                    <p>Speak naturally, I'll take care of the rest</p>
+                                </div>
+                            </div>
+
+                            <div className={styles.audioControls}>
+                                {isListening || isSpeaking ? (
+                                    <>
+                                        <div className={styles.listeningBadge}>
+                                            <div className={`${styles.listeningDot} ${isSpeaking ? styles.isTalking : styles.isListening}`}></div>
+                                            {isSpeaking ? 'connecting...' : 'listening'}
+                                        </div>
+                                        <div className={styles.wave}>
+                                            {[1, 2, 3, 4, 5].map(i => <div key={i} className={styles.waveBar} style={{ transform: `scaleY(${Math.max(0.1, Math.min(volume * 1.5, 1.5))})`, transition: 'transform 0.1s', display: 'inline-block', transformOrigin: 'bottom' }}></div>)}
+                                        </div>
+                                        <button
+                                            className={`${styles.micButton} ${styles.active}`}
+                                            onClick={handleMicClick}
+                                        >
+                                            <MicOff size={24} />
+                                        </button>
+                                    </>
+                                ) : (
+                                    <>
+                                        <div className={styles.listeningBadge}>
+                                            <div className={styles.listeningDot} style={{ backgroundColor: '#39C8CE', boxShadow: 'none', border: 'none' }}></div>
+                                            Ready to Speak
+                                        </div>
+                                        <button
+                                            className={`${styles.micButton} ${styles.ready}`}
+                                            onClick={handleMicClick}
+                                        >
+                                            <Mic size={24} />
+                                        </button>
+                                    </>
+                                )}
+                            </div>
                         </div>
                     )}
 
