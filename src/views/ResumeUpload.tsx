@@ -100,7 +100,7 @@ const ResumeUpload = () => {
                     ref={fileInputRef}
                     onChange={handleFileChange}
                     style={{ display: 'none' }}
-                    accept=".pdf,.doc,.docx,.png,.jpg,.jpeg"
+                    accept=".pdf,.png,.jpg,.jpeg,.doc,.docx"
                 />
 
                 <p className={styles.uploadMeta}>

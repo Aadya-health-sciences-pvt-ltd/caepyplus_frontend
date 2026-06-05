@@ -740,132 +740,152 @@ export const doctorService = {
         return doctorService.mapExtractedDataToFormData(response.data.data);
     },
 
+    /**
+     * Map resume-extraction output to onboarding form fields.
+     *
+     * Only Section 1 (Professional Identity) and Section 2 (Credentials) fields
+     * are prefilled. Section 3 onward is intentionally left for manual entry.
+     */
     mapExtractedDataToFormData: (data: ResumeExtractedData): Record<string, unknown> => {
         const formData: Record<string, unknown> = {};
 
-        // Personal Details
-        const firstName = data.personal_details?.first_name || '';
-        const lastName = data.personal_details?.last_name || '';
-        if (firstName || lastName) {
-            formData.fullName = [firstName, lastName].filter(Boolean).join(' ');
-        }
-        if (data.personal_details?.email) formData.email = data.personal_details.email;
-        if (data.personal_details?.phone) {
-            formData.phone = normalizeIndianPhoneForForm(data.personal_details.phone);
-        }
-
-        // Professional Info
-        if (data.professional_information?.primary_specialization) {
-            formData.specialty = data.professional_information.primary_specialization;
+        // --- Section 1: Professional Identity ---
+        const personal = data.personal_details;
+        const fullName = [personal?.title, personal?.first_name, personal?.last_name]
+            .map(part => (part || '').trim())
+            .filter(Boolean)
+            .join(' ');
+        if (fullName) formData.fullName = fullName;
+        if (personal?.email) formData.email = personal.email;
+        if (personal?.phone) {
+            formData.phone = normalizeIndianPhoneForForm(personal.phone);
         }
 
-        // Registration
-        if (data.registration?.medical_registration_number) {
-            formData.registrationNumber = data.registration.medical_registration_number;
+        const professional = data.professional_information;
+        if (professional?.primary_specialization) {
+            formData.specialty = professional.primary_specialization;
+        }
+        if (professional?.languages?.length) {
+            formData.languages = professional.languages.filter(Boolean);
         }
 
-        // Qualifications
-        if (data.qualifications?.length) {
-            // Map structured qualifications to string list
-            formData.qualifications = data.qualifications
-                .map(q => q.degree || q.field_of_study)
-                .filter(Boolean)
-                .join(', ');
-
-            // Try to extract MBBS and Specialisation years if possible
-            const mbbs = data.qualifications.find(q => q.degree?.toLowerCase().includes('mbbs'));
-            if (mbbs?.year_obtained) formData.mbbsYear = String(mbbs.year_obtained);
-
-            const mdMs = data.qualifications.find(q =>
-                ['md', 'ms', 'dnb'].some(d => q.degree?.toLowerCase().includes(d))
-            );
-            if (mdMs?.year_obtained) formData.specialisationYear = String(mdMs.year_obtained);
+        const registration = data.registration;
+        if (registration?.medical_registration_number) {
+            formData.registrationNumber = registration.medical_registration_number;
+        }
+        if (registration?.medical_council) {
+            formData.medicalCouncil = registration.medical_council;
         }
 
-        // Practice Locations
         if (data.practice_locations?.length) {
-            // Map to existing UI structure (text array or object array depending on usage)
-            // Onboarding.tsx expects objects in practiceLocations usually?
-            // "practiceLocations: [], // Array of { name, address, timings }"
             formData.practiceLocations = data.practice_locations.map(loc => ({
-                name: loc.hospital_name,
-                address: loc.location || loc.address || '',
+                name: loc.hospital_name || '',
+                address: loc.address || '',
                 schedule: loc.weekly_schedule || '',
                 city: loc.city || '',
                 state: loc.state || '',
-                pincode: loc.pincode || '',
                 phone_number: loc.phone_number || '',
-                lat: loc.lat,
-                lng: loc.lng,
             }));
 
-            // Also set primary location to the first one
-            if (data.practice_locations[0]?.location) {
-                formData.primaryLocation = data.practice_locations[0].location;
+            const first = data.practice_locations[0];
+            const primary = first?.address || first?.city || first?.hospital_name || '';
+            if (primary) formData.primaryLocation = primary;
+        }
+
+        // --- Section 2: Credentials & Trust Markers ---
+        if (data.qualifications?.length) {
+            formData.qualifications = data.qualifications
+                .map(q => q.degree)
+                .filter(Boolean)
+                .join(', ');
+
+            const mbbs = data.qualifications.find(q => q.degree?.toLowerCase().includes('mbbs'));
+            if (mbbs?.year) formData.mbbsYear = String(mbbs.year);
+
+            const specialisation = data.qualifications.find(q =>
+                ['md', 'ms', 'dnb', 'dm', 'mch'].some(d => q.degree?.toLowerCase().includes(d))
+            );
+            if (specialisation?.year) formData.specialisationYear = String(specialisation.year);
+        }
+
+        const currentYear = new Date().getFullYear();
+        if (typeof professional?.years_of_experience === 'number') {
+            formData.experience = String(professional.years_of_experience);
+        } else if (formData.mbbsYear) {
+            const mbbsYearNum = parseInt(String(formData.mbbsYear), 10);
+            if (!Number.isNaN(mbbsYearNum) && mbbsYearNum <= currentYear) {
+                formData.experience = String(currentYear - mbbsYearNum);
+            }
+        }
+        if (formData.specialisationYear) {
+            const specYearNum = parseInt(String(formData.specialisationYear), 10);
+            if (!Number.isNaN(specYearNum) && specYearNum <= currentYear) {
+                formData.postSpecialisationExperience = String(currentYear - specYearNum);
             }
         }
 
-        // Awards & Memberships
-        if (data.awards_and_recognitions?.length) {
-            formData.awards = data.awards_and_recognitions.join(', ');
+        const achievements = data.achievements;
+        if (achievements?.fellowships?.length) {
+            formData.fellowships = achievements.fellowships.filter(Boolean);
         }
-        if (data.memberships?.length) {
-            formData.memberships = data.memberships.join(', ');
+        if (achievements?.awards_recognition?.length) {
+            formData.awards = achievements.awards_recognition.join(', ');
         }
-
-        // Skills / Areas of Interest
-        if (data.skills_and_expertise?.length) {
-            formData.areasOfInterest = data.skills_and_expertise;
+        if (achievements?.memberships?.length) {
+            formData.memberships = achievements.memberships.join(', ');
         }
 
         return formData;
     }
 };
 
-// Define extracted data interfaces based on backend response
+// Define extracted data interfaces based on backend ResumeExtractedData schema.
 export interface ResumeExtractedData {
     personal_details: {
+        title: string | null;
         first_name: string | null;
         last_name: string | null;
         email: string | null;
         phone: string | null;
-        title: string | null;
-        linkedin_url: string | null;
     };
     professional_information: {
         primary_specialization: string | null;
-        sub_specialties: string[];
-        current_position: string | null;
         years_of_experience: number | null;
+        conditions_treated: string[];
+        languages: string[];
     };
     registration: {
         medical_registration_number: string | null;
-        state: string | null;
+        medical_council: string | null;
+        registration_year: number | null;
+        registration_authority: string | null;
     };
     qualifications: Array<{
         degree: string | null;
         institution: string | null;
-        year_obtained: number | null;
-        field_of_study: string | null;
+        year: number | null;
     }>;
+    achievements: {
+        awards_recognition: string[];
+        memberships: string[];
+        fellowships: string[];
+    };
+    media: {
+        verbal_intro_file: string | null;
+        professional_documents: string[];
+        achievement_images: string[];
+        external_links: string[];
+    };
     practice_locations: Array<{
         hospital_name: string | null;
-        location: string | null;
-        address?: string | null;
-        city?: string | null;
-        state?: string | null;
-        pincode?: string | null;
-        phone_number?: string | null;
-        weekly_schedule?: string | null;
-        lat?: number;
-        lng?: number;
-        is_current: boolean;
+        address: string | null;
+        city: string | null;
+        state: string | null;
+        phone_number: string | null;
+        consultation_fee: number | null;
+        consultation_type: string | null;
+        weekly_schedule: string | null;
     }>;
-    skills_and_expertise: string[];
-    awards_and_recognitions: string[];
-    memberships: string[];
-    languages: string[];
-    content_seeds: Array<any>;
 }
 
 export interface BlogTopic {
