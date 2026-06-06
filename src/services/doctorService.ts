@@ -1,5 +1,6 @@
 import api, { parseResponse } from '../lib/api';
 import { normalizeIndianPhoneForForm } from '../lib/indianMobile';
+import { applyAuthoritativeLoginIdentity } from '../lib/onboardingIdentity';
 
 export interface DoctorProfile {
     id: number;
@@ -834,6 +835,8 @@ export const doctorService = {
         if (achievements?.memberships?.length) {
             formData.memberships = achievements.memberships.join(', ');
         }
+
+        applyAuthoritativeLoginIdentity(formData);
 
         return formData;
     }
