@@ -1,31 +1,95 @@
 import React, { useState, useEffect } from 'react';
 import styles from '../BlogStudio.module.css';
-import { doctorService, DoctorProfile } from '../../../services/doctorService';
+import {
+  doctorService,
+  isDoctorVerified,
+  type DoctorProfile,
+} from '../../../services/doctorService';
+import { parseErrorMessage } from '../../../lib/api';
+import { isBrowser } from '../../../lib/isBrowser';
+import axios from 'axios';
 
 interface PublishPreviewProps {
   formData: any;
   setFormData: React.Dispatch<React.SetStateAction<any>>;
-  onPublish: () => void;
+  onPublish?: () => void;
   onBack: () => void;
   onBackToHub?: () => void;
 }
 
-export default function PublishPreview({ formData, setFormData, onPublish, onBack, onBackToHub }: PublishPreviewProps) {
+const VERIFICATION_PENDING_TOOLTIP = 'Doctor Verification pending';
+
+function getApiErrorCode(error: unknown): string | null {
+  if (!axios.isAxiosError(error)) return null;
+  const data = error.response?.data;
+  if (!data || typeof data !== 'object') return null;
+  const detail = (data as Record<string, unknown>).detail;
+  if (detail && typeof detail === 'object') {
+    const code = (detail as Record<string, unknown>).code;
+    if (typeof code === 'string') return code;
+  }
+  return null;
+}
+
+function getApiErrorDetailMessage(error: unknown): string {
+  if (!axios.isAxiosError(error)) return parseErrorMessage(error);
+  const data = error.response?.data;
+  if (data && typeof data === 'object') {
+    const detail = (data as Record<string, unknown>).detail;
+    if (detail && typeof detail === 'object') {
+      const msg = (detail as Record<string, unknown>).message;
+      if (typeof msg === 'string') return msg;
+    }
+  }
+  return parseErrorMessage(error);
+}
+
+export default function PublishPreview({
+  formData,
+  setFormData,
+  onBack,
+  onBackToHub,
+}: PublishPreviewProps) {
   const [profile, setProfile] = useState<DoctorProfile | null>(null);
   const [showPreview, setShowPreview] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [publishing, setPublishing] = useState(false);
+  const [showCredentialModal, setShowCredentialModal] = useState(false);
+  const [credentialUsername, setCredentialUsername] = useState('');
+  const [credentialPassword, setCredentialPassword] = useState('');
+  const [publishError, setPublishError] = useState<string | null>(null);
+
+  const isVerified = isDoctorVerified(profile?.onboarding_status);
 
   useEffect(() => {
     setProfile(doctorService.getStoredProfile());
-    
-    // Auto-save as draft once on mount
+
     doctorService.saveBlogDraft(formData).then(result => {
-      // If we got back an ID (new draft created), store it for subsequent saves
       const returnedId = result?.id;
       if (returnedId && !formData.id) {
         setFormData((prev: any) => ({ ...prev, id: returnedId }));
       }
-    }).catch(err => console.error("Failed to auto save draft:", err));
+    }).catch(err => console.error('Failed to auto save draft:', err));
+  }, []);
+
+  useEffect(() => {
+    if (!isBrowser()) return;
+    const doctorId = localStorage.getItem('doctor_id');
+    if (!doctorId) return;
+
+    let cancelled = false;
+    (async () => {
+      try {
+        const p = await doctorService.fetchAndStoreProfile(doctorId);
+        if (!cancelled) setProfile(p);
+      } catch (err) {
+        console.error('Failed to load profile for publish gate:', err);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const handleSaveAndExit = async () => {
@@ -36,18 +100,67 @@ export default function PublishPreview({ formData, setFormData, onPublish, onBac
       const basePath = process.env.NEXT_PUBLIC_BASE_PATH || '';
       window.location.href = `${basePath}/doctor/blog-studio`;
     } catch (err) {
-      console.error("Manual save failed:", err);
-      alert("Failed to save changes. Please try again.");
+      console.error('Manual save failed:', err);
+      alert('Failed to save changes. Please try again.');
     } finally {
       setSaving(false);
     }
   };
 
+  const runPublish = async (credentials?: { username: string; password: string }) => {
+    setPublishError(null);
+    setPublishing(true);
+    try {
+      let blogId = formData.id;
+      const saved = await doctorService.saveBlogDraft(formData);
+      blogId = saved?.id ?? blogId;
+      if (blogId && !formData.id) {
+        setFormData((prev: any) => ({ ...prev, id: blogId }));
+      }
+      if (!blogId) {
+        throw new Error('Could not save blog draft before publishing.');
+      }
+
+      await doctorService.publishBlogToPracticeHub(blogId, credentials);
+      setShowCredentialModal(false);
+      setCredentialPassword('');
+      alert('Blog published to Practice Hub successfully!');
+      const basePath = process.env.NEXT_PUBLIC_BASE_PATH || '';
+      window.location.href = `${basePath}/doctor/blog-studio`;
+    } catch (err) {
+      const code = getApiErrorCode(err);
+      if (code === 'linqmd_credentials_invalid') {
+        setPublishError(getApiErrorDetailMessage(err));
+        setShowCredentialModal(true);
+      } else {
+        alert(getApiErrorDetailMessage(err));
+      }
+    } finally {
+      setPublishing(false);
+    }
+  };
+
+  const handlePublishClick = () => {
+    if (!isVerified || publishing) return;
+    runPublish();
+  };
+
+  const handleCredentialRetry = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!credentialUsername.trim() || !credentialPassword) {
+      setPublishError('Username and password are required.');
+      return;
+    }
+    runPublish({
+      username: credentialUsername.trim(),
+      password: credentialPassword,
+    });
+  };
+
   const doctorName = profile?.full_name || 'Anonymous Doctor';
   const specialty = profile?.specialty || 'Doctor';
   const location = profile?.primary_practice_location || '';
-  
-  // Strip HTML for plain excerpt and calculate read time
+
   const rawText = formData.content ? formData.content.replace(/<[^>]+>/g, ' ') : '';
   const excerpt = rawText.substring(0, 150) + '...';
   const wordCount = rawText.split(/\s+/).filter((word: string) => word.length > 0).length;
@@ -55,14 +168,12 @@ export default function PublishPreview({ formData, setFormData, onPublish, onBac
 
   return (
     <div className={styles.stepContent}>
-      
+
       <div style={{ padding: '2rem', border: '1px solid var(--border-color)', borderRadius: '1.25rem', marginBottom: '2rem', backgroundColor: '#F8FAFC', boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.02)' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.25rem' }}>
-          <div style={{ padding: '0.4rem 0.75rem', background: 'var(--primary-color)', color: 'white', fontSize: '0.65rem', fontWeight: 800, borderRadius: '4px', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Practice Hub</div>
-          <div style={{ height: '1px', flex: 1, background: 'var(--border-color)' }}></div>
-          <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 600 }}>PREVIEW</div>
+        <div style={{ marginBottom: '1.25rem' }}>
+          <div style={{ display: 'inline-block', padding: '0.4rem 0.75rem', background: 'var(--primary-color)', color: 'white', fontSize: '0.65rem', fontWeight: 800, borderRadius: '4px', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Practice Hub</div>
         </div>
-        
+
         <h3 style={{ fontSize: '1.35rem', fontWeight: 800, color: 'var(--text-color)', marginBottom: '0.5rem', lineHeight: 1.3 }}>
           {formData.title || 'Untitled Blog Post'}
         </h3>
@@ -73,20 +184,34 @@ export default function PublishPreview({ formData, setFormData, onPublish, onBac
           {excerpt || 'Generating preview of your blog content...'}
         </p>
 
-        <div style={{ marginTop: '1.5rem', textAlign: 'left' }}>
-            <button 
-               onClick={() => setShowPreview(true)}
-               style={{ padding: '0.65rem 1.25rem', border: '1px solid var(--primary-color)', borderRadius: '0.75rem', background: 'white', cursor: 'pointer', fontWeight: 700, color: 'var(--primary-color)', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '0.5rem', transition: 'all 0.2s' }}
+        <div className={styles.previewActionRow}>
+          <button
+            type="button"
+            onClick={() => setShowPreview(true)}
+            className={styles.previewSecondaryBtn}
+          >
+            👁️ Full Web Preview
+          </button>
+          <span
+            className={styles.publishBtnWrap}
+            title={!isVerified ? VERIFICATION_PENDING_TOOLTIP : undefined}
+          >
+            <button
+              type="button"
+              className={`${styles.publishBtn} ${!isVerified || publishing ? styles.publishBtnDisabled : ''}`}
+              disabled={!isVerified || publishing}
+              onClick={handlePublishClick}
             >
-               👁️ Full Web Preview
+              {publishing ? 'Publishing...' : 'Publish'}
             </button>
+          </span>
         </div>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.2fr', gap: '2rem', marginBottom: '2.5rem' }}>
         <div style={{ backgroundColor: 'white', borderRadius: '1.25rem', padding: '1.75rem', border: '1px solid var(--border-color)', boxShadow: '0 4px 12px rgba(0,0,0,0.03)' }}>
           <h4 style={{ fontSize: '0.75rem', fontWeight: 800, textTransform: 'uppercase', color: 'var(--text-color)', marginBottom: '1.5rem', letterSpacing: '0.1em' }}>Auto-publishing</h4>
-          
+
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem', opacity: 0.4 }}>
             <span style={{ fontSize: '0.9rem', fontWeight: 600 }}>Practice Hub Feed</span>
             <div style={{ width: '36px', height: '20px', backgroundColor: '#E5E7EB', borderRadius: '20px', position: 'relative' }}>
@@ -111,7 +236,7 @@ export default function PublishPreview({ formData, setFormData, onPublish, onBac
 
         <div style={{ backgroundColor: 'white', borderRadius: '1.25rem', padding: '1.75rem', border: '1px solid var(--border-color)', boxShadow: '0 4px 12px rgba(0,0,0,0.03)' }}>
           <h4 style={{ fontSize: '0.75rem', fontWeight: 800, textTransform: 'uppercase', color: 'var(--text-color)', marginBottom: '1.5rem', letterSpacing: '0.1em' }}>Search optimization</h4>
-          
+
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
             <span style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', fontWeight: 500 }}>Target Keywords</span>
             <span style={{ color: '#059669', fontWeight: 700, fontSize: '0.85rem', padding: '0.2rem 0.5rem', background: '#D1FAE5', borderRadius: '4px' }}>{formData.keywords?.length || 0} applied ✔</span>
@@ -131,7 +256,7 @@ export default function PublishPreview({ formData, setFormData, onPublish, onBac
 
       <div style={{ padding: '1.25rem 1.75rem', backgroundColor: 'rgba(245, 158, 11, 0.05)', borderLeft: '4px solid #F59E0B', borderRadius: '0 1rem 1rem 0' }}>
         <h5 style={{ color: '#D97706', fontWeight: 700, fontSize: '0.9rem', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-           <span>📥</span> Draft Automatically Updated
+          <span>📥</span> Draft Automatically Updated
         </h5>
         <p style={{ color: '#92400E', fontSize: '0.85rem', lineHeight: 1.6 }}>
           Everything is staged and ready. You can safely exit; this blog will be waiting in your **Drafts** hub.
@@ -140,28 +265,79 @@ export default function PublishPreview({ formData, setFormData, onPublish, onBac
 
       <div className={styles.footer}>
         <div style={{ display: 'flex', gap: '1rem', width: '100%', justifyContent: 'space-between' }}>
-          <button className={styles.btnBack} onClick={onBack} disabled={saving}>← Back to Editor</button>
-          
+          <button type="button" className={styles.btnBack} onClick={onBack} disabled={saving || publishing}>← Back to Editor</button>
+
           {onBackToHub && (
-            <button 
-              className={styles.btnBack} 
-              onClick={onBackToHub} 
-              disabled={saving}
+            <button
+              type="button"
+              className={styles.btnBack}
+              onClick={onBackToHub}
+              disabled={saving || publishing}
               style={{ background: 'transparent', border: '1px solid var(--border-color)', color: 'var(--text-secondary)' }}
             >
               Exit to Hub
             </button>
           )}
 
-          <button 
-            className={styles.btnNext} 
+          <button
+            type="button"
+            className={styles.btnNext}
             onClick={handleSaveAndExit}
-            disabled={saving}
+            disabled={saving || publishing}
           >
             {saving ? 'Saving...' : 'Save & Exit'}
           </button>
         </div>
       </div>
+
+      {showCredentialModal && (
+        <div className={styles.modalOverlay}>
+          <div className={styles.credentialModal}>
+            <h4 className={styles.credentialModalTitle}>Update Practice Hub credentials</h4>
+            <p className={styles.credentialModalText}>
+              {publishError || 'Login failed. Enter your Practice Hub username and password, then try again.'}
+            </p>
+            <form onSubmit={handleCredentialRetry}>
+              <label className={styles.credentialLabel}>
+                Username
+                <input
+                  type="text"
+                  className={styles.credentialInput}
+                  value={credentialUsername}
+                  onChange={e => setCredentialUsername(e.target.value)}
+                  autoComplete="username"
+                />
+              </label>
+              <label className={styles.credentialLabel}>
+                Password
+                <input
+                  type="password"
+                  className={styles.credentialInput}
+                  value={credentialPassword}
+                  onChange={e => setCredentialPassword(e.target.value)}
+                  autoComplete="current-password"
+                />
+              </label>
+              <div className={styles.credentialModalActions}>
+                <button
+                  type="button"
+                  className={styles.btnBack}
+                  onClick={() => {
+                    setShowCredentialModal(false);
+                    setPublishError(null);
+                  }}
+                  disabled={publishing}
+                >
+                  Cancel
+                </button>
+                <button type="submit" className={styles.btnNext} disabled={publishing}>
+                  {publishing ? 'Publishing...' : 'Login & Publish'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {showPreview && (
         <div style={{
@@ -194,18 +370,19 @@ export default function PublishPreview({ formData, setFormData, onPublish, onBac
                 <h4 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 800, color: 'var(--primary-color)' }}>Full Web Preview</h4>
                 <p style={{ margin: 0, fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 600 }}>HOW IT APPEARS ON PRACTICE HUB</p>
               </div>
-              <button 
+              <button
+                type="button"
                 onClick={() => setShowPreview(false)}
                 style={{ background: '#eee', border: 'none', width: '32px', height: '32px', borderRadius: '50%', cursor: 'pointer', fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
               >✕</button>
             </div>
-            
+
             <div style={{ flex: 1, overflowY: 'auto', padding: '3rem 4rem' }}>
               <div style={{ maxWidth: '650px', margin: '0 auto' }}>
                 <h1 style={{ fontSize: '2.5rem', fontWeight: 800, lineHeight: 1.2, marginBottom: '2rem', color: '#1a202c' }}>
                   {formData.title}
                 </h1>
-                
+
                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '2.5rem' }}>
                   <div style={{ width: '48px', height: '48px', borderRadius: '50%', backgroundColor: 'var(--primary-color)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.2rem', fontWeight: 700 }}>
                     {doctorName.charAt(0)}
@@ -217,10 +394,10 @@ export default function PublishPreview({ formData, setFormData, onPublish, onBac
                 </div>
 
                 {formData.quote && (
-                  <div style={{ 
-                    padding: '2rem', 
-                    borderLeft: '4px solid var(--primary-color)', 
-                    backgroundColor: '#f8fafc', 
+                  <div style={{
+                    padding: '2rem',
+                    borderLeft: '4px solid var(--primary-color)',
+                    backgroundColor: '#f8fafc',
                     marginBottom: '2.5rem',
                     borderRadius: '0 1rem 1rem 0'
                   }}>
@@ -231,21 +408,22 @@ export default function PublishPreview({ formData, setFormData, onPublish, onBac
                   </div>
                 )}
 
-                <div 
+                <div
                   className="ProseMirror"
                   style={{ fontSize: '1.15rem', lineHeight: 1.8, color: '#4a5568' }}
-                  dangerouslySetInnerHTML={{ __html: formData.content || '<p>No content available.</p>' }} 
+                  dangerouslySetInnerHTML={{ __html: formData.content || '<p>No content available.</p>' }}
                 />
               </div>
             </div>
 
             <div style={{ padding: '1.5rem 2rem', borderTop: '1px solid #eee', textAlign: 'center', background: '#f8fafc' }}>
-               <button 
-                 onClick={() => setShowPreview(false)}
-                 style={{ padding: '0.75rem 2rem', backgroundColor: 'var(--primary-color)', color: 'white', border: 'none', borderRadius: '0.75rem', fontWeight: 700, cursor: 'pointer' }}
-               >
-                 Close Preview
-               </button>
+              <button
+                type="button"
+                onClick={() => setShowPreview(false)}
+                style={{ padding: '0.75rem 2rem', backgroundColor: 'var(--primary-color)', color: 'white', border: 'none', borderRadius: '0.75rem', fontWeight: 700, cursor: 'pointer' }}
+              >
+                Close Preview
+              </button>
             </div>
           </div>
         </div>

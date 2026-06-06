@@ -147,6 +147,120 @@
   box-shadow: 0 6px 20px rgba(41, 57, 145, 0.3);
 }
 
+.previewActionRow {
+  margin-top: 1.5rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.previewSecondaryBtn {
+  padding: 0.65rem 1.25rem;
+  border: 1px solid var(--primary-color);
+  border-radius: 0.75rem;
+  background: white;
+  cursor: pointer;
+  font-weight: 700;
+  color: var(--primary-color);
+  font-size: 0.85rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: all 0.2s;
+}
+
+.previewSecondaryBtn:hover {
+  background: #f0f9ff;
+}
+
+.publishBtnWrap {
+  display: inline-flex;
+}
+
+.publishBtn {
+  padding: 0.65rem 1.25rem;
+  border: none;
+  border-radius: 0.75rem;
+  background: var(--primary-color);
+  cursor: pointer;
+  font-weight: 700;
+  color: white;
+  font-size: 0.85rem;
+  transition: all 0.2s;
+}
+
+.publishBtn:hover:not(:disabled) {
+  filter: brightness(1.05);
+}
+
+.publishBtnDisabled,
+.publishBtn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.modalOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(6px);
+  z-index: 1100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+}
+
+.credentialModal {
+  background: white;
+  border-radius: 1rem;
+  padding: 1.75rem;
+  max-width: 420px;
+  width: 100%;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+}
+
+.credentialModalTitle {
+  margin: 0 0 0.5rem;
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: var(--text-color);
+}
+
+.credentialModalText {
+  margin: 0 0 1.25rem;
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.credentialLabel {
+  display: block;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-color);
+  margin-bottom: 1rem;
+}
+
+.credentialInput {
+  display: block;
+  width: 100%;
+  margin-top: 0.35rem;
+  padding: 0.6rem 0.75rem;
+  border: 1px solid var(--border-color);
+  border-radius: 0.5rem;
+  font-size: 0.9rem;
+  box-sizing: border-box;
+}
+
+.credentialModalActions {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: flex-end;
+  margin-top: 0.5rem;
+}
+
 .btnNext:disabled {
   background: #E5E7EB;
   color: #9CA3AF;

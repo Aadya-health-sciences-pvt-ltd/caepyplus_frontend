@@ -49,6 +49,10 @@
     margin-top: 0.25rem;
 }
 
+.previewBtnWrap {
+    display: inline-flex;
+}
+
 .previewBtn {
     border: 1px solid #E5E7EB;
     background: white;
@@ -63,9 +67,16 @@
     transition: all 0.2s;
 }
 
-.previewBtn:hover {
+.previewBtn:hover:not(:disabled) {
     background-color: #F9FAFB;
     border-color: #D1D5DB;
+}
+
+.previewBtnDisabled,
+.previewBtn:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+    color: #9CA3AF;
 }
 
 /* Grid Layout */

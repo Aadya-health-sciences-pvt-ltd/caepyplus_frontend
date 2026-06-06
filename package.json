@@ -8,7 +8,9 @@
     "generate-healthz": "node scripts/generate-healthz.cjs",
     "build": "npm run generate-healthz && NODE_OPTIONS='--no-deprecation --max-old-space-size=4096' next build",
     "start": "NODE_OPTIONS='--no-deprecation --max-old-space-size=4096' next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@react-google-maps/api": "^2.20.8",
@@ -34,6 +36,7 @@
     "eslint-plugin-react-hooks": "^7.0.1",
     "globals": "^16.5.0",
     "typescript": "~5.9.3",
-    "typescript-eslint": "^8.46.4"
+    "typescript-eslint": "^8.46.4",
+    "vitest": "^4.1.8"
   }
 }

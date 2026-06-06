@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import styles from '../BlogStudio.module.css';
 
+import { parseErrorMessage } from '../../../lib/api';
 import { doctorService, BlogTopic } from '../../../services/doctorService';
 
 interface TopicSelectionProps {
@@ -16,23 +17,38 @@ export default function TopicSelection({ onNext, initialTopic, onBack }: TopicSe
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Fetch AI suggested topics
+  // Fetch AI suggested topics (Strict Mode may mount twice in dev — ignore stale responses)
   useEffect(() => {
+    let cancelled = false;
+
     const fetchTopics = async () => {
       setIsLoading(true);
       setError(null);
       try {
         const data = await doctorService.getBlogTopics();
-        setTopics(data.topics);
-      } catch (err: any) {
-        console.error("Failed to fetch topics:", err);
-        setError("Failed to generate AI topics. Please try again or suggest your own.");
+        if (cancelled) return;
+        setTopics(data.topics ?? []);
+        setError(null);
+      } catch (err: unknown) {
+        if (cancelled) return;
+        console.error('Failed to fetch topics:', err);
+        const detail = parseErrorMessage(err);
+        setError(
+          detail.includes('API key')
+            ? detail
+            : `${detail} You can still suggest your own topic below.`,
+        );
       } finally {
-        setIsLoading(false);
+        if (!cancelled) {
+          setIsLoading(false);
+        }
       }
     };
 
     fetchTopics();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const handleNext = () => {

@@ -11,14 +11,18 @@ import { useAppRouter } from '../lib/router';
 import styles from './ProfileView.module.css';
 
 import { mockDataService } from '../services/mockDataService';
+import { doctorService } from '../services/doctorService';
 import { calculateProfileProgress } from '../lib/profileProgress';
 import { useResolvedProfilePhotoDisplayUrl } from '../hooks/useResolvedProfilePhotoDisplayUrl';
+import { useDoctorPublicProfilePreview } from '../hooks/useDoctorPublicProfilePreview';
+import { PreviewPublicProfileButton } from '../components/PreviewPublicProfileButton';
 
 const ProfileView = () => {
     const router = useAppRouter();
     const currentUser = mockDataService.getCurrentUser();
 
     const [navFormData, setNavFormData] = useState<Record<string, any>>({});
+    const { profile: apiProfile, isVerified } = useDoctorPublicProfilePreview();
 
     useEffect(() => {
         try {
@@ -28,10 +32,21 @@ const ProfileView = () => {
         } catch { }
     }, []);
 
+    const mappedApiForm = apiProfile
+        ? doctorService.mapProfileToFormData(apiProfile)
+        : {};
+
     const formData = {
         ...(currentUser?.data || {}),
         ...currentUser,
-        ...navFormData
+        ...mappedApiForm,
+        ...navFormData,
+        ...(apiProfile
+            ? {
+                onboarding_status: apiProfile.onboarding_status,
+                public_profile_url: apiProfile.public_profile_url,
+            }
+            : {}),
     };
 
     const rawProfileImage = typeof formData.profileImage === 'string' ? formData.profileImage : '';
@@ -47,7 +62,6 @@ const ProfileView = () => {
     const specialty = formData.specialty || formData.personalInfo?.specialty || 'General Practitioner';
     const loc = formData.primaryLocation || formData.personalInfo?.primaryLocation || 'India';
     const exp = formData.experience || formData.personalInfo?.experience;
-    const isVerified = (formData.onboarding_status || formData.status) === 'verified';
     const displayProfilePhoto = resolvedProfilePhotoUrl;
     const hasPhoto = !!displayProfilePhoto;
 
@@ -67,9 +81,12 @@ const ProfileView = () => {
                             {specialty} · {loc} {exp ? `· ${exp} Years Exp.` : ''}
                         </p>
                     </div>
-                    <button className={styles.previewBtn}>
-                        <Eye size={16} /> Preview Public Profile
-                    </button>
+                    <PreviewPublicProfileButton
+                        variant="dashboard"
+                        wrapClassName={styles.previewBtnWrap}
+                        className={styles.previewBtn}
+                        disabledClassName={styles.previewBtnDisabled}
+                    />
                 </div>
 
                 <div className={styles.dashboardGrid}>

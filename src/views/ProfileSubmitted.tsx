@@ -1,9 +1,10 @@
 'use client';
 import React, { useState, useEffect } from 'react';
 import { useAppRouter } from '../lib/router';
-import { Check, Clock, UserCheck, Sparkles, MapPin, Edit2, LayoutGrid, Eye, Send, CheckCircle, LifeBuoy } from 'lucide-react';
+import { Check, Clock, UserCheck, Sparkles, MapPin, Edit2, LayoutGrid, Send, CheckCircle, LifeBuoy } from 'lucide-react';
 import styles from './ProfileSubmitted.module.css';
 import { useResolvedProfilePhotoDisplayUrl } from '../hooks/useResolvedProfilePhotoDisplayUrl';
+import { PreviewPublicProfileButton } from '../components/PreviewPublicProfileButton';
 
 const ProfileSubmitted = () => {
     const router = useAppRouter();
@@ -26,6 +27,15 @@ const ProfileSubmitted = () => {
     );
 
     const getVal = (k: string) => formData[k] || '---';
+    const name = getVal('fullName');
+    const displayProfilePhoto = resolvedProfilePhotoUrl;
+    const profileInitials = name
+        .replace(/^Dr\.?\s*/i, '')
+        .split(' ')
+        .filter((part: string) => part && part !== '---')
+        .slice(0, 2)
+        .map((part: string) => part[0].toUpperCase())
+        .join('');
 
     return (
         <div className={styles.pageWrapper}>
@@ -40,20 +50,35 @@ const ProfileSubmitted = () => {
                 <div className={styles.card}>
                     <div className={styles.profileSummary}>
                         <div className={styles.avatarContainer}>
-                            <img
-                                src={
-                                    resolvedProfilePhotoUrl ||
-                                    (typeof formData.profileImage === 'string' && /^https?:\/\//i.test(formData.profileImage)
-                                        ? formData.profileImage
-                                        : 'https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?q=80&w=2070&auto=format&fit=crop')
-                                }
-                                alt="Doctor"
-                                className={styles.avatar}
-                                referrerPolicy="no-referrer"
-                            />
+                            {displayProfilePhoto ? (
+                                <img
+                                    src={displayProfilePhoto}
+                                    alt="Doctor"
+                                    className={styles.avatar}
+                                    referrerPolicy="no-referrer"
+                                />
+                            ) : (
+                                <div
+                                    className={styles.avatar}
+                                    style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        background: 'linear-gradient(135deg, #293991 0%, #1ABFD2 100%)',
+                                        color: 'white',
+                                        fontWeight: 700,
+                                        fontSize: '1.25rem',
+                                        letterSpacing: '0.05em',
+                                        userSelect: 'none',
+                                    }}
+                                    aria-label="Profile initials"
+                                >
+                                    {profileInitials || '?'}
+                                </div>
+                            )}
                         </div>
                         <div className={styles.docInfo}>
-                            <h3>{getVal('fullName')}</h3>
+                            <h3>{name}</h3>
                             <p className={styles.specialty}>{getVal('specialty')}</p>
                             <div className={styles.metaRow}>
                                 <div className={styles.metaItem}>
@@ -134,15 +159,11 @@ const ProfileSubmitted = () => {
 
                 {/* Action Buttons */}
                 <div className={styles.actionButtons}>
-                    <button
+                    <PreviewPublicProfileButton
+                        variant="submitted"
                         className={`${styles.btn} ${styles.btnPrimary}`}
-                        onClick={() => {
-                            sessionStorage.setItem('nav_state', JSON.stringify({ formData }));
-                            router.push('/doctor/profile-summary');
-                        }}
-                    >
-                        <Eye size={18} /> Preview Public Profile
-                    </button>
+                        disabledClassName={styles.btnPrimaryDisabled}
+                    />
                     <button
                         className={styles.btn}
                         onClick={() => {

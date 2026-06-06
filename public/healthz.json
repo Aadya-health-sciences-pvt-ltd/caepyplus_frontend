@@ -1,0 +1,8 @@
+{
+  "status": "ok",
+  "service": "doctor-onboarding",
+  "version": "0.0.0",
+  "build_sha": "unknown",
+  "built_at": "2026-06-03T10:17:39.425Z",
+  "env": "development"
+}

@@ -55,13 +55,6 @@ export default function BlogStudio({ initialStep = 1, initialData = {}, onBackTo
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  const handlePublish = () => {
-    // API call to publish would go here
-    alert('Blog published to Practice Hub successfully!');
-    const basePath = process.env.NEXT_PUBLIC_BASE_PATH || '';
-    window.location.href = `${basePath}/doctor/blog-studio`;
-  };
-
   const renderStep = () => {
     switch (currentStep) {
       case 1:
@@ -112,7 +105,6 @@ export default function BlogStudio({ initialStep = 1, initialData = {}, onBackTo
           <PublishPreview 
             formData={formData}
             setFormData={setFormData}
-            onPublish={handlePublish}
             onBack={() => setCurrentStep(3)}
             onBackToHub={onBackToHub}
           />

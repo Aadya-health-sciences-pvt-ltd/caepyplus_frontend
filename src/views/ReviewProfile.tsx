@@ -9,7 +9,7 @@ import Stepper from '../components/ui/Stepper';
 import Toast from '../components/ui/Toast';
 import styles from './ReviewProfile.module.css';
 import { mockDataService } from '../services/mockDataService';
-import { doctorService } from '../services/doctorService';
+import { doctorService, isDoctorVerified } from '../services/doctorService';
 import { validateSection1, validateSection2 } from '../lib/validation';
 import { calculateProfileProgress } from '../lib/profileProgress';
 import { useResolvedProfilePhotoDisplayUrl } from '../hooks/useResolvedProfilePhotoDisplayUrl';
@@ -78,19 +78,30 @@ const ReviewProfile = () => {
         }
 
         try {
+            const storedProfile = doctorService.getStoredProfile();
+            const alreadyVerified = isDoctorVerified(storedProfile?.onboarding_status);
+
             // 1. Save latest data first
             await doctorService.updateDoctorDetails(doctorId, formData);
 
-            // 2. Submit profile
-            await doctorService.submitProfile(doctorId);
+            // 2. Submit for review only when not already verified
+            if (!alreadyVerified) {
+                await doctorService.submitProfile(doctorId);
+            }
 
             // 3. Update mock status for UI consistency
             const currentUser = mockDataService.getCurrentUser();
             if (currentUser) {
                 mockDataService.updateProfile(currentUser.id, {
-                    status: 'submitted',
-                    data: formData
+                    status: alreadyVerified ? 'verified' : 'submitted',
+                    data: formData,
                 });
+            }
+
+            if (alreadyVerified) {
+                showToast('Profile updated successfully!', 'success');
+                setTimeout(() => router.push('/doctor/profile'), 1000);
+                return;
             }
 
             showToast('Profile submitted successfully!', 'success');
