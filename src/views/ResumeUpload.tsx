@@ -24,7 +24,16 @@ const ResumeUpload = () => {
     const [isUploading, setIsUploading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
+    const resetFileInput = () => {
+        if (fileInputRef.current) {
+            fileInputRef.current.value = '';
+        }
+    };
+
     const handleUploadClick = () => {
+        if (isUploading) return;
+        // Clear prior selection so re-picking the same file still fires onChange.
+        resetFileInput();
         fileInputRef.current?.click();
     };
 
@@ -45,6 +54,7 @@ const ResumeUpload = () => {
             setError("Failed to process resume. Please try again or skip.");
         } finally {
             setIsUploading(false);
+            resetFileInput();
         }
     };
 
