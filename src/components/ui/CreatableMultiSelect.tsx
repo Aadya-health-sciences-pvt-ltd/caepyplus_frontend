@@ -223,6 +223,13 @@ const CreatableMultiSelect: React.FC<CreatableMultiSelectProps> = ({
 
     const showClear = values.length > 0 && !isOpen;
 
+    const openDropdown = useCallback(() => {
+        if (!isOpen) {
+            setIsOpen(true);
+            setHighlightedIndex(-1);
+        }
+    }, [isOpen]);
+
     return (
         <div className={styles.wrapper} ref={wrapperRef}>
             {values.length > 0 && (
@@ -259,6 +266,7 @@ const CreatableMultiSelect: React.FC<CreatableMultiSelectProps> = ({
                         onFocus?.();
                         setIsOpen(true);
                     }}
+                    onClick={openDropdown}
                     onMouseDown={e => {
                         if (e.detail > 1) e.preventDefault();
                     }}
