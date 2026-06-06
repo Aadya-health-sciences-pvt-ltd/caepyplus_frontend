@@ -22,6 +22,7 @@ import { isBrowser } from '../lib/isBrowser';
 
 import { validateSection1, validateSection2 } from '../lib/validation';
 import { normalizeIndianPhoneForForm, validateIndianMobile, isIndianPhoneEmpty } from '../lib/indianMobile';
+import { applyAuthoritativeLoginIdentity } from '../lib/onboardingIdentity';
 import { fellowshipsFromCommaList } from '../lib/fellowshipsCommaList';
 import { calculateProfileProgress } from '../lib/profileProgress';
 import Toast from '../components/ui/Toast';
@@ -308,6 +309,11 @@ const Onboarding = () => {
         normalizeClinicalMultiFields(baseData as Record<string, unknown>);
 
         baseData.phone = normalizeIndianPhoneForForm(baseData.phone);
+
+        applyAuthoritativeLoginIdentity(baseData as Record<string, unknown>, {
+            loginPhone: (isBrowser() ? localStorage.getItem('mobile_number') : null) ?? savedUser?.phone,
+            loginEmail: (isBrowser() ? localStorage.getItem('user_email') : null) ?? savedUser?.email,
+        });
 
         return baseData;
     });
