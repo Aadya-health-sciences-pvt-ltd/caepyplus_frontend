@@ -4,9 +4,17 @@ import React, { useState, useEffect } from 'react';
 import BlogStudio from './BlogStudio';
 import CommentModerationView from '../CommentModeration/CommentModerationView';
 import styles from './BlogStudioHub.module.css';
-import { doctorService } from '../../services/doctorService';
+import { BlogStudioApi, doctorBlogStudioApi } from '../../services/blogStudioApi';
 
 type TabType = 'drafts' | 'published' | 'comments';
+
+interface BlogStudioHubProps {
+  blogApi?: BlogStudioApi;
+  studioTitle?: string;
+  studioSubtitle?: string;
+  contentDoctorId?: number;
+  exitHref?: string;
+}
 
 interface BlogCardData {
   id: number;
@@ -29,7 +37,13 @@ function formatDate(dateStr: string) {
   });
 }
 
-export default function BlogStudioHub() {
+export default function BlogStudioHub({
+  blogApi = doctorBlogStudioApi,
+  studioTitle = 'Blog Studio',
+  studioSubtitle = 'Manage your medical blogs and patient engagement',
+  contentDoctorId,
+  exitHref,
+}: BlogStudioHubProps) {
   const [activeTab, setActiveTab] = useState<TabType>('drafts');
   const [showCreator, setShowCreator] = useState(false);
   const [editingDraft, setEditingDraft] = useState<BlogCardData | null>(null);
@@ -37,12 +51,16 @@ export default function BlogStudioHub() {
   const [loading, setLoading] = useState(true);
   const [pendingCommentsCount, setPendingCommentsCount] = useState(0);
 
+  useEffect(() => {
+    fetchStudioData();
+  }, [blogApi]);
+
   const fetchStudioData = async () => {
     setLoading(true);
     try {
       const [blogsData, commentsData] = await Promise.all([
-        doctorService.getBlogs(),
-        doctorService.getComments()
+        blogApi.getBlogs(),
+        blogApi.getComments()
       ]);
       
       const mappedBlogs = blogsData.map((b: any) => ({
@@ -58,10 +76,6 @@ export default function BlogStudioHub() {
     }
   };
 
-  useEffect(() => {
-    fetchStudioData();
-  }, []);
-
   const handleBack = () => {
     setShowCreator(false);
     setEditingDraft(null);
@@ -72,7 +86,7 @@ export default function BlogStudioHub() {
     if (!window.confirm('Are you sure you want to delete this blog? This action cannot be undone.')) return;
     
     try {
-      await doctorService.deleteBlog(blogId);
+      await blogApi.deleteBlog(blogId);
       fetchStudioData(); // Refresh list
     } catch (err) {
       console.error("Failed to delete blog:", err);
@@ -87,6 +101,9 @@ export default function BlogStudioHub() {
           <BlogStudio
             initialStep={4}
             onBackToHub={handleBack}
+            blogApi={blogApi}
+            contentDoctorId={contentDoctorId}
+            exitHref={exitHref}
             initialData={{
               id: editingDraft.id,
               topic: editingDraft.topic || '',
@@ -98,7 +115,12 @@ export default function BlogStudioHub() {
             }}
           />
         ) : (
-          <BlogStudio onBackToHub={handleBack} />
+          <BlogStudio
+            onBackToHub={handleBack}
+            blogApi={blogApi}
+            contentDoctorId={contentDoctorId}
+            exitHref={exitHref}
+          />
         )}
       </div>
     );
@@ -112,8 +134,8 @@ export default function BlogStudioHub() {
       {/* ── Header ── */}
       <div className={styles.header}>
         <div>
-          <h1 className={styles.title}>Blog Studio</h1>
-          <p className={styles.subtitle}>Manage your medical blogs and patient engagement</p>
+          <h1 className={styles.title}>{studioTitle}</h1>
+          <p className={styles.subtitle}>{studioSubtitle}</p>
         </div>
         <button className={styles.createBtn} onClick={() => setShowCreator(true)}>
           <span className={styles.createBtnIcon}>✦</span>
@@ -175,7 +197,7 @@ export default function BlogStudioHub() {
             <p style={{ marginTop: '1rem', color: 'var(--text-secondary)' }}>Loading your studio...</p>
           </div>
         ) : activeTab === 'comments' ? (
-          <CommentModerationView />
+          <CommentModerationView blogApi={blogApi} />
         ) : (
           <div className={styles.blogGrid}>
             {(activeTab === 'drafts' ? drafts : published).length === 0 ? (

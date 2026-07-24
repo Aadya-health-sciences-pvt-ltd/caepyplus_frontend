@@ -5,7 +5,7 @@ import { usePathname } from 'next/navigation';
 import {
     LayoutGrid, Users,
     ChevronLeft, ChevronRight,
-    Shield, Database, ContactRound
+    Shield, Database, ContactRound, PenLine
 } from 'lucide-react';
 import styles from './Sidebar.module.css'; // Reusing existing sidebar styles
 import { getLoggedInAdmin, type AdminUser } from '../lib/adminAuth';
@@ -25,21 +25,25 @@ const AdminSidebar: React.FC = () => {
                 id: localStorage.getItem('doctor_id') || 'admin_user',
                 name: 'Admin User',
                 email: localStorage.getItem('mobile_number') || '',
-                role: storedRole as 'admin' | 'operation',
+                role: storedRole as AdminUser['role'],
                 joinedDate: new Date().toISOString()
             });
         } else {
             setUser(mockUser);
         }
 
-        adminService.getDropdownOptions({ status: 'pending', limit: 1 })
-            .then(res => setPendingCount(res.pending_count ?? 0))
-            .catch(() => { });
+        if (storedRole !== 'content_creator') {
+            adminService.getDropdownOptions({ status: 'pending', limit: 1 })
+                .then(res => setPendingCount(res.pending_count ?? 0))
+                .catch(() => { });
+        }
     }, []);
 
     const toggleSidebar = () => {
         setIsCollapsed(!isCollapsed);
     };
+
+    const isContentCreator = user?.role === 'content_creator';
 
     return (
         <aside className={`${styles.sidebar} ${isCollapsed ? styles.collapsed : ''}`}>
@@ -62,39 +66,51 @@ const AdminSidebar: React.FC = () => {
             </div>
 
             <nav className={styles.navGroup}>
-                <NavItem
-                    to="/admin/dashboard"
-                    icon={<LayoutGrid size={20} />}
-                    label="Dashboard"
-                    isCollapsed={isCollapsed}
-                />
-                <NavItem
-                    to="/admin/dashboard/doctors"
-                    icon={<Users size={20} />}
-                    label="Doctors"
-                    isCollapsed={isCollapsed}
-                />
-                <NavItem
-                    to="/admin/dashboard/users"
-                    icon={<Shield size={20} />}
-                    label="User Management"
-                    isCollapsed={isCollapsed}
-                />
+                {isContentCreator ? (
+                    <NavItem
+                        to="/admin/dashboard/content"
+                        icon={<PenLine size={20} />}
+                        label="Content"
+                        isCollapsed={isCollapsed}
+                        matchPrefix
+                    />
+                ) : (
+                    <>
+                        <NavItem
+                            to="/admin/dashboard"
+                            icon={<LayoutGrid size={20} />}
+                            label="Dashboard"
+                            isCollapsed={isCollapsed}
+                        />
+                        <NavItem
+                            to="/admin/dashboard/doctors"
+                            icon={<Users size={20} />}
+                            label="Doctors"
+                            isCollapsed={isCollapsed}
+                        />
+                        <NavItem
+                            to="/admin/dashboard/users"
+                            icon={<Shield size={20} />}
+                            label="User Management"
+                            isCollapsed={isCollapsed}
+                        />
 
 
-                <NavItem
-                    to="/admin/dashboard/masters"
-                    icon={<Database size={20} />}
-                    label="Master Data"
-                    isCollapsed={isCollapsed}
-                    badge={pendingCount > 0 ? pendingCount : undefined}
-                />
-                <NavItem
-                    to="/admin/dashboard/lead-doctors"
-                    icon={<ContactRound size={20} />}
-                    label="Lead Doctors"
-                    isCollapsed={isCollapsed}
-                />
+                        <NavItem
+                            to="/admin/dashboard/masters"
+                            icon={<Database size={20} />}
+                            label="Master Data"
+                            isCollapsed={isCollapsed}
+                            badge={pendingCount > 0 ? pendingCount : undefined}
+                        />
+                        <NavItem
+                            to="/admin/dashboard/lead-doctors"
+                            icon={<ContactRound size={20} />}
+                            label="Lead Doctors"
+                            isCollapsed={isCollapsed}
+                        />
+                    </>
+                )}
             </nav>
         </aside>
     );
@@ -106,11 +122,14 @@ interface NavItemProps {
     label: string;
     isCollapsed: boolean;
     badge?: number;
+    matchPrefix?: boolean;
 }
 
-const NavItem: React.FC<NavItemProps> = ({ to, icon, label, isCollapsed, badge }) => {
+const NavItem: React.FC<NavItemProps> = ({ to, icon, label, isCollapsed, badge, matchPrefix }) => {
     const pathname = usePathname();
-    const isActive = pathname === to;
+    const isActive = matchPrefix
+        ? pathname === to || pathname.startsWith(`${to}/`)
+        : pathname === to;
     return (
         <Link
             href={to}

@@ -5,7 +5,7 @@ export interface AdminUserResponse {
     phone: string;
     email: string | null;
     full_name?: string | null;
-    role: 'admin' | 'operation';
+    role: 'admin' | 'operation' | 'content_creator';
     is_active: boolean;
     doctor_id: number | null;
     created_at: string;
@@ -25,7 +25,7 @@ export interface CreateUserPayload {
     phone: string;
     email: string | null;
     full_name?: string | null;
-    role: 'admin' | 'operation';
+    role: 'admin' | 'operation' | 'content_creator';
     is_active: boolean;
     doctor_id: number | null;
 }
@@ -33,7 +33,7 @@ export interface CreateUserPayload {
 export interface UpdateUserPayload {
     email?: string | null;
     full_name?: string | null;
-    role?: 'admin' | 'operation' | null;
+    role?: 'admin' | 'operation' | 'content_creator' | null;
     is_active?: boolean | null;
     doctor_id?: number | null;
 }
@@ -294,6 +294,42 @@ export interface DoctorFullProfile {
     status_history: DoctorStatusHistory[];
 }
 
+/** GET /doctors?status=… returns DoctorWithFullInfoResponse rows, not flat DoctorResponse. */
+function normalizeVerifiedDoctorListRow(item: unknown): Doctor | null {
+    if (item !== null && typeof item === 'object' && 'identity' in item) {
+        const row = item as DoctorFullProfile;
+        const identity = row.identity;
+        if (!identity || typeof identity.doctor_id !== 'number') {
+            return null;
+        }
+        const nested = row.doctor;
+        const specialtyFromNested =
+            nested && typeof nested === 'object'
+                ? (nested as Doctor).specialty ??
+                  (nested as Doctor).primary_specialization ??
+                  (nested as DoctorDetails).specialty ??
+                  null
+                : null;
+
+        return {
+            id: identity.doctor_id,
+            full_name: identity.full_name || null,
+            email: identity.email,
+            phone: identity.phone_number,
+            phone_number: identity.phone_number,
+            specialty: specialtyFromNested,
+            primary_specialization: specialtyFromNested,
+            onboarding_status: identity.onboarding_status,
+        } as Doctor;
+    }
+
+    if (item !== null && typeof item === 'object' && 'id' in item) {
+        return item as Doctor;
+    }
+
+    return null;
+}
+
 // ---------------------------------------------------------------------------
 // Static Dummy Data for Admin Console
 // ---------------------------------------------------------------------------
@@ -515,6 +551,26 @@ export const adminService = {
                 total: STATIC_DOCTORS.length
             };
         }
+    },
+
+    /** Verified doctors only — no static demo merge (Content Creator list). */
+    getVerifiedDoctors: async (
+        page = 1,
+        limit = 20,
+    ): Promise<{ data: Doctor[]; total: number }> => {
+        const response = await api.get('/doctors', {
+            params: { page, page_size: limit, status: 'verified' },
+        });
+        const rawList: unknown[] = Array.isArray(response.data?.data)
+            ? response.data.data
+            : [];
+        const data = rawList
+            .map(normalizeVerifiedDoctorListRow)
+            .filter((d): d is Doctor => d !== null);
+        return {
+            data,
+            total: response.data.pagination?.total ?? data.length,
+        };
     },
 
     /** Fetch a single doctor's full profile (identity + details + media + history). */

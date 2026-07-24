@@ -5,7 +5,7 @@ export interface AdminUser {
     name: string;
     full_name?: string | null;
     email: string;
-    role: 'admin' | 'operation';
+    role: 'admin' | 'operation' | 'content_creator';
     joinedDate: string;
 }
 
@@ -67,7 +67,7 @@ export const updateAdminUser = (id: string, updates: Partial<Omit<AdminUser, 'id
     return null;
 };
 
-export const getCurrentUserRole = (email: string): 'admin' | 'operation' | null => {
+export const getCurrentUserRole = (email: string): 'admin' | 'operation' | 'content_creator' | null => {
     const users = getAdminUsers();
     const found = users.find(u => u.email.toLowerCase() === email.toLowerCase());
     return found ? found.role : null;
@@ -87,7 +87,7 @@ export const getLoggedInAdmin = (): AdminUser | null => {
             name: storedFullName || 'Admin User',
             full_name: storedFullName || undefined,
             email: email,
-            role: (localStorage.getItem('role') as 'admin' | 'operation') || 'admin',
+            role: (localStorage.getItem('role') as 'admin' | 'operation' | 'content_creator') || 'admin',
             joinedDate: new Date().toISOString()
         };
     }
@@ -106,7 +106,7 @@ export const getLoggedInAdmin = (): AdminUser | null => {
         name: storedFullName || 'Admin User',
         full_name: storedFullName || undefined,
         email,
-        role: (localStorage.getItem('role') as 'admin' | 'operation') || 'admin',
+        role: (localStorage.getItem('role') as 'admin' | 'operation' | 'content_creator') || 'admin',
         joinedDate: new Date().toISOString()
     };
 };

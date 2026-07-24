@@ -2,15 +2,22 @@ import React, { useState, useEffect } from 'react';
 import styles from '../BlogStudio.module.css';
 
 import { parseErrorMessage } from '../../../lib/api';
-import { doctorService, BlogTopic } from '../../../services/doctorService';
+import { BlogStudioApi, doctorBlogStudioApi } from '../../../services/blogStudioApi';
+import type { BlogTopic } from '../../../services/doctorService';
 
 interface TopicSelectionProps {
   onNext: (topicTitle: string) => void;
   initialTopic: string;
   onBack?: () => void;
+  blogApi?: BlogStudioApi;
 }
 
-export default function TopicSelection({ onNext, initialTopic, onBack }: TopicSelectionProps) {
+export default function TopicSelection({
+  onNext,
+  initialTopic,
+  onBack,
+  blogApi = doctorBlogStudioApi,
+}: TopicSelectionProps) {
   const [topics, setTopics] = useState<BlogTopic[]>([]);
   const [selectedTopic, setSelectedTopic] = useState<string>(initialTopic);
   const [customTopic, setCustomTopic] = useState('');
@@ -25,7 +32,7 @@ export default function TopicSelection({ onNext, initialTopic, onBack }: TopicSe
       setIsLoading(true);
       setError(null);
       try {
-        const data = await doctorService.getBlogTopics();
+        const data = await blogApi.getBlogTopics();
         if (cancelled) return;
         setTopics(data.topics ?? []);
         setError(null);

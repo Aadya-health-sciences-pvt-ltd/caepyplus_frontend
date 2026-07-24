@@ -7,6 +7,7 @@ import TopicSelection from './components/TopicSelection';
 import KeywordSelection from './components/KeywordSelection';
 import BlogEditor from './components/BlogEditor';
 import PublishPreview from './components/PublishPreview';
+import { BlogStudioApi, doctorBlogStudioApi } from '../../services/blogStudioApi';
 
 interface BlogStudioFormData {
   id?: number | string;
@@ -22,9 +23,19 @@ interface BlogStudioProps {
   initialStep?: number;
   initialData?: Partial<BlogStudioFormData>;
   onBackToHub?: () => void;
+  blogApi?: BlogStudioApi;
+  contentDoctorId?: number;
+  exitHref?: string;
 }
 
-export default function BlogStudio({ initialStep = 1, initialData = {}, onBackToHub }: BlogStudioProps) {
+export default function BlogStudio({
+  initialStep = 1,
+  initialData = {},
+  onBackToHub,
+  blogApi = doctorBlogStudioApi,
+  contentDoctorId,
+  exitHref,
+}: BlogStudioProps) {
   const [currentStep, setCurrentStep] = useState(initialStep);
   
   const [formData, setFormData] = useState<BlogStudioFormData>({
@@ -63,6 +74,7 @@ export default function BlogStudio({ initialStep = 1, initialData = {}, onBackTo
             onNext={handleNextStep1} 
             initialTopic={formData.topic} 
             onBack={onBackToHub}
+            blogApi={blogApi}
           />
         );
       case 2:
@@ -73,6 +85,7 @@ export default function BlogStudio({ initialStep = 1, initialData = {}, onBackTo
             onNext={handleNextStep2}
             onBack={() => setCurrentStep(1)}
             onBackToHub={onBackToHub}
+            blogApi={blogApi}
           />
         );
       case 3:
@@ -85,9 +98,11 @@ export default function BlogStudio({ initialStep = 1, initialData = {}, onBackTo
             quote={formData.quote}
             content={formData.content}
             blogId={formData.id}
+            blogApi={blogApi}
             onSaveDraft={async () => {
-                const { doctorService } = await import('../../services/doctorService');
-                const result = await doctorService.saveBlogDraft(formData);
+                const result = await blogApi.saveBlogDraft(
+                  formData as unknown as Record<string, unknown>,
+                );
                 if (result?.id) {
                    setFormData(prev => ({ ...prev, id: result.id }));
                    return result.id;
@@ -107,6 +122,9 @@ export default function BlogStudio({ initialStep = 1, initialData = {}, onBackTo
             setFormData={setFormData}
             onBack={() => setCurrentStep(3)}
             onBackToHub={onBackToHub}
+            blogApi={blogApi}
+            contentDoctorId={contentDoctorId}
+            exitHref={exitHref}
           />
         );
       default:

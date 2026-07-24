@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import styles from './CommentModerationView.module.css';
-import { doctorService } from '../../services/doctorService';
+import { BlogStudioApi, doctorBlogStudioApi } from '../../services/blogStudioApi';
 
 interface Comment {
   id: number;
@@ -15,7 +15,11 @@ interface Comment {
   created_at: string;
 }
 
-export default function CommentModerationView() {
+export default function CommentModerationView({
+  blogApi = doctorBlogStudioApi,
+}: {
+  blogApi?: BlogStudioApi;
+}) {
   const [comments, setComments] = useState<Comment[]>([]);
   const [activeTab, setActiveTab] = useState<'PENDING' | 'APPROVED' | 'REJECTED'>('PENDING');
   const [loading, setLoading] = useState(true);
@@ -23,12 +27,11 @@ export default function CommentModerationView() {
   const fetchComments = async () => {
     setLoading(true);
     try {
-      const data = await doctorService.getComments();
-      // Backend returns lowercase statuses, map them to uppercase if needed or handle accordingly
-      const mapped = data.map(c => ({
+      const data = await blogApi.getComments();
+      const mapped = (data as Comment[]).map((c) => ({
         ...c,
-        status: c.status.toUpperCase() as any,
-        author_type: c.author_type.toUpperCase() as any
+        status: String(c.status).toUpperCase() as Comment['status'],
+        author_type: String(c.author_type).toUpperCase() as Comment['author_type'],
       }));
       setComments(mapped);
     } catch (err) {
@@ -40,11 +43,11 @@ export default function CommentModerationView() {
 
   useEffect(() => {
     fetchComments();
-  }, []);
+  }, [blogApi]);
 
   const handleAction = async (id: number, status: 'APPROVED' | 'REJECTED') => {
     try {
-      await doctorService.updateCommentStatus(id, status.toLowerCase() as any);
+      await blogApi.updateCommentStatus(id, status.toLowerCase() as any);
       setComments(prev => prev.map(c => c.id === id ? { ...c, status } : c));
     } catch (err) {
       console.error("Failed to update status", err);

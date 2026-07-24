@@ -3,7 +3,7 @@ import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Image from '@tiptap/extension-image';
 import styles from '../BlogStudio.module.css';
-import { doctorService } from '../../../services/doctorService';
+import { BlogStudioApi, doctorBlogStudioApi } from '../../../services/blogStudioApi';
 
 interface BlogEditorProps {
   topic: string;
@@ -13,6 +13,7 @@ interface BlogEditorProps {
   quote: string;
   content: string;
   blogId?: number | string;
+  blogApi?: BlogStudioApi;
   onSaveDraft?: () => Promise<number | string | undefined>;
   onChange: (field: string, value: string) => void;
   onNext: () => void;
@@ -114,7 +115,21 @@ const MenuBar = ({ editor }: { editor: any }) => {
   );
 };
 
-export default function BlogEditor({ topic, keywords, title, subtitle, quote, content, blogId, onSaveDraft, onChange, onNext, onBack, onBackToHub }: BlogEditorProps) {
+export default function BlogEditor({
+  topic,
+  keywords,
+  title,
+  subtitle,
+  quote,
+  content,
+  blogId,
+  blogApi = doctorBlogStudioApi,
+  onSaveDraft,
+  onChange,
+  onNext,
+  onBack,
+  onBackToHub,
+}: BlogEditorProps) {
   const [isGenerating, setIsGenerating] = useState(false);
   const [generateError, setGenerateError] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
@@ -135,7 +150,7 @@ export default function BlogEditor({ topic, keywords, title, subtitle, quote, co
         setIsGenerating(true);
         setGenerateError(null);
         try {
-          const generated = await doctorService.generateBlogContent(topic, keywords);
+          const generated = await blogApi.generateBlogContent(topic, keywords);
           onChange('subtitle', generated.subtitle || '');
           onChange('quote', generated.opening_quote || '');
           onChange('content', generated.content || '');
@@ -175,7 +190,7 @@ export default function BlogEditor({ topic, keywords, title, subtitle, quote, co
       }
 
       // Upload the image via doctorService
-      const result = await doctorService.uploadBlogImage(currentBlogId, file);
+      const result = await blogApi.uploadBlogImage(currentBlogId, file);
       
       // Inject image into Tiptap
       editor.chain().focus().setImage({ src: result.url }).run();
