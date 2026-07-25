@@ -573,6 +573,29 @@ export const adminService = {
         };
     },
 
+    /** Load every verified doctor (paginated API) for client-side search on the Content page. */
+    fetchAllVerifiedDoctors: async (): Promise<Doctor[]> => {
+        const pageSize = 100;
+        const all: Doctor[] = [];
+        let page = 1;
+        let total = 0;
+
+        for (;;) {
+            const result = await adminService.getVerifiedDoctors(page, pageSize);
+            total = result.total;
+            if (result.data.length === 0) {
+                break;
+            }
+            all.push(...result.data);
+            if (all.length >= total) {
+                break;
+            }
+            page += 1;
+        }
+
+        return all;
+    },
+
     /** Fetch a single doctor's full profile (identity + details + media + history). */
     getDoctorFullProfile: async (doctorId: number): Promise<DoctorFullProfile> => {
         const response = await api.get(`/doctors/lookup?doctor_id=${doctorId}`);
@@ -589,8 +612,13 @@ export const adminService = {
         return parseResponse(response);
     },
 
-    syncLinqMDProfile: async (doctorId: number): Promise<LinqMDSyncResult> => {
-        const response = await api.get(`/onboarding-admin/linqmd-sync/${doctorId}`);
+    syncLinqMDProfile: async (
+        doctorId: number,
+        theme: 'dp_1' | 'dp_2' | 'dp_3' = 'dp_1',
+    ): Promise<LinqMDSyncResult> => {
+        const response = await api.get(`/onboarding-admin/linqmd-sync/${doctorId}`, {
+            params: { theme },
+        });
         return parseResponse<LinqMDSyncResult>(response);
     },
 
@@ -603,6 +631,8 @@ export const adminService = {
     downloadBulkTemplate: async (): Promise<void> => {
         const response = await api.get('/doctors/bulk-upload/csv/template', {
             responseType: 'blob',
+            params: { _: Date.now() },
+            headers: { Accept: 'text/csv' },
         });
         const blob = new Blob([response.data], { type: 'text/csv' });
         const url = URL.createObjectURL(blob);

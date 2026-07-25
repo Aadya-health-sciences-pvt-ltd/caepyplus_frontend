@@ -70,7 +70,7 @@ const AdminSidebar: React.FC = () => {
                     <NavItem
                         to="/admin/dashboard/content"
                         icon={<PenLine size={20} />}
-                        label="Content"
+                        label="Content Management"
                         isCollapsed={isCollapsed}
                         matchPrefix
                     />

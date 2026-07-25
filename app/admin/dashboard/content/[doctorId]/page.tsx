@@ -15,7 +15,7 @@ export default function ContentDoctorStudioPage() {
         return (
             <div style={{ padding: '2rem' }}>
                 <p>Invalid doctor.</p>
-                <Link href="/admin/dashboard/content">Back to Content</Link>
+                <Link href="/admin/dashboard/content">Back to Content Management</Link>
             </div>
         );
     }
