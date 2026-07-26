@@ -90,9 +90,8 @@ const Login = () => {
         if (profile.status === 'submitted' || profile.status === 'verified') {
             router.push('/doctor/profile');
         } else {
-            // In-progress - determine where to send
-            const totalSteps = 7;
-            const completionPercent = ((profile.currentStep) / totalSteps) * 100;
+            // In-progress — route by real profile completion (not legacy step 7/8)
+            const completionPercent = onboardingPercent;
 
             if (completionPercent > 75) {
                 // High completion – go straight to dashboard

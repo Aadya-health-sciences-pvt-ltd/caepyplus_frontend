@@ -5,7 +5,7 @@ interface DoctorProfile {
     phone?: string;
     name: string;
     status: 'pending' | 'submitted' | 'verified' | 'rejected';
-    currentStep: number; // 0-7 (0=Resume, 1-7=Onboarding Sections)
+    currentStep: number; // 0 = resume gate; 1–6 = onboarding sections
     lastUpdated: string;
     data: any; // Holds the onboarding form data
 }
@@ -14,6 +14,11 @@ const STORAGE_KEY = 'caepy_doctor_profiles';
 const CURRENT_USER_KEY = 'caepy_current_user_id';
 
 import { isBrowser } from '../lib/isBrowser';
+import {
+    ONBOARDING_SECTION_COUNT,
+    clampOnboardingSectionStep,
+    normalizeStoredOnboardingStep,
+} from '../lib/onboardingSteps';
 
 class MockDataService {
     private profiles: DoctorProfile[] = [];
@@ -27,9 +32,25 @@ class MockDataService {
         const stored = localStorage.getItem(STORAGE_KEY);
         if (stored) {
             this.profiles = JSON.parse(stored);
+            this.migrateLegacyStepValues();
             this.ensureSeedData(); // Ensure seed/test profiles always exist even if storage has other data
         } else {
             this.seedData();
+        }
+    }
+
+    /** Legacy apps stored 7–8 for “completed”; onboarding only has 6 sections. */
+    private migrateLegacyStepValues() {
+        let changed = false;
+        for (const profile of this.profiles) {
+            const normalized = normalizeStoredOnboardingStep(profile.currentStep);
+            if (profile.currentStep !== normalized) {
+                profile.currentStep = normalized;
+                changed = true;
+            }
+        }
+        if (changed) {
+            this.saveToStorage();
         }
     }
 
@@ -61,7 +82,7 @@ class MockDataService {
                 phone: '9876543210',
                 name: 'Dr. Arjun Mehta',
                 status: 'verified',
-                currentStep: 8, // Completed
+                currentStep: ONBOARDING_SECTION_COUNT,
                 lastUpdated: new Date().toISOString(),
                 data: {
                     personalInfo: { firstName: 'Arjun', lastName: 'Mehta', email: 'dr.arjun@caepy.com' },
@@ -87,7 +108,7 @@ class MockDataService {
                 phone: '9876543211',
                 name: 'Dr. Priya Sharma',
                 status: 'submitted',
-                currentStep: 8,
+                currentStep: ONBOARDING_SECTION_COUNT,
                 lastUpdated: new Date().toISOString(),
                 data: {
                     personalInfo: { firstName: 'Priya', lastName: 'Sharma' },
@@ -214,10 +235,16 @@ class MockDataService {
             ...sectionData // specific section update or merge logic
         };
 
+        const progressed =
+            step >= 1
+                ? Math.max(currentProfile.currentStep, clampOnboardingSectionStep(step))
+                : currentProfile.currentStep;
+        const nextStep = normalizeStoredOnboardingStep(progressed);
+
         this.profiles[index] = {
             ...currentProfile,
             data: newData,
-            currentStep: Math.max(currentProfile.currentStep, step), // Access next step if greater
+            currentStep: nextStep,
             lastUpdated: new Date().toISOString()
         };
 
