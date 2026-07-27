@@ -288,7 +288,7 @@ const BulkUploadModal = ({ onClose, onComplete }: BulkUploadModalProps) => {
                                                 <tr key={i} style={{ borderBottom: '1px solid #FEE2E2' }}>
                                                     <td style={{ padding: '0.375rem 0.75rem', color: '#B91C1C' }}>{err.row}</td>
                                                     <td style={{ padding: '0.375rem 0.75rem', color: '#B91C1C', fontFamily: 'monospace' }}>{err.field}</td>
-                                                    <td style={{ padding: '0.375rem 0.75rem', color: '#B91C1C' }}>{err.message}</td>
+                                                    <td style={{ padding: '0.375rem 0.75rem', color: '#B91C1C' }}>{err.error}</td>
                                                 </tr>
                                             ))}
                                         </tbody>
@@ -328,18 +328,28 @@ const BulkUploadModal = ({ onClose, onComplete }: BulkUploadModalProps) => {
                 )}
 
                 {/* Step: Done */}
-                {step === 'done' && uploadResult && (
+                {step === 'done' && uploadResult && (() => {
+                    const rowWarnings = uploadResult.rows.flatMap((r) =>
+                        (r.warnings ?? []).map((w) => ({ row: r.row, text: w }))
+                    );
+                    const hasWarnings = (uploadResult.warning_count ?? rowWarnings.length) > 0;
+                    const hasSkipped = uploadResult.skipped > 0;
+                    const bg = hasSkipped ? '#FEF2F2' : hasWarnings ? '#FFFBEB' : '#F0FDF4';
+                    const border = hasSkipped ? '#FECACA' : hasWarnings ? '#FDE68A' : '#BBF7D0';
+                    const titleColor = hasSkipped ? '#991B1B' : hasWarnings ? '#92400E' : '#166534';
+                    const iconColor = hasSkipped ? '#DC2626' : hasWarnings ? '#D97706' : '#16A34A';
+                    return (
                     <div>
                         <div style={{
                             padding: '1.25rem',
                             borderRadius: '0.5rem',
-                            background: '#F0FDF4',
-                            border: '1px solid #BBF7D0',
+                            background: bg,
+                            border: `1px solid ${border}`,
                             textAlign: 'center'
                         }}>
-                            <CheckCircle size={36} color="#16A34A" style={{ marginBottom: '0.75rem' }} />
-                            <p style={{ margin: 0, fontWeight: 700, color: '#166534', fontSize: '1.0625rem' }}>
-                                Upload Complete!
+                            <CheckCircle size={36} color={iconColor} style={{ marginBottom: '0.75rem' }} />
+                            <p style={{ margin: 0, fontWeight: 700, color: titleColor, fontSize: '1.0625rem' }}>
+                                {hasSkipped ? 'Upload completed with errors' : hasWarnings ? 'Upload complete with warnings' : 'Upload Complete!'}
                             </p>
                             <div style={{ display: 'flex', justifyContent: 'center', gap: '1.5rem', marginTop: '0.75rem', fontSize: '0.875rem', color: '#374151' }}>
                                 {uploadResult.created > 0 && (
@@ -352,15 +362,30 @@ const BulkUploadModal = ({ onClose, onComplete }: BulkUploadModalProps) => {
                                     <span><strong style={{ color: '#D97706' }}>{uploadResult.skipped}</strong> skipped</span>
                                 )}
                             </div>
-                            {uploadResult.errors && uploadResult.errors.length > 0 && (
+                            {rowWarnings.length > 0 && (
                                 <div style={{ marginTop: '0.75rem', textAlign: 'left' }}>
-                                    <p style={{ fontSize: '0.8125rem', color: '#B91C1C', fontWeight: 600 }}>Warnings:</p>
-                                    <ul style={{ margin: '0.25rem 0 0', paddingLeft: '1.25rem', fontSize: '0.8125rem', color: '#B91C1C' }}>
-                                        {uploadResult.errors.slice(0, 5).map((err, i) => (
-                                            <li key={i}>Row {err.row}: {err.field} — {err.message}</li>
+                                    <p style={{ fontSize: '0.8125rem', color: '#92400E', fontWeight: 600 }}>
+                                        Verify / LinQMD warnings (create LinQMD manually in admin if needed):
+                                    </p>
+                                    <ul style={{ margin: '0.25rem 0 0', paddingLeft: '1.25rem', fontSize: '0.8125rem', color: '#B45309' }}>
+                                        {rowWarnings.slice(0, 8).map((w, i) => (
+                                            <li key={i}>Row {w.row}: {w.text}</li>
                                         ))}
-                                        {uploadResult.errors.length > 5 && (
-                                            <li>...and {uploadResult.errors.length - 5} more</li>
+                                        {rowWarnings.length > 8 && (
+                                            <li>...and {rowWarnings.length - 8} more</li>
+                                        )}
+                                    </ul>
+                                </div>
+                            )}
+                            {uploadResult.skipped_errors && uploadResult.skipped_errors.length > 0 && (
+                                <div style={{ marginTop: '0.75rem', textAlign: 'left' }}>
+                                    <p style={{ fontSize: '0.8125rem', color: '#B91C1C', fontWeight: 600 }}>Skipped rows:</p>
+                                    <ul style={{ margin: '0.25rem 0 0', paddingLeft: '1.25rem', fontSize: '0.8125rem', color: '#B91C1C' }}>
+                                        {uploadResult.skipped_errors.slice(0, 5).map((err, i) => (
+                                            <li key={i}>Row {err.row}{err.field ? ` (${err.field})` : ''}: {err.error}</li>
+                                        ))}
+                                        {uploadResult.skipped_errors.length > 5 && (
+                                            <li>...and {uploadResult.skipped_errors.length - 5} more</li>
                                         )}
                                     </ul>
                                 </div>
@@ -370,7 +395,8 @@ const BulkUploadModal = ({ onClose, onComplete }: BulkUploadModalProps) => {
                             </p>
                         </div>
                     </div>
-                )}
+                    );
+                })()}
             </div>
         </div>
     );

@@ -342,21 +342,37 @@ const STATIC_USERS: AdminUserResponse[] = [];
 
 export interface CsvRowError {
     row: number;
-    field: string;
-    message: string;
+    field: string | null;
+    error: string;
 }
 
 export interface CsvValidationResponse {
     valid: boolean;
     total_rows: number;
+    error_count: number;
     errors: CsvRowError[];
 }
 
+export interface CsvUploadRowResult {
+    row: number;
+    status: 'created' | 'updated' | 'skipped';
+    doctor_id: number | null;
+    phone: string | null;
+    email: string | null;
+    warnings?: string[];
+    onboarding_status?: string | null;
+}
+
 export interface CsvUploadResponse {
+    success: boolean;
+    message: string;
+    total_rows: number;
     created: number;
     updated: number;
     skipped: number;
-    errors: CsvRowError[];
+    warning_count?: number;
+    rows: CsvUploadRowResult[];
+    skipped_errors: CsvRowError[];
 }
 
 // ---------------------------------------------------------------------------
