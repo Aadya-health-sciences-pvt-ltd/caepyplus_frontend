@@ -5,7 +5,7 @@ export interface AdminUserResponse {
     phone: string;
     email: string | null;
     full_name?: string | null;
-    role: 'admin' | 'operation';
+    role: 'admin' | 'operation' | 'content_creator';
     is_active: boolean;
     doctor_id: number | null;
     created_at: string;
@@ -25,7 +25,7 @@ export interface CreateUserPayload {
     phone: string;
     email: string | null;
     full_name?: string | null;
-    role: 'admin' | 'operation';
+    role: 'admin' | 'operation' | 'content_creator';
     is_active: boolean;
     doctor_id: number | null;
 }
@@ -33,7 +33,7 @@ export interface CreateUserPayload {
 export interface UpdateUserPayload {
     email?: string | null;
     full_name?: string | null;
-    role?: 'admin' | 'operation' | null;
+    role?: 'admin' | 'operation' | 'content_creator' | null;
     is_active?: boolean | null;
     doctor_id?: number | null;
 }
@@ -294,6 +294,42 @@ export interface DoctorFullProfile {
     status_history: DoctorStatusHistory[];
 }
 
+/** GET /doctors?status=… returns DoctorWithFullInfoResponse rows, not flat DoctorResponse. */
+function normalizeVerifiedDoctorListRow(item: unknown): Doctor | null {
+    if (item !== null && typeof item === 'object' && 'identity' in item) {
+        const row = item as DoctorFullProfile;
+        const identity = row.identity;
+        if (!identity || typeof identity.doctor_id !== 'number') {
+            return null;
+        }
+        const nested = row.doctor;
+        const specialtyFromNested =
+            nested && typeof nested === 'object'
+                ? (nested as Doctor).specialty ??
+                  (nested as Doctor).primary_specialization ??
+                  (nested as DoctorDetails).specialty ??
+                  null
+                : null;
+
+        return {
+            id: identity.doctor_id,
+            full_name: identity.full_name || null,
+            email: identity.email,
+            phone: identity.phone_number,
+            phone_number: identity.phone_number,
+            specialty: specialtyFromNested,
+            primary_specialization: specialtyFromNested,
+            onboarding_status: identity.onboarding_status,
+        } as Doctor;
+    }
+
+    if (item !== null && typeof item === 'object' && 'id' in item) {
+        return item as Doctor;
+    }
+
+    return null;
+}
+
 // ---------------------------------------------------------------------------
 // Static Dummy Data for Admin Console
 // ---------------------------------------------------------------------------
@@ -306,21 +342,37 @@ const STATIC_USERS: AdminUserResponse[] = [];
 
 export interface CsvRowError {
     row: number;
-    field: string;
-    message: string;
+    field: string | null;
+    error: string;
 }
 
 export interface CsvValidationResponse {
     valid: boolean;
     total_rows: number;
+    error_count: number;
     errors: CsvRowError[];
 }
 
+export interface CsvUploadRowResult {
+    row: number;
+    status: 'created' | 'updated' | 'skipped';
+    doctor_id: number | null;
+    phone: string | null;
+    email: string | null;
+    warnings?: string[];
+    onboarding_status?: string | null;
+}
+
 export interface CsvUploadResponse {
+    success: boolean;
+    message: string;
+    total_rows: number;
     created: number;
     updated: number;
     skipped: number;
-    errors: CsvRowError[];
+    warning_count?: number;
+    rows: CsvUploadRowResult[];
+    skipped_errors: CsvRowError[];
 }
 
 // ---------------------------------------------------------------------------
@@ -517,6 +569,49 @@ export const adminService = {
         }
     },
 
+    /** Verified doctors only — no static demo merge (Content Creator list). */
+    getVerifiedDoctors: async (
+        page = 1,
+        limit = 20,
+    ): Promise<{ data: Doctor[]; total: number }> => {
+        const response = await api.get('/doctors', {
+            params: { page, page_size: limit, status: 'verified' },
+        });
+        const rawList: unknown[] = Array.isArray(response.data?.data)
+            ? response.data.data
+            : [];
+        const data = rawList
+            .map(normalizeVerifiedDoctorListRow)
+            .filter((d): d is Doctor => d !== null);
+        return {
+            data,
+            total: response.data.pagination?.total ?? data.length,
+        };
+    },
+
+    /** Load every verified doctor (paginated API) for client-side search on the Content page. */
+    fetchAllVerifiedDoctors: async (): Promise<Doctor[]> => {
+        const pageSize = 100;
+        const all: Doctor[] = [];
+        let page = 1;
+        let total = 0;
+
+        for (;;) {
+            const result = await adminService.getVerifiedDoctors(page, pageSize);
+            total = result.total;
+            if (result.data.length === 0) {
+                break;
+            }
+            all.push(...result.data);
+            if (all.length >= total) {
+                break;
+            }
+            page += 1;
+        }
+
+        return all;
+    },
+
     /** Fetch a single doctor's full profile (identity + details + media + history). */
     getDoctorFullProfile: async (doctorId: number): Promise<DoctorFullProfile> => {
         const response = await api.get(`/doctors/lookup?doctor_id=${doctorId}`);
@@ -533,8 +628,13 @@ export const adminService = {
         return parseResponse(response);
     },
 
-    syncLinqMDProfile: async (doctorId: number): Promise<LinqMDSyncResult> => {
-        const response = await api.get(`/onboarding-admin/linqmd-sync/${doctorId}`);
+    syncLinqMDProfile: async (
+        doctorId: number,
+        theme: 'dp_1' | 'dp_2' | 'dp_3' = 'dp_1',
+    ): Promise<LinqMDSyncResult> => {
+        const response = await api.get(`/onboarding-admin/linqmd-sync/${doctorId}`, {
+            params: { theme },
+        });
         return parseResponse<LinqMDSyncResult>(response);
     },
 
@@ -547,6 +647,8 @@ export const adminService = {
     downloadBulkTemplate: async (): Promise<void> => {
         const response = await api.get('/doctors/bulk-upload/csv/template', {
             responseType: 'blob',
+            params: { _: Date.now() },
+            headers: { Accept: 'text/csv' },
         });
         const blob = new Blob([response.data], { type: 'text/csv' });
         const url = URL.createObjectURL(blob);

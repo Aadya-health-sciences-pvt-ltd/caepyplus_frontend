@@ -14,6 +14,8 @@ export class LiveClient {
     private processor: ScriptProcessorNode | AudioWorkletNode | null = null;
     private source: MediaStreamAudioSourceNode | null = null;
     private nextStartTime: number = 0;
+    /** Bumped when mic/audio teardown runs; async setup aborts if it no longer matches. */
+    private audioSetupGeneration = 0;
     private listeners: { [K in keyof LiveClientEvents]?: LiveClientEvents[K][] } = {};
 
     constructor(private url: string) { }
@@ -75,6 +77,11 @@ export class LiveClient {
     }
 
     private async startAudioInput() {
+        const setupGeneration = this.audioSetupGeneration;
+
+        const setupStillActive = (): boolean =>
+            setupGeneration === this.audioSetupGeneration;
+
         try {
             this.mediaStream = await navigator.mediaDevices.getUserMedia({
                 audio: {
@@ -83,19 +90,32 @@ export class LiveClient {
                 }
             });
 
-            this.audioContext = new AudioContext({ sampleRate: 16000 });
-            console.log(`AudioContext created. State: ${this.audioContext.state}, SampleRate: ${this.audioContext.sampleRate}`);
-
-            if (this.audioContext.state === 'suspended') {
-                console.log("AudioContext suspended. Resuming...");
-                await this.audioContext.resume();
+            if (!setupStillActive()) {
+                this.mediaStream.getTracks().forEach((t) => t.stop());
+                this.mediaStream = null;
+                return;
             }
 
-            if (this.audioContext.sampleRate !== 16000) {
+            const audioContext = new AudioContext({ sampleRate: 16000 });
+            this.audioContext = audioContext;
+            console.log(`AudioContext created. State: ${audioContext.state}, SampleRate: ${audioContext.sampleRate}`);
+
+            if (audioContext.state === 'suspended') {
+                console.log("AudioContext suspended. Resuming...");
+                await audioContext.resume();
+            }
+
+            if (!setupStillActive()) {
+                await audioContext.close().catch(() => undefined);
+                this.audioContext = null;
+                return;
+            }
+
+            if (audioContext.sampleRate !== 16000) {
                 console.warn("WARNING: AudioContext sample rate is NOT 16000Hz. Audio may be pitch-shifted.");
             }
             // Create source and STORE IT to prevent Garbage Collection
-            this.source = this.audioContext.createMediaStreamSource(this.mediaStream);
+            this.source = audioContext.createMediaStreamSource(this.mediaStream);
             console.log("MediaStreamSource created.");
 
             // Load the audio processor worklet
@@ -103,14 +123,23 @@ export class LiveClient {
                 console.log("Loading audio-processor.js...");
                 // Cache-busting to ensure we load the latest version (with correct buffer size)
                 const basePath = process.env.NEXT_PUBLIC_BASE_PATH || '';
-                await this.audioContext.audioWorklet.addModule(`${basePath}/audio-processor.js?v=${Date.now()}`);
+                await audioContext.audioWorklet.addModule(`${basePath}/audio-processor.js?v=${Date.now()}`);
                 console.log("AudioWorklet loaded. creating node...");
 
-                const workletNode = new AudioWorkletNode(this.audioContext, 'audio-processor', {
+                if (!setupStillActive()) {
+                    return;
+                }
+
+                const workletNode = new AudioWorkletNode(audioContext, 'audio-processor', {
                     numberOfInputs: 1,
                     numberOfOutputs: 1,
                     outputChannelCount: [1]
                 });
+
+                if (!setupStillActive()) {
+                    workletNode.disconnect();
+                    return;
+                }
 
                 // Store in matching types or the union type property
                 this.processor = workletNode;
@@ -145,7 +174,7 @@ export class LiveClient {
 
                 // Connect the graph
                 this.source!.connect(workletNode);
-                workletNode.connect(this.audioContext.destination);
+                workletNode.connect(audioContext.destination);
                 (this.processor as any) = workletNode;
 
             } catch (err) {
@@ -160,6 +189,7 @@ export class LiveClient {
     }
 
     private stopAudioInput() {
+        this.audioSetupGeneration += 1;
         if (this.mediaStream) {
             this.mediaStream.getTracks().forEach(track => track.stop());
             this.mediaStream = null;

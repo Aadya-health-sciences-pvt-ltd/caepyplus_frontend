@@ -7,10 +7,24 @@ import {
 import { adminService, type AdminUserResponse, type CreateUserPayload, type UpdateUserPayload } from '../../services/adminService';
 import styles from './AdminDashboard.module.css';
 
+type StaffRole = 'admin' | 'operation' | 'content_creator';
+
+const roleLabel = (role: StaffRole): string => {
+    if (role === 'admin') return 'Admin';
+    if (role === 'content_creator') return 'Content Creator';
+    return 'Operation';
+};
+
+const roleBadgeStyle = (role: StaffRole): { background: string; color: string } => {
+    if (role === 'admin') return { background: '#FEF3C7', color: '#92400E' };
+    if (role === 'content_creator') return { background: '#EDE9FE', color: '#5B21B6' };
+    return { background: '#E0F2FE', color: '#0369A1' };
+};
+
 const AdminUsers = () => {
     const [users, setUsers] = useState<AdminUserResponse[]>([]);
     const [isLoading, setIsLoading] = useState(false);
-    const [currentUserRole, setCurrentUserRole] = useState<'admin' | 'operation'>('operation');
+    const [currentUserRole, setCurrentUserRole] = useState<StaffRole>('operation');
 
     // Modal State
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -31,7 +45,7 @@ const AdminUsers = () => {
 
     useEffect(() => {
         // Determine current user role from localStorage
-        const storedRole = localStorage.getItem('role') as 'admin' | 'operation';
+        const storedRole = localStorage.getItem('role') as StaffRole;
         setCurrentUserRole(storedRole || 'operation');
 
         fetchUsers();
@@ -40,8 +54,7 @@ const AdminUsers = () => {
     const fetchUsers = async () => {
         setIsLoading(true);
         try {
-            // Filter only valid admin/op users
-            const data = await adminService.getUsers(page, 20, ['admin', 'operation']);
+            const data = await adminService.getUsers(page, 20, ['admin', 'operation', 'content_creator']);
             if (data && data.users) {
                 setUsers(data.users);
                 setTotalUsers(data.total);
@@ -73,7 +86,7 @@ const AdminUsers = () => {
             phone: user.phone,
             email: user.email || '',
             full_name: user.full_name ?? '',
-            role: user.role as 'admin' | 'operation', // Ensure type match
+            role: user.role as StaffRole,
             is_active: user.is_active,
             doctor_id: user.doctor_id
         });
@@ -186,11 +199,10 @@ const AdminUsers = () => {
                                             <span style={{
                                                 display: 'inline-flex', alignItems: 'center', gap: '0.25rem',
                                                 padding: '0.25rem 0.625rem', borderRadius: '99px', fontSize: '0.75rem', fontWeight: 500,
-                                                background: user.role === 'admin' ? '#FEF3C7' : '#E0F2FE',
-                                                color: user.role === 'admin' ? '#92400E' : '#0369A1'
+                                                ...roleBadgeStyle(user.role as StaffRole),
                                             }}>
                                                 {user.role === 'admin' ? <Shield size={12} /> : <Users size={12} />}
-                                                {user.role === 'admin' ? 'Admin' : 'Operation'}
+                                                {roleLabel(user.role as StaffRole)}
                                             </span>
                                         </td>
                                         <td style={{ padding: '1rem 1.5rem' }}>
@@ -336,10 +348,11 @@ const AdminUsers = () => {
                                 <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, color: '#374151', marginBottom: '0.5rem' }}>Role</label>
                                 <select
                                     value={formData.role}
-                                    onChange={(e) => setFormData({ ...formData, role: e.target.value as 'admin' | 'operation' })}
+                                    onChange={(e) => setFormData({ ...formData, role: e.target.value as StaffRole })}
                                     style={{ width: '100%', padding: '0.75rem', borderRadius: '0.5rem', border: '1px solid #D1D5DB', background: 'white' }}
                                 >
                                     <option value="operation">Operation</option>
+                                    <option value="content_creator">Content Creator</option>
                                     <option value="admin">Admin</option>
                                 </select>
                             </div>

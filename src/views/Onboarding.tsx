@@ -25,6 +25,10 @@ import { normalizeIndianPhoneForForm, validateIndianMobile, isIndianPhoneEmpty }
 import { applyAuthoritativeLoginIdentity } from '../lib/onboardingIdentity';
 import { fellowshipsFromCommaList } from '../lib/fellowshipsCommaList';
 import { calculateProfileProgress } from '../lib/profileProgress';
+import {
+    ONBOARDING_SECTION_COUNT,
+    clampOnboardingSectionStep,
+} from '../lib/onboardingSteps';
 import Toast from '../components/ui/Toast';
 
 import type { OnboardingFormData } from './onboarding-steps/types';
@@ -124,8 +128,11 @@ const Onboarding = () => {
     const savedData = savedUser?.data;
     const savedStep = savedUser?.currentStep;
 
-    const [currentStep, setCurrentStep] = useState(navState.step || (savedStep && savedStep > 0 ? savedStep : 1));
-    const totalSteps = 6;
+    const initialStep = clampOnboardingSectionStep(
+        navState.step ?? (savedStep && savedStep > 0 ? savedStep : 1),
+    );
+    const [currentStep, setCurrentStep] = useState(initialStep);
+    const totalSteps = ONBOARDING_SECTION_COUNT;
     const [focusedField, setFocusedField] = useState<string>(navState.focusedField || '');
     const [skippedFields, setSkippedFields] = useState<string[]>([]);
     const [voiceConfig, setVoiceConfig] = useState<{ context: Record<string, StepContext>, instructions: Record<string, string> } | null>(null);
@@ -140,6 +147,13 @@ const Onboarding = () => {
     // Reset skipped fields when navigating between steps so they can be prompted again
     useEffect(() => {
         setSkippedFields([]);
+    }, [currentStep]);
+
+    useEffect(() => {
+        const clamped = clampOnboardingSectionStep(currentStep);
+        if (clamped !== currentStep) {
+            setCurrentStep(clamped);
+        }
     }, [currentStep]);
 
     // Welcome Dialog & Guided Tour State
@@ -467,7 +481,7 @@ const Onboarding = () => {
     // Handle edit field click from LivePreview
     const handleEditField = (fieldName: string) => {
         skipAutoFocus.current = true;
-        const targetStep = getStepForField(fieldName);
+        const targetStep = clampOnboardingSectionStep(getStepForField(fieldName));
         setCurrentStep(targetStep);
 
         setTimeout(() => {
@@ -533,6 +547,10 @@ const Onboarding = () => {
 
         if (!voiceConfig) return;
         const baseContext = voiceConfig.context[currentStep.toString()];
+        if (!baseContext) {
+            console.warn(`No voice context for onboarding step ${currentStep}`);
+            return;
+        }
 
         const missingFields = baseContext.fields.filter(f => {
             if (f.voiceSkip) return false;
@@ -673,7 +691,7 @@ const Onboarding = () => {
                     console.error('Failed to save to API:', err);
                 });
             }
-            setCurrentStep((c: number) => c - 1);
+            setCurrentStep((c: number) => clampOnboardingSectionStep(c - 1));
         }
     };
 
@@ -757,12 +775,7 @@ const Onboarding = () => {
             case 6:
                 return <Step6ContentSeed {...stepProps} />;
             default:
-                return (
-                    <div style={{ textAlign: 'center', padding: '4rem 0' }}>
-                        <h3>Section {currentStep}</h3>
-                        <p>This is an optional section to improve your profile score.</p>
-                    </div>
-                );
+                return <Step6ContentSeed {...stepProps} />;
         }
     };
 
@@ -818,7 +831,7 @@ const Onboarding = () => {
         }
 
         if (currentStep < totalSteps) {
-            setCurrentStep((prev: number) => prev + 1);
+            setCurrentStep((prev: number) => clampOnboardingSectionStep(prev + 1));
             setFocusedField('');
             autoStartMic.current = true;
         } else {
@@ -838,7 +851,7 @@ const Onboarding = () => {
                     console.error('Failed to save to API:', err);
                 });
             }
-            setCurrentStep(step);
+            setCurrentStep(clampOnboardingSectionStep(step));
         }
     };
 
@@ -850,7 +863,7 @@ const Onboarding = () => {
                     <p className={styles.subtitle}>This will take just 2-3 minutes.</p>
                 </div>
                 <div className={styles.stepperContainer} data-tour="stepper">
-                    <Stepper currentStep={currentStep} totalSteps={6} onStepClick={handleStepJump} />
+                    <Stepper currentStep={currentStep} totalSteps={totalSteps} onStepClick={handleStepJump} />
                 </div>
             </div>
 
@@ -991,7 +1004,7 @@ const Onboarding = () => {
                 isNewUser={isNewUser}
                 userName={formData.fullName || savedUser?.name}
                 currentStep={currentStep}
-                totalSteps={6}
+                totalSteps={totalSteps}
                 profileCompletionPercent={profileProgress.totalPercentage}
                 showSkipButton={showSkipButton}
                 onStartTour={handleStartTour}

@@ -11,6 +11,9 @@ import { authService } from '../../services/authService';
 import { publicAssetUrl, BRAND_LOGO_MARK_PATH } from '../../config/basePath';
 import styles from './AdminLogin.module.css';
 
+const adminHomeForRole = (role?: string | null) =>
+    role === 'content_creator' ? '/admin/dashboard/content' : '/admin/dashboard';
+
 const AdminLogin = () => {
     const router = useAppRouter();
     const [email, setEmail] = useState('');
@@ -43,7 +46,7 @@ const AdminLogin = () => {
         const role = getCurrentUserRole(email);
         if (role) {
             setLoggedInAdmin(email); // Persist session
-            router.push('/admin/dashboard');
+            router.push(adminHomeForRole(role));
         } else {
             alert("Access Denied: You are not an authorized admin or operations user.");
         }
@@ -83,8 +86,7 @@ const AdminLogin = () => {
             if (response.success) {
                 console.log("Admin Login Successful:", response);
                 setLoggedInAdmin(`phone:${mobileNumber}`);
-                // navigate to dashboard
-                router.push('/admin/dashboard');
+                router.push(adminHomeForRole(response.role));
             }
         } catch (err: unknown) {
             console.error("OTP Verify Error:", err);
@@ -136,7 +138,7 @@ const AdminLogin = () => {
             const role = getCurrentUserRole(userEmail);
             if (role) {
                 setLoggedInAdmin(userEmail);
-                router.push('/admin/dashboard');
+                router.push(adminHomeForRole(role));
             } else {
                 alert("Access Denied: Your Google account is not authorized for Admin access.");
             }
@@ -151,7 +153,7 @@ const AdminLogin = () => {
                     const mockAdminEmail = "admin@caepy.com";
                     setLoggedInAdmin(mockAdminEmail);
                     alert(`(Demo Mode) Auto-logging in as ${mockAdminEmail}`);
-                    router.push('/admin/dashboard');
+                    router.push(adminHomeForRole(getCurrentUserRole(mockAdminEmail)));
                     return;
                 }
                 alert("Firebase configuration missing! Please add your keys to .env file.");

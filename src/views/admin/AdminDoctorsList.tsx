@@ -288,7 +288,7 @@ const BulkUploadModal = ({ onClose, onComplete }: BulkUploadModalProps) => {
                                                 <tr key={i} style={{ borderBottom: '1px solid #FEE2E2' }}>
                                                     <td style={{ padding: '0.375rem 0.75rem', color: '#B91C1C' }}>{err.row}</td>
                                                     <td style={{ padding: '0.375rem 0.75rem', color: '#B91C1C', fontFamily: 'monospace' }}>{err.field}</td>
-                                                    <td style={{ padding: '0.375rem 0.75rem', color: '#B91C1C' }}>{err.message}</td>
+                                                    <td style={{ padding: '0.375rem 0.75rem', color: '#B91C1C' }}>{err.error}</td>
                                                 </tr>
                                             ))}
                                         </tbody>
@@ -328,18 +328,28 @@ const BulkUploadModal = ({ onClose, onComplete }: BulkUploadModalProps) => {
                 )}
 
                 {/* Step: Done */}
-                {step === 'done' && uploadResult && (
+                {step === 'done' && uploadResult && (() => {
+                    const rowWarnings = uploadResult.rows.flatMap((r) =>
+                        (r.warnings ?? []).map((w) => ({ row: r.row, text: w }))
+                    );
+                    const hasWarnings = (uploadResult.warning_count ?? rowWarnings.length) > 0;
+                    const hasSkipped = uploadResult.skipped > 0;
+                    const bg = hasSkipped ? '#FEF2F2' : hasWarnings ? '#FFFBEB' : '#F0FDF4';
+                    const border = hasSkipped ? '#FECACA' : hasWarnings ? '#FDE68A' : '#BBF7D0';
+                    const titleColor = hasSkipped ? '#991B1B' : hasWarnings ? '#92400E' : '#166534';
+                    const iconColor = hasSkipped ? '#DC2626' : hasWarnings ? '#D97706' : '#16A34A';
+                    return (
                     <div>
                         <div style={{
                             padding: '1.25rem',
                             borderRadius: '0.5rem',
-                            background: '#F0FDF4',
-                            border: '1px solid #BBF7D0',
+                            background: bg,
+                            border: `1px solid ${border}`,
                             textAlign: 'center'
                         }}>
-                            <CheckCircle size={36} color="#16A34A" style={{ marginBottom: '0.75rem' }} />
-                            <p style={{ margin: 0, fontWeight: 700, color: '#166534', fontSize: '1.0625rem' }}>
-                                Upload Complete!
+                            <CheckCircle size={36} color={iconColor} style={{ marginBottom: '0.75rem' }} />
+                            <p style={{ margin: 0, fontWeight: 700, color: titleColor, fontSize: '1.0625rem' }}>
+                                {hasSkipped ? 'Upload completed with errors' : hasWarnings ? 'Upload complete with warnings' : 'Upload Complete!'}
                             </p>
                             <div style={{ display: 'flex', justifyContent: 'center', gap: '1.5rem', marginTop: '0.75rem', fontSize: '0.875rem', color: '#374151' }}>
                                 {uploadResult.created > 0 && (
@@ -352,15 +362,30 @@ const BulkUploadModal = ({ onClose, onComplete }: BulkUploadModalProps) => {
                                     <span><strong style={{ color: '#D97706' }}>{uploadResult.skipped}</strong> skipped</span>
                                 )}
                             </div>
-                            {uploadResult.errors && uploadResult.errors.length > 0 && (
+                            {rowWarnings.length > 0 && (
                                 <div style={{ marginTop: '0.75rem', textAlign: 'left' }}>
-                                    <p style={{ fontSize: '0.8125rem', color: '#B91C1C', fontWeight: 600 }}>Warnings:</p>
-                                    <ul style={{ margin: '0.25rem 0 0', paddingLeft: '1.25rem', fontSize: '0.8125rem', color: '#B91C1C' }}>
-                                        {uploadResult.errors.slice(0, 5).map((err, i) => (
-                                            <li key={i}>Row {err.row}: {err.field} — {err.message}</li>
+                                    <p style={{ fontSize: '0.8125rem', color: '#92400E', fontWeight: 600 }}>
+                                        Verify / LinQMD warnings (create LinQMD manually in admin if needed):
+                                    </p>
+                                    <ul style={{ margin: '0.25rem 0 0', paddingLeft: '1.25rem', fontSize: '0.8125rem', color: '#B45309' }}>
+                                        {rowWarnings.slice(0, 8).map((w, i) => (
+                                            <li key={i}>Row {w.row}: {w.text}</li>
                                         ))}
-                                        {uploadResult.errors.length > 5 && (
-                                            <li>...and {uploadResult.errors.length - 5} more</li>
+                                        {rowWarnings.length > 8 && (
+                                            <li>...and {rowWarnings.length - 8} more</li>
+                                        )}
+                                    </ul>
+                                </div>
+                            )}
+                            {uploadResult.skipped_errors && uploadResult.skipped_errors.length > 0 && (
+                                <div style={{ marginTop: '0.75rem', textAlign: 'left' }}>
+                                    <p style={{ fontSize: '0.8125rem', color: '#B91C1C', fontWeight: 600 }}>Skipped rows:</p>
+                                    <ul style={{ margin: '0.25rem 0 0', paddingLeft: '1.25rem', fontSize: '0.8125rem', color: '#B91C1C' }}>
+                                        {uploadResult.skipped_errors.slice(0, 5).map((err, i) => (
+                                            <li key={i}>Row {err.row}{err.field ? ` (${err.field})` : ''}: {err.error}</li>
+                                        ))}
+                                        {uploadResult.skipped_errors.length > 5 && (
+                                            <li>...and {uploadResult.skipped_errors.length - 5} more</li>
                                         )}
                                     </ul>
                                 </div>
@@ -370,7 +395,8 @@ const BulkUploadModal = ({ onClose, onComplete }: BulkUploadModalProps) => {
                             </p>
                         </div>
                     </div>
-                )}
+                    );
+                })()}
             </div>
         </div>
     );
@@ -597,6 +623,148 @@ function credentialsFromLinqMDResult(result: LinqMDSyncResult): { username: stri
     return { username: String(username), password: String(password) };
 }
 
+export type LinqmdProfileTheme = 'dp_1' | 'dp_2' | 'dp_3';
+
+const LINQMD_PROFILE_THEMES: Array<{
+    value: LinqmdProfileTheme;
+    title: string;
+    subtitle: string;
+    gradient: string;
+}> = [
+    {
+        value: 'dp_1',
+        title: 'Ocean Clinical',
+        subtitle: 'Teal · calm & clinical',
+        gradient: 'linear-gradient(145deg, #0D9488 0%, #5EEAD4 55%, #134E4A 100%)',
+    },
+    {
+        value: 'dp_2',
+        title: 'Royal Trust',
+        subtitle: 'Indigo · professional',
+        gradient: 'linear-gradient(145deg, #4338CA 0%, #A5B4FC 50%, #312E81 100%)',
+    },
+    {
+        value: 'dp_3',
+        title: 'Warm Care',
+        subtitle: 'Amber · approachable',
+        gradient: 'linear-gradient(145deg, #EA580C 0%, #FCD34D 45%, #9A3412 100%)',
+    },
+];
+
+interface LinqMDThemePickerModalProps {
+    doctorName: string;
+    syncing: boolean;
+    selectedTheme: LinqmdProfileTheme;
+    onSelectTheme: (theme: LinqmdProfileTheme) => void;
+    onConfirm: () => void;
+    onClose: () => void;
+}
+
+const LinqMDThemePickerModal = ({
+    doctorName,
+    syncing,
+    selectedTheme,
+    onSelectTheme,
+    onConfirm,
+    onClose,
+}: LinqMDThemePickerModalProps) => (
+    <div className={styles.modalOverlay} onClick={syncing ? undefined : onClose}>
+        <div
+            className={styles.modalContent}
+            onClick={(e) => e.stopPropagation()}
+            style={{ maxWidth: '560px' }}
+            role="dialog"
+            aria-labelledby="linqmd-theme-picker-title"
+        >
+            <div className={styles.flexBetweenCenter} style={{ marginBottom: '0.5rem' }}>
+                <h2
+                    id="linqmd-theme-picker-title"
+                    style={{ margin: 0, fontSize: '1.125rem', fontWeight: 700, color: '#111827' }}
+                >
+                    Choose Practice Hub theme
+                </h2>
+                <button
+                    type="button"
+                    onClick={onClose}
+                    disabled={syncing}
+                    style={{ background: 'none', border: 'none', cursor: syncing ? 'not-allowed' : 'pointer', padding: '0.25rem' }}
+                    aria-label="Close"
+                >
+                    <X size={20} color="#6B7280" />
+                </button>
+            </div>
+            <p style={{ margin: '0 0 0.25rem', fontSize: '0.875rem', color: '#4B5563', lineHeight: 1.5 }}>
+                Select a visual theme for <strong>{doctorName}</strong>&apos;s LinQMD profile. This is applied once at
+                creation.
+            </p>
+            <div className={styles.linqmdThemeGrid}>
+                {LINQMD_PROFILE_THEMES.map((theme) => {
+                    const selected = selectedTheme === theme.value;
+                    return (
+                        <button
+                            key={theme.value}
+                            type="button"
+                            className={`${styles.linqmdThemeCard} ${selected ? styles.linqmdThemeCardSelected : ''}`}
+                            onClick={() => onSelectTheme(theme.value)}
+                            disabled={syncing}
+                            aria-pressed={selected}
+                        >
+                            <div
+                                className={styles.linqmdThemePreview}
+                                style={{ background: theme.gradient }}
+                                aria-hidden
+                            />
+                            <div className={styles.linqmdThemeCardBody}>
+                                <p className={styles.linqmdThemeCardTitle}>{theme.title}</p>
+                                <p className={styles.linqmdThemeCardMeta}>{theme.subtitle}</p>
+                                <span className={styles.linqmdThemeCode}>{theme.value}</span>
+                            </div>
+                        </button>
+                    );
+                })}
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
+                <button
+                    type="button"
+                    onClick={onClose}
+                    disabled={syncing}
+                    style={{
+                        padding: '0.625rem 1rem',
+                        borderRadius: '0.5rem',
+                        border: '1px solid #D1D5DB',
+                        background: 'white',
+                        cursor: syncing ? 'not-allowed' : 'pointer',
+                        fontSize: '0.875rem',
+                    }}
+                >
+                    Cancel
+                </button>
+                <button
+                    type="button"
+                    onClick={onConfirm}
+                    disabled={syncing}
+                    className={styles.primaryBtn}
+                    style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '0.5rem',
+                        opacity: syncing ? 0.7 : 1,
+                    }}
+                >
+                    {syncing ? (
+                        <>
+                            <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} />
+                            Creating profile…
+                        </>
+                    ) : (
+                        'Create profile on LinQMD'
+                    )}
+                </button>
+            </div>
+        </div>
+    </div>
+);
+
 // ---------------------------------------------------------------------------
 // Admin Doctors List Page
 // ---------------------------------------------------------------------------
@@ -610,6 +778,12 @@ const AdminDoctorsList = () => {
     const [total, setTotal] = useState(0);
     const [showUploadModal, setShowUploadModal] = useState(false);
     const [linqmdModal, setLinqmdModal] = useState<LinqMDModalState | null>(null);
+    const [linqmdThemePicker, setLinqmdThemePicker] = useState<{
+        doctorId: number;
+        doctorName: string;
+    } | null>(null);
+    const [selectedLinqmdTheme, setSelectedLinqmdTheme] = useState<LinqmdProfileTheme>('dp_1');
+    const [linqmdThemeSyncing, setLinqmdThemeSyncing] = useState(false);
 
     useEffect(() => {
         fetchDoctors();
@@ -647,24 +821,37 @@ const AdminDoctorsList = () => {
         }
     };
 
-    const handleSyncLinqMD = async (id: number) => {
-        if (!window.confirm("Are you sure you want to create a profile in LinQMD for this doctor?")) {
-            return;
-        }
+    const openLinqMDThemePicker = (doc: Doctor) => {
+        const name =
+            doc.full_name ||
+            `${doc.first_name || ''} ${doc.last_name || ''}`.trim() ||
+            `Doctor #${doc.id}`;
+        setSelectedLinqmdTheme('dp_1');
+        setLinqmdThemePicker({ doctorId: doc.id, doctorName: name });
+    };
+
+    const handleConfirmLinqMDCreate = async () => {
+        if (!linqmdThemePicker) return;
+        const { doctorId } = linqmdThemePicker;
+        setLinqmdThemeSyncing(true);
         try {
-            const result = await adminService.syncLinqMDProfile(id);
+            const result = await adminService.syncLinqMDProfile(doctorId, selectedLinqmdTheme);
             const { username, password } = credentialsFromLinqMDResult(result);
             if (!username || !password) {
                 throw new Error('LinQMD credentials were not returned by the server.');
             }
+            setLinqmdThemePicker(null);
             setLinqmdModal({ mode: 'success', username, password });
             fetchDoctors();
         } catch (error) {
-            console.error("LinQMD sync failed", error);
+            console.error('LinQMD sync failed', error);
+            setLinqmdThemePicker(null);
             setLinqmdModal({
                 mode: 'error',
                 message: parseErrorMessage(error),
             });
+        } finally {
+            setLinqmdThemeSyncing(false);
         }
     };
 
@@ -832,7 +1019,7 @@ const AdminDoctorsList = () => {
                                                                         ...(canCreate ? {} : disabledBtnStyle),
                                                                     }}
                                                                     disabled={!canCreate}
-                                                                    onClick={() => canCreate && handleSyncLinqMD(doc.id)}
+                                                                    onClick={() => canCreate && openLinqMDThemePicker(doc)}
                                                                 >
                                                                     <UserPlus size={18} />
                                                                 </button>
@@ -921,6 +1108,17 @@ const AdminDoctorsList = () => {
             </div>
 
             {/* Bulk Upload Modal */}
+            {linqmdThemePicker && (
+                <LinqMDThemePickerModal
+                    doctorName={linqmdThemePicker.doctorName}
+                    syncing={linqmdThemeSyncing}
+                    selectedTheme={selectedLinqmdTheme}
+                    onSelectTheme={setSelectedLinqmdTheme}
+                    onConfirm={handleConfirmLinqMDCreate}
+                    onClose={() => !linqmdThemeSyncing && setLinqmdThemePicker(null)}
+                />
+            )}
+
             {linqmdModal && (
                 <LinqMDResultModal
                     state={linqmdModal}

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import styles from '../BlogStudio.module.css';
-import { doctorService } from '../../../services/doctorService';
+import { BlogStudioApi, doctorBlogStudioApi } from '../../../services/blogStudioApi';
 
 interface KeywordSelectionProps {
   topic: string;
@@ -8,9 +8,17 @@ interface KeywordSelectionProps {
   onNext: (keywords: string[]) => void;
   onBack: () => void;
   onBackToHub?: () => void;
+  blogApi?: BlogStudioApi;
 }
 
-export default function KeywordSelection({ topic, initialKeywords, onNext, onBack, onBackToHub }: KeywordSelectionProps) {
+export default function KeywordSelection({
+  topic,
+  initialKeywords,
+  onNext,
+  onBack,
+  onBackToHub,
+  blogApi = doctorBlogStudioApi,
+}: KeywordSelectionProps) {
   const [suggestedKeywords, setSuggestedKeywords] = useState<string[]>([]);
   const [selectedKeywords, setSelectedKeywords] = useState<string[]>(initialKeywords);
   const [customKeyword, setCustomKeyword] = useState('');
@@ -22,7 +30,7 @@ export default function KeywordSelection({ topic, initialKeywords, onNext, onBac
       setIsLoading(true);
       setError(null);
       try {
-        const data = await doctorService.getBlogKeywords(topic);
+        const data = await blogApi.getBlogKeywords(topic);
         setSuggestedKeywords(data.keywords);
       } catch (err: any) {
         console.error("Failed to fetch keywords:", err);

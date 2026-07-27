@@ -5,6 +5,8 @@ import {
   isDoctorVerified,
   type DoctorProfile,
 } from '../../../services/doctorService';
+import { BlogStudioApi, doctorBlogStudioApi } from '../../../services/blogStudioApi';
+import { adminService } from '../../../services/adminService';
 import { parseErrorMessage } from '../../../lib/api';
 import { isBrowser } from '../../../lib/isBrowser';
 import axios from 'axios';
@@ -15,6 +17,9 @@ interface PublishPreviewProps {
   onPublish?: () => void;
   onBack: () => void;
   onBackToHub?: () => void;
+  blogApi?: BlogStudioApi;
+  contentDoctorId?: number;
+  exitHref?: string;
 }
 
 const VERIFICATION_PENDING_TOOLTIP = 'Doctor Verification pending';
@@ -24,6 +29,7 @@ function getApiErrorCode(error: unknown): string | null {
   const data = error.response?.data;
   if (!data || typeof data !== 'object') return null;
   const detail = (data as Record<string, unknown>).detail;
+  if (typeof detail === 'string') return null;
   if (detail && typeof detail === 'object') {
     const code = (detail as Record<string, unknown>).code;
     if (typeof code === 'string') return code;
@@ -49,6 +55,9 @@ export default function PublishPreview({
   setFormData,
   onBack,
   onBackToHub,
+  blogApi = doctorBlogStudioApi,
+  contentDoctorId,
+  exitHref,
 }: PublishPreviewProps) {
   const [profile, setProfile] = useState<DoctorProfile | null>(null);
   const [showPreview, setShowPreview] = useState(false);
@@ -62,9 +71,33 @@ export default function PublishPreview({
   const isVerified = isDoctorVerified(profile?.onboarding_status);
 
   useEffect(() => {
-    setProfile(doctorService.getStoredProfile());
+    if (contentDoctorId) {
+      let cancelled = false;
+      (async () => {
+        try {
+          const full = await adminService.getDoctorFullProfile(contentDoctorId);
+          const status = full.identity?.onboarding_status;
+          if (!cancelled) {
+            setProfile({
+              full_name: full.identity?.full_name ?? undefined,
+              onboarding_status: typeof status === 'string' ? status : String(status ?? ''),
+            } as DoctorProfile);
+          }
+        } catch (err) {
+          console.error('Failed to load doctor profile for publish gate:', err);
+        }
+      })();
+      return () => {
+        cancelled = true;
+      };
+    }
 
-    doctorService.saveBlogDraft(formData).then(result => {
+    setProfile(doctorService.getStoredProfile());
+    return undefined;
+  }, [contentDoctorId]);
+
+  useEffect(() => {
+    blogApi.saveBlogDraft(formData).then(result => {
       const returnedId = result?.id;
       if (returnedId && !formData.id) {
         setFormData((prev: any) => ({ ...prev, id: returnedId }));
@@ -73,6 +106,7 @@ export default function PublishPreview({
   }, []);
 
   useEffect(() => {
+    if (contentDoctorId) return;
     if (!isBrowser()) return;
     const doctorId = localStorage.getItem('doctor_id');
     if (!doctorId) return;
@@ -90,15 +124,19 @@ export default function PublishPreview({
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [contentDoctorId]);
+
+  const defaultExitHref = () => {
+    const basePath = process.env.NEXT_PUBLIC_BASE_PATH || '';
+    return exitHref ?? `${basePath}/doctor/blog-studio`;
+  };
 
   const handleSaveAndExit = async () => {
     setSaving(true);
     try {
-      await doctorService.saveBlogDraft(formData);
+      await blogApi.saveBlogDraft(formData);
       alert('Saved to your Blog Studio');
-      const basePath = process.env.NEXT_PUBLIC_BASE_PATH || '';
-      window.location.href = `${basePath}/doctor/blog-studio`;
+      window.location.href = defaultExitHref();
     } catch (err) {
       console.error('Manual save failed:', err);
       alert('Failed to save changes. Please try again.');
@@ -112,28 +150,30 @@ export default function PublishPreview({
     setPublishing(true);
     try {
       let blogId = formData.id;
-      const saved = await doctorService.saveBlogDraft(formData);
+      const saved = await blogApi.saveBlogDraft(formData);
       blogId = saved?.id ?? blogId;
-      if (blogId && !formData.id) {
+      if (blogId) {
         setFormData((prev: any) => ({ ...prev, id: blogId }));
       }
       if (!blogId) {
         throw new Error('Could not save blog draft before publishing.');
       }
 
-      await doctorService.publishBlogToPracticeHub(blogId, credentials);
+      await blogApi.publishBlogToPracticeHub(blogId, credentials);
       setShowCredentialModal(false);
       setCredentialPassword('');
       alert('Blog published to Practice Hub successfully!');
-      const basePath = process.env.NEXT_PUBLIC_BASE_PATH || '';
-      window.location.href = `${basePath}/doctor/blog-studio`;
+      window.location.href = defaultExitHref();
     } catch (err) {
       const code = getApiErrorCode(err);
       if (code === 'linqmd_credentials_invalid') {
         setPublishError(getApiErrorDetailMessage(err));
         setShowCredentialModal(true);
       } else {
-        alert(getApiErrorDetailMessage(err));
+        const message = getApiErrorDetailMessage(err);
+        setPublishError(null);
+        setShowCredentialModal(false);
+        alert(message);
       }
     } finally {
       setPublishing(false);
