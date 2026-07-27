@@ -1,4 +1,5 @@
 import api, { parseResponse } from '../lib/api';
+import axios from 'axios';
 import type { BlogTopic } from './doctorService';
 
 /** Blog Studio API — doctor self-service or content creator on behalf of a doctor. */
@@ -61,21 +62,39 @@ function createBlogApi(basePath: string): BlogStudioApi {
 
         async saveBlogDraft(blogData) {
             let blogId = blogData.id as number | undefined;
+
+            const persistUpdate = async (id: number) => {
+                const updateRes = await api.put(`${basePath}/${id}`, {
+                    title: blogData.title,
+                    subtitle: blogData.subtitle,
+                    opening_quote: blogData.quote || blogData.opening_quote,
+                    content: blogData.content,
+                    keywords: blogData.keywords,
+                });
+                return parseResponse(updateRes) as { id?: number } & Record<string, unknown>;
+            };
+
             if (!blogId) {
                 const createRes = await api.post(basePath, {
                     title: (blogData.title as string) || 'Untitled Blog',
                 });
                 const createdBlog = parseResponse<{ id: number }>(createRes);
                 blogId = createdBlog.id;
+                return persistUpdate(blogId);
             }
-            const updateRes = await api.put(`${basePath}/${blogId}`, {
-                title: blogData.title,
-                subtitle: blogData.subtitle,
-                opening_quote: blogData.quote || blogData.opening_quote,
-                content: blogData.content,
-                keywords: blogData.keywords,
-            });
-            return parseResponse(updateRes) as { id?: number } & Record<string, unknown>;
+
+            try {
+                return await persistUpdate(blogId);
+            } catch (err) {
+                if (axios.isAxiosError(err) && err.response?.status === 404) {
+                    const createRes = await api.post(basePath, {
+                        title: (blogData.title as string) || 'Untitled Blog',
+                    });
+                    const createdBlog = parseResponse<{ id: number }>(createRes);
+                    return persistUpdate(createdBlog.id);
+                }
+                throw err;
+            }
         },
 
         async uploadBlogImage(blogId, file) {

@@ -29,6 +29,7 @@ function getApiErrorCode(error: unknown): string | null {
   const data = error.response?.data;
   if (!data || typeof data !== 'object') return null;
   const detail = (data as Record<string, unknown>).detail;
+  if (typeof detail === 'string') return null;
   if (detail && typeof detail === 'object') {
     const code = (detail as Record<string, unknown>).code;
     if (typeof code === 'string') return code;
@@ -151,7 +152,7 @@ export default function PublishPreview({
       let blogId = formData.id;
       const saved = await blogApi.saveBlogDraft(formData);
       blogId = saved?.id ?? blogId;
-      if (blogId && !formData.id) {
+      if (blogId) {
         setFormData((prev: any) => ({ ...prev, id: blogId }));
       }
       if (!blogId) {
@@ -169,7 +170,10 @@ export default function PublishPreview({
         setPublishError(getApiErrorDetailMessage(err));
         setShowCredentialModal(true);
       } else {
-        alert(getApiErrorDetailMessage(err));
+        const message = getApiErrorDetailMessage(err);
+        setPublishError(null);
+        setShowCredentialModal(false);
+        alert(message);
       }
     } finally {
       setPublishing(false);
