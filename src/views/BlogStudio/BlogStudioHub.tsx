@@ -26,6 +26,7 @@ interface BlogCardData {
   keywords?: string[];
   status: 'DRAFT' | 'PUBLISHED';
   estimated_read_time?: number;
+  live_url?: string | null;
   created_at: string;
   updated_at?: string;
 }
@@ -238,6 +239,16 @@ export default function BlogStudioHub({
 
 function BlogCard({ blog, onContinue, onDelete }: { blog: BlogCardData; onContinue?: () => void; onDelete?: () => void }) {
   const isDraft = blog.status.toLowerCase() === 'draft';
+  const liveUrl = blog.live_url?.trim() || null;
+
+  const handleViewLive = () => {
+    if (!liveUrl) {
+      alert('Live URL is not available for this blog yet.');
+      return;
+    }
+    window.open(liveUrl, '_blank', 'noopener,noreferrer');
+  };
+
   return (
     <div className={styles.blogCard}>
       <div className={styles.blogCardTop}>
@@ -285,7 +296,13 @@ function BlogCard({ blog, onContinue, onDelete }: { blog: BlogCardData; onContin
             Continue editing →
           </button>
         ) : (
-          <button className={styles.viewBtn}>
+          <button
+            type="button"
+            className={styles.viewBtn}
+            onClick={handleViewLive}
+            disabled={!liveUrl}
+            title={liveUrl ? 'Open published blog in a new tab' : 'Live URL is not available for this blog yet'}
+          >
             View live →
           </button>
         )}
