@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo, type CSSProperties } from 'react';
 import { useAppRouter } from '../../lib/router';
-import { Search, Users, AlertCircle, CheckCircle, Eye, Upload, X, Download, FileSpreadsheet, Loader2, ShieldCheck, UserPlus, KeyRound, Copy, Check } from 'lucide-react';
+import { Search, Users, AlertCircle, CheckCircle, Eye, Upload, X, Download, FileSpreadsheet, Loader2, ShieldCheck, UserPlus, KeyRound, Copy, Check, ChevronUp, ChevronDown, ChevronsUpDown } from 'lucide-react';
 import styles from './AdminDashboard.module.css';
 import { adminService, type Doctor, type CsvValidationResponse, type CsvUploadResponse, type LinqMDSyncResult } from '../../services/adminService';
 import { parseErrorMessage } from '../../lib/api';
@@ -421,6 +421,153 @@ function isDoctorVerified(doc: Doctor): boolean {
     return (doc.onboarding_status ?? '').toLowerCase() === 'verified';
 }
 
+const ADMIN_DOCTORS_PAGE_SIZE = 20;
+
+type AdminDoctorSortColumn =
+    | 'name'
+    | 'specialty'
+    | 'location'
+    | 'dateJoined'
+    | 'profile'
+    | 'status';
+
+type SortDirection = 'asc' | 'desc';
+
+const ONBOARDING_STATUS_RANK: Record<string, number> = {
+    verified: 0,
+    submitted: 1,
+    pending: 2,
+    rejected: 3,
+};
+
+function doctorDisplayName(doc: Doctor): string {
+    return (
+        doc.full_name ||
+        `${doc.first_name ?? ''} ${doc.last_name ?? ''}`.trim() ||
+        `Doctor #${doc.id}`
+    );
+}
+
+function buildDoctorProfileProgressInput(doc: Doctor) {
+    return {
+        full_name: doctorDisplayName(doc),
+        specialty: doc.specialty || doc.primary_specialization,
+        primary_practice_location: doc.primary_practice_location,
+        years_of_clinical_experience: doc.years_of_clinical_experience || doc.years_of_experience,
+        medical_registration_number: doc.medical_registration_number,
+        profile_photo: null,
+        year_of_mbbs: doc.year_of_mbbs,
+        conditions_commonly_treated: doc.conditions_commonly_treated,
+        conditions_known_for: doc.conditions_known_for,
+        training_experience: doc.training_experience,
+        motivation_in_practice: doc.motivation_in_practice,
+        unwinding_after_work: doc.unwinding_after_work,
+        what_patients_value_most: doc.what_patients_value_most,
+        approach_to_care: doc.approach_to_care,
+        availability_philosophy: doc.availability_philosophy,
+        content_seeds: doc.content_seeds,
+    };
+}
+
+function doctorProfileProgressPercent(doc: Doctor): number {
+    return calculateProfileProgressFromApi(buildDoctorProfileProgressInput(doc)).totalPercentage;
+}
+
+function compareDoctorsByColumn(
+    a: Doctor,
+    b: Doctor,
+    column: AdminDoctorSortColumn,
+    direction: SortDirection,
+): number {
+    let result = 0;
+
+    switch (column) {
+        case 'name':
+            result = doctorDisplayName(a).localeCompare(doctorDisplayName(b), undefined, { sensitivity: 'base' });
+            break;
+        case 'specialty':
+            result = (a.specialty || a.primary_specialization || '').localeCompare(
+                b.specialty || b.primary_specialization || '',
+                undefined,
+                { sensitivity: 'base' },
+            );
+            break;
+        case 'location':
+            result = (a.primary_practice_location || '').localeCompare(
+                b.primary_practice_location || '',
+                undefined,
+                { sensitivity: 'base' },
+            );
+            break;
+        case 'dateJoined':
+            result = new Date(a.created_at || 0).getTime() - new Date(b.created_at || 0).getTime();
+            break;
+        case 'profile':
+            result = doctorProfileProgressPercent(a) - doctorProfileProgressPercent(b);
+            break;
+        case 'status':
+            result =
+                (ONBOARDING_STATUS_RANK[(a.onboarding_status ?? 'pending').toLowerCase()] ?? 99) -
+                (ONBOARDING_STATUS_RANK[(b.onboarding_status ?? 'pending').toLowerCase()] ?? 99);
+            break;
+        default:
+            break;
+    }
+
+    if (result === 0) {
+        result = a.id - b.id;
+    }
+
+    return direction === 'asc' ? result : -result;
+}
+
+interface SortableTableHeaderProps {
+    label: string;
+    column: AdminDoctorSortColumn;
+    activeColumn: AdminDoctorSortColumn;
+    direction: SortDirection;
+    onSort: (column: AdminDoctorSortColumn) => void;
+}
+
+const sortHeaderButtonStyle: CSSProperties = {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: '0.25rem',
+    background: 'none',
+    border: 'none',
+    padding: 0,
+    font: 'inherit',
+    fontWeight: 600,
+    color: 'inherit',
+    cursor: 'pointer',
+    textAlign: 'left',
+};
+
+const SortableTableHeader = ({
+    label,
+    column,
+    activeColumn,
+    direction,
+    onSort,
+}: SortableTableHeaderProps) => {
+    const active = activeColumn === column;
+    const SortIcon = active ? (direction === 'asc' ? ChevronUp : ChevronDown) : ChevronsUpDown;
+
+    return (
+        <th>
+            <button
+                type="button"
+                onClick={() => onSort(column)}
+                style={sortHeaderButtonStyle}
+                aria-sort={active ? (direction === 'asc' ? 'ascending' : 'descending') : 'none'}
+            >
+                {label}
+                <SortIcon size={14} style={{ opacity: active ? 1 : 0.45, flexShrink: 0 }} />
+            </button>
+        </th>
+    );
+};
+
 interface LinqMDResultModalProps {
     state: LinqMDModalState;
     onClose: () => void;
@@ -772,10 +919,11 @@ const LinqMDThemePickerModal = ({
 const AdminDoctorsList = () => {
     const router = useAppRouter();
     const [searchTerm, setSearchTerm] = useState("");
-    const [doctors, setDoctors] = useState<Doctor[]>([]);
+    const [allDoctors, setAllDoctors] = useState<Doctor[]>([]);
     const [loading, setLoading] = useState(true);
     const [page, setPage] = useState(1);
-    const [total, setTotal] = useState(0);
+    const [sortColumn, setSortColumn] = useState<AdminDoctorSortColumn>('status');
+    const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
     const [showUploadModal, setShowUploadModal] = useState(false);
     const [linqmdModal, setLinqmdModal] = useState<LinqMDModalState | null>(null);
     const [linqmdThemePicker, setLinqmdThemePicker] = useState<{
@@ -785,22 +933,61 @@ const AdminDoctorsList = () => {
     const [selectedLinqmdTheme, setSelectedLinqmdTheme] = useState<LinqmdProfileTheme>('dp_1');
     const [linqmdThemeSyncing, setLinqmdThemeSyncing] = useState(false);
 
-    useEffect(() => {
-        fetchDoctors();
-    }, [page]);
-
-    const fetchDoctors = async () => {
+    const loadAllDoctors = useCallback(async () => {
         setLoading(true);
         try {
-            const response = await adminService.getDoctors(page, 20); // 20 items per page
-            setDoctors(response.data);
-            setTotal(response.total);
+            const result = await adminService.fetchAllDoctors();
+            setAllDoctors(result);
         } catch (error) {
-            console.error("Failed to fetch doctors", error);
+            console.error('Failed to fetch doctors', error);
+            setAllDoctors([]);
         } finally {
             setLoading(false);
         }
-    };
+    }, []);
+
+    useEffect(() => {
+        loadAllDoctors();
+    }, [loadAllDoctors]);
+
+    useEffect(() => {
+        setPage(1);
+    }, [searchTerm, sortColumn, sortDirection]);
+
+    const handleSort = useCallback((column: AdminDoctorSortColumn) => {
+        if (sortColumn === column) {
+            setSortDirection((current) => (current === 'asc' ? 'desc' : 'asc'));
+            return;
+        }
+        setSortColumn(column);
+        setSortDirection('asc');
+    }, [sortColumn]);
+
+    const sortedDoctors = useMemo(
+        () => [...allDoctors].sort((a, b) => compareDoctorsByColumn(a, b, sortColumn, sortDirection)),
+        [allDoctors, sortColumn, sortDirection],
+    );
+
+    const filteredDoctors = useMemo(() => {
+        const q = searchTerm.trim().toLowerCase();
+        if (!q) {
+            return sortedDoctors;
+        }
+        return sortedDoctors.filter((doc) => {
+            const name = doctorDisplayName(doc).toLowerCase();
+            const specialty = (doc.specialty || doc.primary_specialization || '').toLowerCase();
+            return name.includes(q) || specialty.includes(q);
+        });
+    }, [sortedDoctors, searchTerm]);
+
+    const pageDoctors = useMemo(() => {
+        const start = (page - 1) * ADMIN_DOCTORS_PAGE_SIZE;
+        return filteredDoctors.slice(start, start + ADMIN_DOCTORS_PAGE_SIZE);
+    }, [filteredDoctors, page]);
+
+    const filteredTotal = filteredDoctors.length;
+    const pageStart = filteredTotal === 0 ? 0 : (page - 1) * ADMIN_DOCTORS_PAGE_SIZE + 1;
+    const pageEnd = filteredTotal === 0 ? 0 : Math.min(page * ADMIN_DOCTORS_PAGE_SIZE, filteredTotal);
 
     const handleViewLinqMDCredentials = async (id: number) => {
         try {
@@ -842,7 +1029,7 @@ const AdminDoctorsList = () => {
             }
             setLinqmdThemePicker(null);
             setLinqmdModal({ mode: 'success', username, password });
-            fetchDoctors();
+            loadAllDoctors();
         } catch (error) {
             console.error('LinQMD sync failed', error);
             setLinqmdThemePicker(null);
@@ -855,17 +1042,12 @@ const AdminDoctorsList = () => {
         }
     };
 
-    const filteredDoctors = doctors.filter(doc => {
-        const name = doc.full_name || `${doc.first_name} ${doc.last_name}`;
-        const specialty = doc.specialty || "";
-        return name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            specialty.toLowerCase().includes(searchTerm.toLowerCase());
-    });
-
     const stats = {
-        total: total,
-        verified: doctors.filter(d => d.onboarding_status === "verified" || d.onboarding_status === "VERIFIED").length,
-        pending: doctors.filter(d => d.onboarding_status === "submitted" || d.onboarding_status === "SUBMITTED").length
+        total: allDoctors.length,
+        verified: allDoctors.filter((d) => isDoctorVerified(d)).length,
+        pending: allDoctors.filter(
+            (d) => (d.onboarding_status ?? '').toLowerCase() === 'submitted',
+        ).length,
     };
 
     return (
@@ -886,8 +1068,6 @@ const AdminDoctorsList = () => {
                         <p>Total Doctors</p>
                     </div>
                 </div>
-                {/* Note: Pending/Verified counts here are only for current page unless we add stats endpoint. 
-                    Keeping simple for now. */}
             </div>
 
             {/* Controls */}
@@ -919,17 +1099,53 @@ const AdminDoctorsList = () => {
                     <table className={styles.table}>
                         <thead>
                             <tr>
-                                <th>Doctor Name</th>
-                                <th>Specialty</th>
-                                <th>Location</th>
-                                <th>Date Joined</th>
-                                <th>Profile %</th>
-                                <th>Status</th>
+                                <SortableTableHeader
+                                    label="Doctor Name"
+                                    column="name"
+                                    activeColumn={sortColumn}
+                                    direction={sortDirection}
+                                    onSort={handleSort}
+                                />
+                                <SortableTableHeader
+                                    label="Specialty"
+                                    column="specialty"
+                                    activeColumn={sortColumn}
+                                    direction={sortDirection}
+                                    onSort={handleSort}
+                                />
+                                <SortableTableHeader
+                                    label="Location"
+                                    column="location"
+                                    activeColumn={sortColumn}
+                                    direction={sortDirection}
+                                    onSort={handleSort}
+                                />
+                                <SortableTableHeader
+                                    label="Date Joined"
+                                    column="dateJoined"
+                                    activeColumn={sortColumn}
+                                    direction={sortDirection}
+                                    onSort={handleSort}
+                                />
+                                <SortableTableHeader
+                                    label="Profile %"
+                                    column="profile"
+                                    activeColumn={sortColumn}
+                                    direction={sortDirection}
+                                    onSort={handleSort}
+                                />
+                                <SortableTableHeader
+                                    label="Status"
+                                    column="status"
+                                    activeColumn={sortColumn}
+                                    direction={sortDirection}
+                                    onSort={handleSort}
+                                />
                                 <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody>
-                            {filteredDoctors.map(doc => {
+                            {pageDoctors.map(doc => {
                                 const status = doc.onboarding_status || 'pending';
                                 return (
                                     <tr key={doc.id}>
@@ -941,24 +1157,7 @@ const AdminDoctorsList = () => {
                                         <td>{new Date(doc.created_at).toLocaleDateString()}</td>
                                         <td>
                                             {(() => {
-                                                const p = calculateProfileProgressFromApi({
-                                                    full_name: doc.full_name || `${doc.first_name} ${doc.last_name}`,
-                                                    specialty: doc.specialty || doc.primary_specialization,
-                                                    primary_practice_location: doc.primary_practice_location,
-                                                    years_of_clinical_experience: doc.years_of_clinical_experience || doc.years_of_experience,
-                                                    medical_registration_number: doc.medical_registration_number,
-                                                    profile_photo: null,
-                                                    year_of_mbbs: doc.year_of_mbbs,
-                                                    conditions_commonly_treated: doc.conditions_commonly_treated,
-                                                    conditions_known_for: doc.conditions_known_for,
-                                                    training_experience: doc.training_experience,
-                                                    motivation_in_practice: doc.motivation_in_practice,
-                                                    unwinding_after_work: doc.unwinding_after_work,
-                                                    what_patients_value_most: doc.what_patients_value_most,
-                                                    approach_to_care: doc.approach_to_care,
-                                                    availability_philosophy: doc.availability_philosophy,
-                                                    content_seeds: doc.content_seeds,
-                                                });
+                                                const p = calculateProfileProgressFromApi(buildDoctorProfileProgressInput(doc));
                                                 const color = p.totalPercentage >= 80 ? '#10B981' : p.totalPercentage >= 50 ? '#F59E0B' : '#EF4444';
                                                 return (
                                                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
@@ -1052,7 +1251,7 @@ const AdminDoctorsList = () => {
                         </tbody>
                     </table>
                 )}
-                {!loading && filteredDoctors.length === 0 && (
+                {!loading && pageDoctors.length === 0 && (
                     <div style={{ padding: '2rem', textAlign: 'center', color: '#6B7280' }}>
                         No doctors found matching your search.
                     </div>
@@ -1071,7 +1270,7 @@ const AdminDoctorsList = () => {
                 color: '#6B7280'
             }}>
                 <div>
-                    Showing <span style={{ fontWeight: 600, color: '#111827' }}>{(page - 1) * 20 + 1}</span> to <span style={{ fontWeight: 600, color: '#111827' }}>{Math.min(page * 20, total)}</span> of <span style={{ fontWeight: 600, color: '#111827' }}>{total}</span> entries
+                    Showing <span style={{ fontWeight: 600, color: '#111827' }}>{pageStart}</span> to <span style={{ fontWeight: 600, color: '#111827' }}>{pageEnd}</span> of <span style={{ fontWeight: 600, color: '#111827' }}>{filteredTotal}</span> entries
                 </div>
                 <div style={{ display: 'flex', gap: '0.5rem' }}>
                     <button
@@ -1090,7 +1289,7 @@ const AdminDoctorsList = () => {
                         Previous
                     </button>
                     <button
-                        disabled={filteredDoctors.length < 20} // Or total > page * 20
+                        disabled={page * ADMIN_DOCTORS_PAGE_SIZE >= filteredTotal}
                         onClick={() => setPage(p => p + 1)}
                         style={{
                             padding: '0.5rem 1rem',
@@ -1129,7 +1328,7 @@ const AdminDoctorsList = () => {
             {showUploadModal && (
                 <BulkUploadModal
                     onClose={() => setShowUploadModal(false)}
-                    onComplete={fetchDoctors}
+                    onComplete={loadAllDoctors}
                 />
             )}
         </div>

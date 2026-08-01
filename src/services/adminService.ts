@@ -612,6 +612,48 @@ export const adminService = {
         return all;
     },
 
+    /** Load every doctor (paginated API) for client-side search on the Admin list. */
+    fetchAllDoctors: async (): Promise<Doctor[]> => {
+        const pageSize = 100;
+        const all: Doctor[] = [];
+        let page = 1;
+        let total = 0;
+
+        try {
+            for (;;) {
+                const response = await api.get('/doctors', {
+                    params: { page, page_size: pageSize },
+                });
+                const batch: Doctor[] = response.data?.data ?? [];
+                total = response.data?.pagination?.total ?? batch.length;
+                if (batch.length === 0) {
+                    break;
+                }
+                all.push(...batch);
+                if (all.length >= total) {
+                    break;
+                }
+                page += 1;
+            }
+        } catch (error) {
+            console.warn('API error fetching all doctors, using static data only', error);
+            return [...STATIC_DOCTORS];
+        }
+
+        const seen = new Set<number>();
+        const unique: Doctor[] = [];
+        for (const doc of all) {
+            if (seen.has(doc.id)) {
+                continue;
+            }
+            seen.add(doc.id);
+            unique.push(doc);
+        }
+
+        const staticOnly = STATIC_DOCTORS.filter((doc) => !seen.has(doc.id));
+        return [...unique, ...staticOnly];
+    },
+
     /** Fetch a single doctor's full profile (identity + details + media + history). */
     getDoctorFullProfile: async (doctorId: number): Promise<DoctorFullProfile> => {
         const response = await api.get(`/doctors/lookup?doctor_id=${doctorId}`);
