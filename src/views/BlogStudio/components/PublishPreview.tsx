@@ -29,7 +29,12 @@ function getApiErrorCode(error: unknown): string | null {
   const data = error.response?.data;
   if (!data || typeof data !== 'object') return null;
   const detail = (data as Record<string, unknown>).detail;
-  if (typeof detail === 'string') return null;
+  if (typeof detail === 'string') {
+    if (detail.includes('LinQMD Practice Hub profile')) {
+      return 'linqmd_profile_missing';
+    }
+    return null;
+  }
   if (detail && typeof detail === 'object') {
     const code = (detail as Record<string, unknown>).code;
     if (typeof code === 'string') return code;
@@ -46,6 +51,7 @@ function getApiErrorDetailMessage(error: unknown): string {
       const msg = (detail as Record<string, unknown>).message;
       if (typeof msg === 'string') return msg;
     }
+    if (typeof detail === 'string') return detail;
   }
   return parseErrorMessage(error);
 }
@@ -166,7 +172,7 @@ export default function PublishPreview({
       window.location.href = defaultExitHref();
     } catch (err) {
       const code = getApiErrorCode(err);
-      if (code === 'linqmd_credentials_invalid') {
+      if (code === 'linqmd_credentials_invalid' || code === 'linqmd_profile_missing') {
         setPublishError(getApiErrorDetailMessage(err));
         setShowCredentialModal(true);
       } else {
@@ -182,6 +188,11 @@ export default function PublishPreview({
 
   const handlePublishClick = () => {
     if (!isVerified || publishing) return;
+    if (profile?.has_linqmd_profile === false) {
+      setPublishError('Enter your Practice Hub username and password to publish.');
+      setShowCredentialModal(true);
+      return;
+    }
     runPublish();
   };
 

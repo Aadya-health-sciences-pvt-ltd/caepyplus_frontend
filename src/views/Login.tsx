@@ -94,9 +94,9 @@ const Login = () => {
             const completionPercent = onboardingPercent;
 
             if (completionPercent > 75) {
-                // High completion – go straight to dashboard
+                // High completion – go straight to dashboard (profile home)
                 sessionStorage.setItem('nav_state', JSON.stringify({ isNewUser }));
-                router.push('/doctor/dashboard');
+                router.push('/doctor/profile');
             } else if (isNewUser && profile.currentStep === 0 && type === 'phone') {
                 // Phone sign-up: optional resume upload first
                 sessionStorage.setItem('nav_state', JSON.stringify({ isNewUser }));
